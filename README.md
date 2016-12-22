@@ -15,3 +15,8 @@
 - Directory: [`initialpitch`](https://github.com/Lab41/Magnolia/tree/master/initialpitch)
 - Contents: Initial code and data used to generate beamforming effect.
 
+## Input/Output
+
+- Directory: [`inoutput`](https://github.com/Lab41/Magnolia/tree/master/inoutput)
+- Contents: Code to read and write *.wav files, convert formats, and read from the audio interface. Likely will need to understand "garageband" app.
+
