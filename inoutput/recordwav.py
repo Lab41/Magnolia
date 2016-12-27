@@ -6,7 +6,7 @@ CHUNK = 1024
 FORMAT = pyaudio.paInt16
 CHANNELS = 2
 RATE = 44100
-RECORD_SECONDS = 15
+RECORD_SECONDS = 60
 
 if len(sys.argv)!=2:
     sys.stdout.write('Usage: Requires output\n')

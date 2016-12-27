@@ -2,7 +2,9 @@
 
 ## Necessary Python Libraries
 ### libsndfile
-```brew install libsndfile```
+```
+brew install libsndfile
+```
 ### pyaudio
 ```
 pip install scikits.audiolab
