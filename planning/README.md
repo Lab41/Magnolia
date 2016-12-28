@@ -11,7 +11,8 @@ The resulting algorithms of interest will be a mix of ICA and simulated beamform
 
 Sampling rate at 48kHz, but we can apply anti-aliasing and subsampling to simulate lower rate capture devices. Microphones are omnidirectional.
 
-For the individual problems, please see
+For the individual problems, please see  
+
 1. [**Source Removal Details**](sourceremove.md)
   - Lab41 POC: Karl Ni
 2. [**Moving Sources Details**](movingsource.md)
