@@ -13,11 +13,11 @@ Sampling rate at 48kHz, but we can apply anti-aliasing and subsampling to simula
 
 For the individual problems, please see
 1. [**Source Removal Details**](sourceremove.md)
-  Lab41 POC: Karl Ni
+  - Lab41 POC: Karl Ni
 2. [**Moving Sources Details**](movingsource.md)
-  Lab41 POC: Patrick Callier & Abhinav Ganesh
+  - Lab41 POC: Patrick Callier & Abhinav Ganesh
 3. [**Standoff Distance**](standoff.md)
-  Time Permitting
+  - Time Permitting
 
 ## Collaboration Efforts
 
