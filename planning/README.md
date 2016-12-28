@@ -1,6 +1,7 @@
 # Magnolia
 
 We will focus on three independent problems. These are:
+
 1. Removing a source (whose location is static) that is dynamic and loud
 2. Multiple moving sources (i.e., the channel changes with time)
 3. Standoff distance acoustic enhancement (dynamic gain adjustment in low SNR)
