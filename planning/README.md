@@ -40,13 +40,19 @@ This project will be primarily an analysis of cost functions (in supervised and 
 
 The following will be implemented from scratch.
 
-- **Supervised Methods**
-  - **Week 1 and 2 and 3**
-    - Gradient Descent
-    - Supervised Neural Networks
+- **Supervised Methods Cost Functions**
+  - **Weeks 1 and 2 and 3**
+    - Inverse problem
+    - Gradient descent
+    - Neural networks
     - Backpropagation
-- **Week 4 and 5** - Independent Components Analysis and Beamforming
-- **Week 6 and 7** - Deep ICA and Deep Reconstruction ICA
-- **Week 7** - Recurrent Methods for Neural Networks
-- **Week 8** - Joint space/time convolutions
+- **Unsupervised Cost Functions** 
+  - **Weeks 4 and 5**
+    - Independent Components Analysis and Beamforming
+  - **Week 6 and 7** 
+    - Deep ICA and Deep Reconstruction ICA
+- **Recurrent Methods for Neural Networks**
+  - **Week 8**
+- **Joint space/time convolutions**
+  - **Week 9**
 
