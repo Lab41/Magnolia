@@ -51,10 +51,15 @@ The following will be implemented from scratch.
 - **Unsupervised Cost Functions** 
   - **Weeks 4 and 5**
     - Independent Components Analysis and Beamforming
+    - Adversarial Training for Feature Extraction
   - **Week 6 and 7** 
     - Deep ICA and Deep Reconstruction ICA
 - **Recurrent Methods for Neural Networks**
   - **Week 8**
 - **Joint space/time convolutions**
   - **Week 9**
-
+    - Convolutional LSTM Fully Connected Neetworks - CLDNNs
+      - (Sainath et al)
+  - ** Week 10**
+    - Positionally Invariant Neural Networks
+- **Neural Network Tuning and Data Augmentation**
