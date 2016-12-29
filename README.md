@@ -6,7 +6,7 @@
 - Contents: Source code.
 
 ### Simple Components Analysis
-- Directory: [`src/simplecomponents`](https://github.com/Lab41/Magnolia/tree/master/simplecomponents)
+- Directory: [`src/simplecomponents`](https://github.com/Lab41/Magnolia/tree/master/src/simplecomponents)
 - Contents: PCA and ICA code, which show simple examples of how to do linear methods of denoising and signal isolation. 
 
 ## Documentation
@@ -15,11 +15,11 @@
 - Contents: Documentation, including initial pitch and planning.
 
 ### Initial Pitch
-- Directory: [`initialpitch`](https://github.com/Lab41/Magnolia/tree/master/initialpitch)
+- Directory: [`docs/initialpitch`](https://github.com/Lab41/Magnolia/tree/master/docs/initialpitch)
 - Contents: Initial code and data used to generate beamforming effect.
 
 ### Planning and Scheduling
-- Directory: [`planning`](https://github.com/Lab41/Magnolia/tree/master/planning)
+- Directory: [`docs/planning`](https://github.com/Lab41/Magnolia/tree/master/docs/planning)
 - Contents: Datasets, collaboration efforts, scheduling, etc.
 
 ## Input/Output
