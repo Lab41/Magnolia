@@ -1,3 +1,4 @@
+# This environment works on Mac
 name: magnolia
 channels: !!python/tuple
 - defaults
@@ -51,7 +52,6 @@ dependencies:
 - pip=9.0.1=py27_1
 - prompt_toolkit=1.0.9=py27_0
 - ptyprocess=0.5.1=py27_0
-- pyaudio=0.2.7=py27_0
 - pygments=2.1.3=py27_0
 - pyparsing=2.1.4=py27_0
 - pyqt=5.6.0=py27_1
@@ -87,7 +87,6 @@ dependencies:
   - backports.shutil-get-terminal-size==1.0.0
   - backports.ssl-match-hostname==3.4.0.2
   - certifi==2016.9.26
-  - ica==0.5
   - ipython-genutils==0.1.0
   - jupyter-client==4.4.0
   - jupyter-console==5.0.0
