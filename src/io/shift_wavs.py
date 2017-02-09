@@ -23,6 +23,7 @@ def shift_signal(sig1, sig2):
         shifted2 = sig2[offset:]
     else:
         logger.info("Padding head...{}".format(offset))
+        logger.info("Signal shape...{}".format(sig2.shape))
         shifted2 = np.concatenate((np.zeros(-offset, dtype=sig2.dtype), sig2))
     # Deal with signal tail
     if shifted2.size >= sig1.size:
