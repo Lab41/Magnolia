@@ -1,4 +1,6 @@
+#!/usr/bin/env python 
 # -*- coding: utf-8 -*-
+
 '''
 Source separation algorithms attempt to extract recordings of individual
 sources from a recording of a mixture of sources.  Evaluation methods for
@@ -973,3 +975,15 @@ def evaluate(reference_sources, estimated_sources, **kwargs):
         scores['Sources - Source permutation'] = perm.tolist()
 
     return scores
+
+if __name__=="__main__":
+    # Simple demo
+    ts = np.linspace(0,5,10000)
+    srcs = np.array([np.sin(ts*600),
+                     np.cos(357*ts+0.01)])
+    recons = srcs[::-1] + np.random.randn(*srcs.shape)*2
+
+    sdr, sir, sar, permut = bss_eval_sources(srcs, recons)
+    print("""SDR: {}
+SIR: {}
+SAR: {}""".format(sdr, sir, sar))
