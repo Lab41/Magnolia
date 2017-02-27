@@ -4,6 +4,7 @@ Functions for featurizing audio using spectral analysis, as well as for
 reconstructing time-domain audio signals from spectral features
 '''
 
+import numpy as np
 import scipy
 
 def stft(x, fs, framesz, hop, two_sided=True):
@@ -15,7 +16,7 @@ def stft(x, fs, framesz, hop, two_sided=True):
         fs - sampling frequency (in Hz)
         framesz - frame size (in seconds)
         hop - skip length (in seconds)
-        two_sided - not implemented
+        two_sided - return full spectrogram? or just positive frequencies
 
     Output:
         X = 2d array time-frequency repr of x, time x frequency
@@ -23,12 +24,16 @@ def stft(x, fs, framesz, hop, two_sided=True):
     framesamp = int(framesz*fs)
     hopsamp = int(hop*fs)
     w = scipy.hanning(framesamp)
-    X = scipy.array([scipy.fft(w*x[i:i+framesamp])
+    if two_sided:
+        X = scipy.array([scipy.fft(w*x[i:i+framesamp])
                      for i in range(0, len(x)-framesamp, hopsamp)])
+    else:
+        X = scipy.array([np.fft.fftpack.rfft(w*x[i:i+framesamp])
+             for i in range(0, len(x)-framesamp, hopsamp)])
 
     return X
 
-def istft(X, fs, recon_size, hop):
+def istft(X, fs, recon_size, hop, two_sided=True):
     ''' Inverse Short Time Fourier Transform (iSTFT) - Spectral reconstruction
 
     Input:
@@ -41,8 +46,14 @@ def istft(X, fs, recon_size, hop):
         x - a 1-D array holding reconstructed time-domain audio signal
     '''
     x = scipy.zeros(recon_size*fs)
-    framesamp = X.shape[1]
     hopsamp = int(hop*fs)
+    if two_sided:
+        framesamp = X.shape[1]
+        inverse_transform = scipy.ifft
+    else:
+        framesamp = (X.shape[1] - 1) * 2
+        inverse_transform = np.fft.fftpack.irfft
+
     for n,i in enumerate(range(0, len(x)-framesamp, hopsamp)):
-        x[i:i+framesamp] += scipy.real(scipy.ifft(X[n]))
+        x[i:i+framesamp] += scipy.real(inverse_transform(X[n]))
     return x
