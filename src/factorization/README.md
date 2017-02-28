@@ -3,9 +3,9 @@
 Matrix factorization using various simple components analysis algorithms. The iPython notebooks are on random signals and some audio signals. Here are libraries using these, foremost are PCA, ICA, and we're working on NMF.
 
 Current libraries:
-- _PCA_ (Principle Component Analysis) in [pca.py](pca.py) 
-- _ICA_ (Independent Component Analsys) in [ica.py](ica.py) 
-- _NMF_ (Non-negative Matrix Factorization) in [nmf.py](nmf.py) 
+- _PCA_ - (Principle Component Analysis) in [pca.py](pca.py) 
+- _ICA_ - (Independent Component Analsys) in [ica.py](ica.py) 
+- _NMF_ - (Non-negative Matrix Factorization) in [nmf.py](nmf.py) 
   - L-1 normalization
   - L-2 normalization
 
