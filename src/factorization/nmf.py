@@ -30,4 +30,3 @@ def nmf(X, k, maxiter=1000):
         W = W * ((X /(W @ H+eps)) @ H.T) / (ONES @ H.T)
 
     return W, H
-
