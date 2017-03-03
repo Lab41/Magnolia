@@ -1,8 +1,17 @@
-## Simple Components Analysis
+## Matrix Factorization 
 
-Doing PCA and ICA on random signals and audio signals. All notebooks are standalone at present. Their descriptions are as follows:
+Matrix factorization using various simple components analysis algorithms. The iPython notebooks are on random signals and some audio signals. Here are libraries using these, foremost are PCA, ICA, and we're working on NMF.
+
+Current libraries:
+- _PCA_ (Principle Component Analysis) in [pca.py](pca.py) 
+- _ICA_ (Independent Component Analsys) in [ica.py](ica.py) 
+- _NMF_ (Non-negative Matrix Factorization) in [nmf.py](nmf.py) 
+  - L-1 normalization
+  - L-2 normalization
 
 ### Independent Component Analysis
+
+All notebooks are standalone at present. Their descriptions are as follows:
 
 | iPython Notebook | Audio Sources    | Channels / Mixing | Software Packages |
 | ---------------- | ---------------- | ---------------- | ---------------- |
