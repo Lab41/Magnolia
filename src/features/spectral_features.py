@@ -16,7 +16,8 @@ def stft(x, fs, framesz, hop, two_sided=True):
         fs - sampling frequency (in Hz)
         framesz - frame size (in seconds)
         hop - skip length (in seconds)
-        two_sided - return full spectrogram? or just positive frequencies
+        two_sided - return full spectrogram if True
+            or just positive frequencies if False
 
     Output:
         X = 2d array time-frequency repr of x, time x frequency

@@ -9,7 +9,7 @@ import os
 from itertools import islice
 import numpy as np
 import python_speech_features as psf
-from spectral_features import stft
+from .spectral_features import stft
 from scipy.io import wavfile
 
 def wav_mixer(wav_dir, mix_random=False, num_to_mix=2, sig_length=100*512+1, mask="_src.wav", dtype=np.int16):
@@ -76,7 +76,8 @@ def lmf_iterator(wavs, fs = 1.0, stft_len=1024, stft_step=512, nfft=512,
     while True:
         truth_sigs, mixed_sig = next(wavs)
         # Stack signals onto each other for transformation
-        all_sigs = np.stack((mixed_sig[np.newaxis, :], truth_sigs), axis=0)
+        all_sigs = (mixed_sig, truth_sigs)
+        all_sigs = np.concatenate(all_sigs, axis=0)
         #stft_len = (stft_len_orig)/fs
         # transform each truth signal into logmel features
         num_sigs = all_sigs.shape[0]
@@ -100,7 +101,7 @@ def lmf_iterator(wavs, fs = 1.0, stft_len=1024, stft_step=512, nfft=512,
 
         yield truth_lmf, mixed_lmf
 
-def stft_iterator(wavs, fs = 1.0, stft_len=1024, stft_step=512, use_diffs=False):
+def stft_iterator(wavs, fs = 1.0, stft_len=1024, stft_step=512, use_diffs=False, **kwargs):
     """
     get signals from iterator wavs, transform to freq domn,
     get difference features, and yield
@@ -116,14 +117,15 @@ def stft_iterator(wavs, fs = 1.0, stft_len=1024, stft_step=512, use_diffs=False)
     while True:
         truth_sigs, mixed_sig = next(wavs)
         # Stack signals onto each other for transformation
-        all_sigs = np.stack((mixed_sig[np.newaxis, :], truth_sigs), axis=0)
+        all_sigs = (mixed_sig, truth_sigs)
+        all_sigs = np.concatenate(all_sigs, axis=0)
         #stft_len = (stft_len_orig)/fs
-        # transform each truth signal into logmel features
+        # transform each truth signal into stft features
         num_sigs = all_sigs.shape[0]
         # TODO: Is axis=-1 the only option here? Transpose in next line seems
         # unnecessary
-        spectrogram = np.stack([stft(all_sigs[j], fs=fs, framesz=stft_len, hop=stft_step)
-                                for j in range(num_sigs)], axis=-1)
+        spectrogram = np.stack([stft(all_sigs[j], fs=fs, framesz=stft_len, hop=stft_step, **kwargs)
+                                for j in range(num_sigs)], axis=-1)                            
         # From time x freq x sig, transform to sig x time x freq
         spectrogram = np.transpose(spectrogram, [2, 0, 1])
         if use_diffs:
