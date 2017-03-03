@@ -6,17 +6,18 @@ Current libraries:
 - _PCA_ - (Principle Component Analysis) in [pca.py](pca.py) 
 - _ICA_ - (Independent Component Analsys) in [ica.py](ica.py) 
 - _NMF_ - (Non-negative Matrix Factorization) in [nmf.py](nmf.py) 
-  - L-1 normalization
-  - L-2 normalization
+  - L-1 normalization (to add...)
+  - L-2 normalization (to add...)
 
 ### Independent Component Analysis
 
 All notebooks are standalone at present. Their descriptions are as follows:
 
-| iPython Notebook | Audio Sources    | Channels / Mixing | Software Packages |
-| ---------------- | ---------------- | ---------------- | ---------------- |
-|`main-ica.ipynb`  | Synthesized (Saw/Sin/Gaus) | Synthesized (Gaussian) | scikit-learn's toolbox |
-|`main-audio-ica.ipynb`  | 20-Source Single Audio | Synthesized (Gaussian) | scikit-learn's toolbox |
-|`main-real-ica.ipynb`  | 5-Source Mixed Audio | 5 iPhones | scikit-learn's toolbox |
-|`implemented-fastica.ipynb`  | Synthesized waveforms | 5 iPhones | Implemented from [Wikipedia](https://en.wikipedia.org/wiki/FastICA) |
+| iPython Notebook | Audio Sources    | Channels / Mixing | Software Packages | Notes |
+| ---------------- | ---------------- | ---------------- | ---------------- | ---------------- |
+|`main-ica.ipynb`  | Synthesized (Saw/Sin/Gaus) | Synthesized (Gaussian) | scikit-learn's toolbox | Time-domain separation |
+|`main-audio-ica.ipynb`  | 20-Source Single Audio | Synthesized (Gaussian) | scikit-learn's toolbox | |
+|`main-real-ica.ipynb`  | 5-Source Mixed Audio | 5 iPhones | scikit-learn's toolbox | |
+|`implemented-fastica.ipynb`  | Synthesized waveforms | 5 iPhones | Implemented from [Wikipedia](https://en.wikipedia.org/wiki/FastICA) | |
+|`implemented-nmf.ipynb` | 2-Source Mixed Audio | 1 Channel | Implemented from [Haesun Park](https://goo.gl/Xgy3ZN) | Separation with spectrum (STFT) |
 
