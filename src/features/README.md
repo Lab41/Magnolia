@@ -10,3 +10,5 @@ These are defined as:
 
 $$\mathbf{C} = \mathcal{DCT} \left\{ \Phi \log |\mathcal{DFT}(\hat\mathbf{x})|   \right\} $$
 
+![Mel Frequencies](images/melfreq.png)
+
