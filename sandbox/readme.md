@@ -10,4 +10,4 @@ Multiple experiments run by labmates to explore methods for source separation in
 - [`stereo-micviz`](https://github.com/Lab41/Magnolia/tree/master/sandbox/stereo-micviz), visualization of two microphone gain array, implemented by @cstephenson
 - [`mfcc-LR-mask`](mfcc-LR-mask), prediction of ideal binary mask using linear (and to do, logistic regression) masks. Currently training and testing on the same data. Implemented by @kni
 - [`mfcc-DNN-mask`](mfcc-DNN-mask), prediction of ideal binary mask using deep neural network, starting with keras. Implemented by @kni
-
+- [`mfcc-multibranch`](mfcc-multibranch), make a forked neural network using output masks. Currently overfitting, based on architecture inspired by permutation-based networks. Implemented by @kni
