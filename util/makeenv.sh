@@ -19,5 +19,6 @@ source deactivate
 # install swiss army knife sound utility
 sudo apt-get update
 sudo apt-get install sox
+pip install pysoundfile
 
 
