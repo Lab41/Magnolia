@@ -80,22 +80,27 @@ def lmf_iterator(wavs, fs = 1.0, stft_len=1024, stft_step=512, nfft=512,
         all_sigs = np.concatenate(all_sigs, axis=0)
         #stft_len = (stft_len_orig)/fs
         # transform each truth signal into logmel features
-        num_sigs = all_sigs.shape[0]
-        # TODO: Is axis=-1 the only option here? Transpose in next line seems
-        # unnecessary
-        lmf = np.stack([psf.logfbank(all_sigs[j], samplerate=fs,
+        #num_sigs = all_sigs.shape[0]
+        lmfs = []
+        for sig in all_sigs:
+            lmf = psf.logfbank(sig, samplerate=fs,
                                 nfft=nfft, nfilt=nfilters,
                                 winlen=stft_len, winstep=stft_step)
-                                for j in range(num_sigs)], axis=-1)
+                                
+            lmfs.append(lmf)
+        lmf = np.stack(lmfs, 0)
         # From time x freq x sig, transform to sig x time x freq
-        lmf = np.transpose(lmf, [2, 0, 1])
+        #lmf = np.transpose(lmf, [2, 0, 1])
         if use_diffs:
-            # take 1st- and 2nd-order differences in time
-            diff1 = np.diff(lmf, axis=1)
-            diff2 = np.diff(diff1, axis=1)
+            # take 1st- and 2nd-order differences of LMF in time
+            diff1 = np.diff(lmf, axis=0)
+            diff2 = np.diff(diff1, axis=0)
+            # zero-pad diff features
+            diff1 = np.concatenate((np.zeros_like(diff1[:1]), diff1))
+            diff2 = np.concatenate((np.zeros_like(diff2[:2]), diff2))
             # concatenate difference features in "frequency" TODO: use another dimension??
-            lmf = np.concatenate((lmf[:,:-2], diff1[:,:-1], diff2), axis=2)
-
+            lmf = np.concatenate((lmf, diff1, diff2), axis=1)
+            
         truth_lmf = lmf[1:]
         mixed_lmf = lmf[0]
 
