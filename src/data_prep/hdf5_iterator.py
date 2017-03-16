@@ -66,7 +66,9 @@ class Hdf5Iterator:
                 if want_pos is None:
                     slice_start = self.rng.randint(have_dim - want_dim + 1)
                 else:
+                    # TODO: warn if want_pos is out of bounds
                     slice_start = want_pos
+
                 slice_end = slice_start + want_dim
                 slices.append(slice(slice_start, slice_end))
             output_slice = next_item[tuple(slices)]
