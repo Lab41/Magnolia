@@ -10,7 +10,24 @@ import h5py
 import numpy as np
 
 class Hdf5Iterator:
-    def __init__(self, hdf5_path, shape, seed=41):
+    def __init__(self, hdf5_path, shape, pos=None, seed=41):
+        '''
+
+        Args:
+            hdf5_path (str): path to HDF5 file
+            shape (tuple): dimension of slices to extract
+            pos (tuple or None): optionally, tuple of ints or None, the same
+                length as shape. Where not None, slices will always be extracted
+                from the given position on that dimension. If None, slices
+                will be extracted from random positions in that dimension.
+
+        Examples:
+            Hdf5Iterator("foo.h5", shape=(None, 256), pos=(None, 0))
+                returns an iterator over 2d data samples from foo.h5, where the first
+                dimension of the sample is determined by the first dimension of the dataset,
+                and the second dimension of the sample is always taken from 0:256 in the
+                second dimension of the data.
+        '''
         self.hdf5_path = hdf5_path
         self.h5 = h5py.File(hdf5_path, 'r')
         self.h5_groups = [key for key in self.h5]
@@ -19,6 +36,10 @@ class Hdf5Iterator:
             self.h5_items += [ group + '/' + item for item in self.h5[group] ]
         self.rng = np.random.RandomState(seed)
         self.shape = shape
+        if pos is not None:
+            self.pos = pos
+        else:
+            self.pos = tuple(None for dim in self.shape)
 
     def __next__(self):
         '''Randomly pick a dataset from the available options'''
@@ -27,7 +48,7 @@ class Hdf5Iterator:
         for i in range(num_tries):
             next_item = self.h5[self.rng.choice(self.h5_items)]
 
-            # Ensure that Nones is self.shape
+            # Ensure that Nones in self.shape
             # will yield the maximum size on the given dimension
             shape = list(copy.copy(self.shape))
             for j, dim in enumerate(shape):
@@ -39,10 +60,13 @@ class Hdf5Iterator:
                 continue
 
             # Choose a random, valid place for the slice
-            # to be made and yield it
+            # to be made and return it
             slices = []
-            for have_dim, want_dim in zip(next_item.shape,shape):
-                slice_start = self.rng.randint(have_dim - want_dim + 1)
+            for have_dim, want_dim, want_pos in zip(next_item.shape, shape, self.pos):
+                if want_pos is None:
+                    slice_start = self.rng.randint(have_dim - want_dim + 1)
+                else:
+                    slice_start = want_pos
                 slice_end = slice_start + want_dim
                 slices.append(slice(slice_start, slice_end))
             output_slice = next_item[tuple(slices)]
@@ -66,7 +90,6 @@ if __name__ == "__main__":
     h = Hdf5Iterator('._test.h5', (2, None))
     a = next(h)
     assert a.shape == (2, 20)
-
 
     h = Hdf5Iterator('._test.h5', (0, None))
     a = next(h)
