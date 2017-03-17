@@ -4,7 +4,7 @@ class DNNfeeder:
     
     def __init_(self, iterators, shape=None, pos=None, seed=0 ):
         '''
-        DNN Data Feeder 
+        DNNfeeder: DNN Data Feeder 
 
         Args:
             iterator (list): a list of hdf5 file names or a list of iterators
