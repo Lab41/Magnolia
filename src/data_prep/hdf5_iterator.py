@@ -10,12 +10,13 @@ import h5py
 import numpy as np
 
 class Hdf5Iterator:
-    def __init__(self, hdf5_path, shape, pos=None, seed=41):
+    def __init__(self, hdf5_path, shape=None, pos=None, seed=41):
         '''
 
         Args:
             hdf5_path (str): path to HDF5 file
-            shape (tuple): dimension of slices to extract
+            shape (tuple): dimension of slices to extract; if None, will yield
+                the full size for each dataset in the HDF5 file
             pos (tuple or None): optionally, tuple of ints or None, the same
                 length as shape. Where not None, slices will always be extracted
                 from the given position on that dimension. If None, slices
@@ -51,6 +52,8 @@ class Hdf5Iterator:
             # Ensure that Nones in self.shape
             # will yield the maximum size on the given dimension
             shape = list(copy.copy(self.shape))
+            if shape is None:
+                shape = [None for dim in next_item.shape]
             for j, dim in enumerate(shape):
                 if dim is None:
                     shape[j] = next_item.shape[j]
