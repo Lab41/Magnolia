@@ -1,10 +1,10 @@
-from hdf5_iterator import Hdf5Iterator 
+from hdf5_iterator import Hdf5Iterator
 
 class DNNfeeder:
-    
-    def __init_(self, iterators, shape=None, pos=None, seed=0 ):
+
+    def __init__(self, iterators, shape=None, pos=None, seed=0 ):
         '''
-        DNNfeeder: DNN Data Feeder 
+        DNNfeeder: DNN Data Feeder
 
         Args:
             iterator (list): a list of hdf5 file names or a list of iterators
@@ -28,26 +28,31 @@ class DNNfeeder:
         # If iterators to get samples from isn't specified, use our own
         if not iterators:
             iterators = self.iterators
-        sample = ()
+        sample = next(iterator)
         for iterator in iterators:
-            sample += iterator.next()
+            sample += next(iterator)
         return sample
 
     def get_batch(self, batch_size, iterators=None):
         '''Get a batch from iterators of size batch_size'''
-     
+
         # If iterators  to get samples from isn't specified, use our own
         if not iterators:
-            iterators = self.iterators  
+            iterators = self.iterators
         data_batch = []
-        for i in range(batch_size):            
+        for i in range(batch_size):
             self.get_sample(iterators)
             data_batch += [current_sample]
         return data_batch
-            
+
     def sum_features(self, data_sample):
         '''Sum features'''
         return sum(data_sample)
 
     def convert2mfcc(self):
-        return NotImplemented
+        raise NotImplementedError
+
+if __name__ == "__main__":
+    h = Hdf5Iterator("._test.h5")
+    d = DNNfeeder((h,))
+    print(d.get_batch(10))
