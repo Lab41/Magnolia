@@ -43,21 +43,47 @@ def wav_iterator(wav_dir, **kwargs):
         yield wav_mixer(wav_dir, **kwargs)
 
 def batcher(feature_iter, batch_size=256):
+    '''
+    Yield batches from an iterator over examples.
+    batch_size examples from feature_iter will be collected from feature_iter
+    and 'transposed' so that elements in a given position
+    will be grouped together across examples.
+
+    Yields:
+        tuple, the same length as one item from feature_iter, of iterables
+            of size batch_size
+    '''
     while True:
         # Gather batch_size examples from feature_iter
         new_batch = islice(feature_iter, batch_size)
+        # Transpose the batch so that examples of a certain type are
+        # grouped together
         try:
-            truth, mixed = list(zip(*new_batch))    # This behaves badly on limited-length iterators
-            yield truth, mixed
+            batch_transposed = []
+            for dataset in list(zip(*new_batch)):
+                try:
+                    batch_transposed.append(np.array(dataset))
+                except ValueError:
+                    batch_transposed.append(tuple(dataset))
+            yield tuple(batch_transposed)
         except ValueError:
             raise StopIteration
 
 def test_batcher():
+    # Basic functionality: transpose for non-array-like data; cast to array when possible
     features = [[2, 0], [5, 3], [8, 10], [2, -4]]
     batches = batcher(iter(features), 2)
-    a, b = list(batches)
-    assert a == ((2, 5), (0, 3))
-    assert b == ((8, 2), (10, -4))
+    a, b = list(islice(batches, 2))
+    assert (a[1] == np.array((0, 3))).all()
+    assert (b[0] == np.array((8, 2))).all()
+
+    # Fall back to tuple when shapes don't conform for a scertain dataset
+    features = [[2, 0], [5, [0,2]], [8, 10], [2, -4]]
+    batches = batcher(iter(features), 2)
+    c = list(islice(batches, 1))
+    print(c)
+    assert(isinstance(c[0][0], np.ndarray))
+    assert(isinstance(c[0][1], tuple))
 
 def lmf_iterator(wavs, fs = 1.0, stft_len=1024, stft_step=512, nfft=512,
     nfilters=40, use_diffs=True):

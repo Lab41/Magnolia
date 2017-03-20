@@ -1,3 +1,4 @@
+from features.wav_iterator import batcher
 from hdf5_iterator import Hdf5Iterator
 
 class DNNfeeder:
@@ -36,13 +37,11 @@ class DNNfeeder:
     def get_batch(self, batch_size, iterators=None):
         '''Get a batch from iterators of size batch_size'''
 
-        # If iterators  to get samples from isn't specified, use our own
+        # # If iterators to get samples from isn't specified, use our own
         if not iterators:
-            iterators = self.iterators
-        data_batch = []
-        for i in range(batch_size):
-            self.get_sample(iterators)
-            data_batch += [current_sample]
+             iterators = self.iterators
+        batches = batcher(zip(*iterators), batch_size)
+        data_batch = next(batches)
         return data_batch
 
     def sum_features(self, data_sample):
@@ -54,5 +53,10 @@ class DNNfeeder:
 
 if __name__ == "__main__":
     h = Hdf5Iterator("._test.h5")
+    print(next(h))
     d = DNNfeeder((h,))
-    print(d.get_batch(10))
+    c = batcher(h, 1)
+    print(next(c)[0].shape)
+    b = d.get_batch(10)
+    print(len(b))
+    print((b[0][0]).shape)
