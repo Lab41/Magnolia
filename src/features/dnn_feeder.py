@@ -3,7 +3,7 @@
 from wav_iterator import batcher
 from hdf5_iterator import Hdf5Iterator
 
-class DNNfeeder:
+class DNNFeeder:
 
     def __init__(self, iterators, shape=None, pos=None, seed=0 ):
         '''
