@@ -1,11 +1,12 @@
-from features.wav_iterator import batcher
+from wav_iterator import batcher
 from hdf5_iterator import Hdf5Iterator
 
 class DNNfeeder:
 
     def __init__(self, iterators, shape=None, pos=None, seed=0 ):
         '''
-        DNNfeeder: DNN Data Feeder
+        DNNfeeder: DNN Data Feeder. Retrieve batches over
+        examples from arbitrary numbers of HDF5 sources.
 
         Args:
             iterator (list): a list of hdf5 file names or a list of iterators
@@ -35,7 +36,7 @@ class DNNfeeder:
     def get_batch(self, batch_size, iterators=None):
         '''Get a batch from iterators of size batch_size'''
 
-        # # If iterators to get samples from isn't specified, use our own
+        # If iterators to get samples from isn't specified, use our own
         if not iterators:
              iterators = self.iterators
         batches = batcher(zip(*iterators), batch_size)
