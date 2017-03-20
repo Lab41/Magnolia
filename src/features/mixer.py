@@ -47,37 +47,8 @@ class FeatureMixer:
 
     def __iter__(self):
         return self
-    # def get_sample(self, iterators=None):
-    #     '''Get a single sample from all iterators in the list'''
-    #
-    #     # If iterators to get samples from isn't specified, use our own
-    #     if not iterators:
-    #         iterators = self.iterators
-    #     sample = next(zip(*iterators))
-    #     return sample
-    #
-    # def get_batch(self, batch_size, iterators=None):
-    #     '''Get a batch from iterators of size batch_size
-    #
-    #     Returns:
-    #         tuple, length equal to the number of iterators in iterators or
-    #         self.iterators
-    #     '''
-    #
-    #     # If iterators to get samples from isn't specified, use our own
-    #     if not iterators:
-    #          iterators = self.iterators
-    #     batches = batcher(zip(*iterators), batch_size)
-    #     data_batch = next(batches)
-    #     return data_batch
 
-    # def sum_features(self, data_sample):
-    #     '''Sum features'''
-    #     return sum(data_sample)
-    #
-    # def convert2mfcc(self):
-    #     raise NotImplementedError
-    #
+
 if __name__ == "__main__":
     # Some tests and examples
     from features.hdf5_iterator import mock_hdf5
