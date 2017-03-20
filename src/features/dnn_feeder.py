@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from wav_iterator import batcher
 from hdf5_iterator import Hdf5Iterator
 
