@@ -9,8 +9,9 @@ import os
 from itertools import islice
 import numpy as np
 import python_speech_features as psf
-from .spectral_features import stft
 from scipy.io import wavfile
+
+import spectral_features
 
 def wav_mixer(wav_dir, mix_random=False, num_to_mix=2, sig_length=100*512+1, mask="_src.wav", dtype=np.int16):
     """
@@ -112,7 +113,7 @@ def lmf_iterator(wavs, fs = 1.0, stft_len=1024, stft_step=512, nfft=512,
             lmf = psf.logfbank(sig, samplerate=fs,
                                 nfft=nfft, nfilt=nfilters,
                                 winlen=stft_len, winstep=stft_step)
-                                
+
             lmfs.append(lmf)
         lmf = np.stack(lmfs, 0)
         # From time x freq x sig, transform to sig x time x freq
@@ -126,7 +127,7 @@ def lmf_iterator(wavs, fs = 1.0, stft_len=1024, stft_step=512, nfft=512,
             diff2 = np.concatenate((np.zeros_like(diff2[:2]), diff2))
             # concatenate difference features in "frequency" TODO: use another dimension??
             lmf = np.concatenate((lmf, diff1, diff2), axis=1)
-            
+
         truth_lmf = lmf[1:]
         mixed_lmf = lmf[0]
 
@@ -155,8 +156,8 @@ def stft_iterator(wavs, fs = 1.0, stft_len=1024, stft_step=512, use_diffs=False,
         num_sigs = all_sigs.shape[0]
         # TODO: Is axis=-1 the only option here? Transpose in next line seems
         # unnecessary
-        spectrogram = np.stack([stft(all_sigs[j], fs=fs, framesz=stft_len, hop=stft_step, **kwargs)
-                                for j in range(num_sigs)], axis=-1)                            
+        spectrogram = np.stack([spectral_features.stft(all_sigs[j], fs=fs, framesz=stft_len, hop=stft_step, **kwargs)
+                                for j in range(num_sigs)], axis=-1)
         # From time x freq x sig, transform to sig x time x freq
         spectrogram = np.transpose(spectrogram, [2, 0, 1])
         if use_diffs:
@@ -170,16 +171,3 @@ def stft_iterator(wavs, fs = 1.0, stft_len=1024, stft_step=512, use_diffs=False,
         mixed_lmf = spectrogram[0]
 
         yield truth_lmf, mixed_lmf
-
-
-# def wav_batches(batch_size, wav_dir, **kwargs):
-#     """
-#     Yield batches as numpy arrays
-#
-#     Yields:
-#     truth - batch_size x num_srcs x num_time_steps x num_freq_bins
-#     mix - batch_size x num_time_steps x num_freq_bins
-#     """
-#     while True:
-#         truth_tensors, mix_tensors = list(zip(*wav_iterator(batch_size, wav_dir, **kwargs)))
-#         yield np.stack(truth_tensors), np.stack(mix_tensors)
