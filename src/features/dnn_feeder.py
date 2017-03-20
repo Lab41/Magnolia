@@ -29,9 +29,7 @@ class DNNfeeder:
         # If iterators to get samples from isn't specified, use our own
         if not iterators:
             iterators = self.iterators
-        sample = next(iterator)
-        for iterator in iterators:
-            sample += next(iterator)
+        sample = next(zip(*iterators))
         return sample
 
     def get_batch(self, batch_size, iterators=None):
