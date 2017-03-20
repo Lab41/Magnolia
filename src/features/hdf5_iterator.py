@@ -108,9 +108,7 @@ class Hdf5Iterator:
     def __iter__(self):
         return self
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.WARNING)
-
+def mock_hdf5(hdf5_path="._test.h5"):
     # make small test hdf5 object
     datasets = np.random.randn(5, 10, 15, 20)
     with h5py.File('._test.h5', mode='w') as f:
@@ -119,6 +117,11 @@ if __name__ == "__main__":
             grp = f.create_group(k)
             for j, dataset in enumerate(datasets[i]):
                 grp.create_dataset(str(j), data=dataset)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.WARNING)
+
+    mock_hdf5()
 
     # Tests ##########
     # Sending a number on one dimension of shape and none on the rest

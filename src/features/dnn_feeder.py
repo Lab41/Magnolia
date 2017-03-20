@@ -36,7 +36,12 @@ class DNNfeeder:
         return sample
 
     def get_batch(self, batch_size, iterators=None):
-        '''Get a batch from iterators of size batch_size'''
+        '''Get a batch from iterators of size batch_size
+
+        Returns:
+            tuple, length equal to the number of iterators in iterators or
+            self.iterators
+        '''
 
         # If iterators to get samples from isn't specified, use our own
         if not iterators:
@@ -53,11 +58,16 @@ class DNNfeeder:
         raise NotImplementedError
 
 if __name__ == "__main__":
+    from features.hdf5_iterator import mock_hdf5
+    mock_hdf5()
     h = Hdf5Iterator("._test.h5")
-    print(next(h))
     d = DNNfeeder((h,))
-    c = batcher(h, 1)
-    print(next(c)[0].shape)
-    b = d.get_batch(10)
-    print(len(b))
-    print((b[0][0]).shape)
+    batch_size=10
+    b = d.get_batch(batch_size)
+
+    # Check that b has the right number of features
+    assert len(b) == 1
+    # Check the shape of the batch
+    assert b[0].shape == (batch_size, 15, 20)
+    # Make sure it is pulling different batches each time
+    assert not (d.get_batch(10)[0] == d.get_batch(10)[0]).all()
