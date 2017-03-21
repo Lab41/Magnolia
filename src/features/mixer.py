@@ -2,8 +2,8 @@
 
 import numpy as np
 
-from wav_iterator import batcher
-from hdf5_iterator import Hdf5Iterator
+from features.wav_iterator import batcher
+from features.hdf5_iterator import Hdf5Iterator
 
 class FeatureMixer:
 
