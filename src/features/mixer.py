@@ -30,12 +30,12 @@ class FeatureMixer:
             tuple (mix, *features), total length equal to length of iterators + 1,
                 and mix is the sum of the input features
         '''
-        if isinstance(iterators[0], str):
-            self.iterator = []
-            for h5file_name in iterators:
-                self.iterators = Hdf5Iterator(h5file_name,shape=shape,pos=pos,seed=seed)
-        else:
-            self.iterators = iterators
+        self.iterators = []
+        for iterator in iterators:
+            if isinstance(iterator, str):
+                self.iterators.append(Hdf5Iterator(iterator,shape=shape,pos=pos,seed=seed))
+            else:
+                self.iterators.append(iterator)
         self.mix_method = mix_method
 
     def __next__(self):
