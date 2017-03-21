@@ -31,9 +31,9 @@ class FeatureMixer:
                 and mix is the sum of the input features
         '''
         self.iterators = []
-        for iterator in iterators:
+        for i, iterator in enumerate(iterators):
             if isinstance(iterator, str):
-                self.iterators.append(Hdf5Iterator(iterator,shape=shape,pos=pos,seed=seed))
+                self.iterators.append(Hdf5Iterator(iterator,shape=shape,pos=pos,seed=seed+i))
             else:
                 self.iterators.append(iterator)
         self.mix_method = mix_method
