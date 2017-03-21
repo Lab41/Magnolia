@@ -46,7 +46,7 @@ class FeatureMixer:
         logger.debug(len(next_example))
         logger.debug(','.join([str(x.dtype) for x in next_example if isinstance(x, np.ndarray)]))
         if self.mix_method == 'sum':
-            mixed_example = np.sum(next_example, axis=0)
+            mixed_example = np.sum(np.array(next_example), axis=0)
         else:
             raise ValueError("Invalid mix_method: '{}'".format(mix_method))
 
