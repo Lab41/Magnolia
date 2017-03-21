@@ -9,8 +9,9 @@ import os
 from itertools import islice
 import numpy as np
 import python_speech_features as psf
-from .spectral_features import stft
 from scipy.io import wavfile
+
+import spectral_features
 
 def wav_mixer(wav_dir, mix_random=False, num_to_mix=2, sig_length=100*512+1, mask="_src.wav", dtype=np.int16):
     """
@@ -43,21 +44,47 @@ def wav_iterator(wav_dir, **kwargs):
         yield wav_mixer(wav_dir, **kwargs)
 
 def batcher(feature_iter, batch_size=256):
+    '''
+    Yield batches from an iterator over examples.
+    batch_size examples from feature_iter will be collected from feature_iter
+    and 'transposed' so that elements in a given position
+    will be grouped together across examples.
+
+    Yields:
+        tuple, the same length as one item from feature_iter, of iterables
+            of size batch_size
+    '''
     while True:
         # Gather batch_size examples from feature_iter
         new_batch = islice(feature_iter, batch_size)
+        # Transpose the batch so that examples of a certain type are
+        # grouped together
         try:
-            truth, mixed = list(zip(*new_batch))    # This behaves badly on limited-length iterators
-            yield truth, mixed
+            batch_transposed = []
+            for dataset in list(zip(*new_batch)):
+                try:
+                    batch_transposed.append(np.array(dataset))
+                except ValueError:
+                    batch_transposed.append(tuple(dataset))
+            yield tuple(batch_transposed)
         except ValueError:
             raise StopIteration
 
 def test_batcher():
+    # Basic functionality: transpose for non-array-like data; cast to array when possible
     features = [[2, 0], [5, 3], [8, 10], [2, -4]]
     batches = batcher(iter(features), 2)
-    a, b = list(batches)
-    assert a == ((2, 5), (0, 3))
-    assert b == ((8, 2), (10, -4))
+    a, b = list(islice(batches, 2))
+    assert (a[1] == np.array((0, 3))).all()
+    assert (b[0] == np.array((8, 2))).all()
+
+    # Fall back to tuple when shapes don't conform for a scertain dataset
+    features = [[2, 0], [5, [0,2]], [8, 10], [2, -4]]
+    batches = batcher(iter(features), 2)
+    c = list(islice(batches, 1))
+    print(c)
+    assert(isinstance(c[0][0], np.ndarray))
+    assert(isinstance(c[0][1], tuple))
 
 def lmf_iterator(wavs, fs = 1.0, stft_len=1024, stft_step=512, nfft=512,
     nfilters=40, use_diffs=True):
@@ -86,7 +113,7 @@ def lmf_iterator(wavs, fs = 1.0, stft_len=1024, stft_step=512, nfft=512,
             lmf = psf.logfbank(sig, samplerate=fs,
                                 nfft=nfft, nfilt=nfilters,
                                 winlen=stft_len, winstep=stft_step)
-                                
+
             lmfs.append(lmf)
         lmf = np.stack(lmfs, 0)
         # From time x freq x sig, transform to sig x time x freq
@@ -100,7 +127,7 @@ def lmf_iterator(wavs, fs = 1.0, stft_len=1024, stft_step=512, nfft=512,
             diff2 = np.concatenate((np.zeros_like(diff2[:2]), diff2))
             # concatenate difference features in "frequency" TODO: use another dimension??
             lmf = np.concatenate((lmf, diff1, diff2), axis=1)
-            
+
         truth_lmf = lmf[1:]
         mixed_lmf = lmf[0]
 
@@ -129,8 +156,8 @@ def stft_iterator(wavs, fs = 1.0, stft_len=1024, stft_step=512, use_diffs=False,
         num_sigs = all_sigs.shape[0]
         # TODO: Is axis=-1 the only option here? Transpose in next line seems
         # unnecessary
-        spectrogram = np.stack([stft(all_sigs[j], fs=fs, framesz=stft_len, hop=stft_step, **kwargs)
-                                for j in range(num_sigs)], axis=-1)                            
+        spectrogram = np.stack([spectral_features.stft(all_sigs[j], fs=fs, framesz=stft_len, hop=stft_step, **kwargs)
+                                for j in range(num_sigs)], axis=-1)
         # From time x freq x sig, transform to sig x time x freq
         spectrogram = np.transpose(spectrogram, [2, 0, 1])
         if use_diffs:
@@ -144,16 +171,3 @@ def stft_iterator(wavs, fs = 1.0, stft_len=1024, stft_step=512, use_diffs=False,
         mixed_lmf = spectrogram[0]
 
         yield truth_lmf, mixed_lmf
-
-
-# def wav_batches(batch_size, wav_dir, **kwargs):
-#     """
-#     Yield batches as numpy arrays
-#
-#     Yields:
-#     truth - batch_size x num_srcs x num_time_steps x num_freq_bins
-#     mix - batch_size x num_time_steps x num_freq_bins
-#     """
-#     while True:
-#         truth_tensors, mix_tensors = list(zip(*wav_iterator(batch_size, wav_dir, **kwargs)))
-#         yield np.stack(truth_tensors), np.stack(mix_tensors)
