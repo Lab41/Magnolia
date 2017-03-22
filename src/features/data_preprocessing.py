@@ -42,7 +42,7 @@ def make_stft_features(signal, sample_rate,
     normalized = (preemphasised - preemphasised.mean())/preemphasised.std()
 
     # Get the magnitude spectrogram
-    spectrogram = stft(normalized,sample_rate,
+    spectrogram = stft(normalized,output_sample_rate,
                        window_size,overlap,two_sided=False)
 
     return spectrogram
