@@ -36,7 +36,7 @@ def make_stft_features(signal, sample_rate,
                               int(sample_rate/output_sample_rate*100))
 
     # Do preemphasis on the resampled signal
-    preemphasised = preemphasis(signal,preemphasis_coeff)
+    preemphasised = preemphasis(resampled,preemphasis_coeff)
 
     # Normalize the downsampled signal
     normalized = (preemphasised - preemphasised.mean())/preemphasised.std()
