@@ -58,3 +58,16 @@ def istft(X, fs, recon_size, hop, two_sided=True):
     for n,i in enumerate(range(0, len(x)-framesamp, hopsamp)):
         x[i:i+framesamp] += scipy.real(inverse_transform(X[n]))
     return x
+
+def reconstruct(spec_mag, spec_phase, fs, window_size, step_size):
+    mag = np.absolute(spec_mag)
+    if spec_phase is None:
+        phase = np.random.randn(*spec_mag.shape)
+    else:
+        phase = np.exp(1.0j*np.unwrap(np.angle(spec_phase)))
+    duration = (spec_mag.shape[0]-1)*step_size+window_size
+    return istft(mag * phase,
+                 fs,
+                 duration,
+                 step_size,
+                 two_sided=False)
