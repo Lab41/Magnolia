@@ -36,13 +36,13 @@ def make_stft_features(signal, sample_rate,
                               int(sample_rate/output_sample_rate*100))
 
     # Do preemphasis on the resampled signal
-    preemphasised = preemphasis(signal,preemphasis_coeff)
+    preemphasised = preemphasis(resampled,preemphasis_coeff)
 
     # Normalize the downsampled signal
     normalized = (preemphasised - preemphasised.mean())/preemphasised.std()
 
     # Get the magnitude spectrogram
-    spectrogram = stft(normalized,sample_rate,
+    spectrogram = stft(normalized,output_sample_rate,
                        window_size,overlap,two_sided=False)
 
     return spectrogram
@@ -50,7 +50,8 @@ def make_stft_features(signal, sample_rate,
 def make_stft_dataset(data_dir, key_level, file_type, output_file,
                       output_sample_rate=1e4,
                       window_size=0.05, overlap=0.025,
-                      preemphasis_coeff=0.95):
+                      preemphasis_coeff=0.95,
+                      track=None):
     '''
     Function to walk through a data directory data_dir and compute the stft
     features for each file of type file_type.  The computed features are
@@ -64,6 +65,7 @@ def make_stft_dataset(data_dir, key_level, file_type, output_file,
         window_size: Length of fft window in seconds (float)
         overlap: Amount of window overlap in seconds (float)
         preemphasis_coeff: preemphasis coefficient (float)
+        track: Track number to use for signals with multiple tracks (int)
     '''
 
     # Open output file for writing
@@ -88,7 +90,11 @@ def make_stft_dataset(data_dir, key_level, file_type, output_file,
                     file_path = os.path.join(dirpath,file)
 
                     # Read in the signal and sample rate
-                    signal, sample_rate = sf.read(file_path)
+                    if track is not None:
+                        signal, sample_rate = sf.read(file_path)
+                        signal = signal[:,track]
+                    else:
+                        signal, sample_rate = sf.read(file_path)
 
                     # Compute STFT spectrogram
                     spectrogram = make_stft_features(signal,sample_rate,

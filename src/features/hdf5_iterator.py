@@ -64,7 +64,7 @@ class Hdf5Iterator:
     def __next__(self):
         '''Randomly pick a dataset from the available options'''
         logger = logging.getLogger(__name__)
-        num_tries = 500
+        num_tries = 5
         for i in range(num_tries):
             next_item = self.h5[self.rng.choice(self.h5_items)]
             logger.debug("next_item.shape: {}".format(next_item.shape))
@@ -99,9 +99,9 @@ class Hdf5Iterator:
                 slices.append(slice(slice_start, slice_end))
             output_slice = next_item[tuple(slices)]
             logger.debug("slices: {}".format(slices))
-            logger.debug("output_slice: {}".format(output_slice))
             assert output_slice.shape == tuple(shape), "Result shape {} does not match " \
                     "target shape {}".format(output_slice.shape, shape)
+            logger.debug("Returning.")
             return output_slice
         raise ValueError("Failed to find a slice. Slice size too big?")
 
