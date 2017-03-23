@@ -7,7 +7,7 @@ import h5py
 import numpy as np
 import soundfile as sf
 from scipy.signal import resample_poly
-from spectral_features import stft, istft
+from features.spectral_features import stft, istft
 from python_speech_features.sigproc import preemphasis
 
 def make_stft_features(signal, sample_rate,
