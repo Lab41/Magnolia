@@ -9,7 +9,10 @@ dependencies:
 - numpy
 - scipy
 - scikit-learn
+- seaborn
 - pip:
   - tensorflow
   - python_speech_features
   - theano
+  - soundfile
+
