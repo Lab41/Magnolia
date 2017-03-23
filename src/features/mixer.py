@@ -17,8 +17,9 @@ class FeatureMixer:
 
         Args:
             iterators (list): a list of hdf5 file names or a list of iterators
-            mix_method (str): how to mix features together. 'sum' is the only
-                supported method
+            mix_method (str): how to mix features together. Supported methods:
+		'sum': add features together over the first axis
+                'ident': do not modify inputs
             shape (tuple): dimension of slices to extract; if None, will yield
                 the full size for each dataset in the HDF5 file
             pos (tuple or None): optionally, tuple of ints or None, the same
@@ -47,10 +48,12 @@ class FeatureMixer:
         logger.debug(','.join([str(x.dtype) for x in next_example if isinstance(x, np.ndarray)]))
         if self.mix_method == 'sum':
             mixed_example = np.sum(np.array(next_example), axis=0)
+            return (mixed_example, *next_example)
+        elif self.mix_method=='ident':
+            return next_example
         else:
             raise ValueError("Invalid mix_method: '{}'".format(mix_method))
 
-        return (mixed_example, *next_example)
 
     def __iter__(self):
         return self
