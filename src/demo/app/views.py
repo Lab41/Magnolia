@@ -1,6 +1,5 @@
 from flask import render_template, request, flash, send_file, redirect
 from app import app
-from .forms import ContactForm
 import numpy as np
 from python_speech_features import sigproc
 from keras.models import load_model
@@ -13,23 +12,29 @@ import pylab
 import collections
 import os
 
-#input_file_path = '/Users/aganesh/trial_flask/sound/app/static/mixed_signal.wav'
-model_path = '/Users/aganesh/trial_flask/sound/app/static/overfitted_dnn_mask.h5'
-project_root = '/Users/aganesh/trial_flask/sound/app'
+
+project_root = app.root_path
+
+model_path = project_root + '/static/overfitted_dnn_mask.h5'
 
 ALLOWED_EXTENSIONS = set(['wav'])
-#Create submit button to just result in a UI change 
+
 app.config['SECRET_KEY'] = 'development key'
+
+nfilt=64
+numcep=64
+nfft=512
+winlen=0.01
+winstep=0.005
+ceplifter=0
+fs = 16000
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-#State = collections.namedtuple('State', ['wav_list', 'spec_file'], verbose=True)
-#state = State(wav_list=[],spec_file=None)
 state = {'wav_list':[],'spec_file':None, 'input_signal_url':'/static/mixed_signal.wav'}
-
 
 @app.route('/',methods = ['GET','POST'])
 @app.route('/index.html',methods = ['GET','POST'])
@@ -41,9 +46,7 @@ def index():
     if request.method == 'POST' and request.form['btn'] == 'Visualize':
         fs,noisy_signal = wav.read(project_root + state['input_signal_url'])
         mfcc_feat = mfcc_feature_extractor(noisy_signal)
-        #mag,phase = feature_extractor(noisy_signal)
-        #plot_spectogram(mfcc_feat,'/Users/aganesh/trial_flask/sound/app/resources/spec_tmp1.png')
-        plot_spectogram(mfcc_feat,'/Users/aganesh/trial_flask/sound/app/resources/spec_'+input_signal_filename+'.png')
+        plot_spectogram(mfcc_feat,project_root + '/resources/spec_'+ input_signal_filename + '.png')
         state['spec_file'] = 'spec_' + input_signal_filename + '.png'
 
 
@@ -53,14 +56,12 @@ def index():
         mag,phase = feature_extractor(noisy_signal)
         mask = mask_prediction(model_path,mfcc_feat)
         recon_signal = (signal_reconstruction(mask,mag,phase)).astype(np.int16)
-        
-        #wav.write('/Users/aganesh/trial_flask/sound/app/resources/wav_tmp1.wav',16000,recon_signal)
-        #wav.write('/Users/aganesh/trial_flask/sound/app/resources/wav_tmp2.wav',16000,recon_signal)
-        wav.write('/Users/aganesh/trial_flask/sound/app/resources/'+input_signal_filename+'split1.wav',16000,recon_signal)
-        wav.write('/Users/aganesh/trial_flask/sound/app/resources/'+input_signal_filename+'split2.wav',16000,recon_signal)
+
+        wav.write(project_root + '/resources/' + input_signal_filename + 'split1.wav',fs,recon_signal)
+        wav.write(project_root + '/resources/'+ input_signal_filename + 'split2.wav',fs,recon_signal)
       
         state['spec_file'] = 'spec_' + input_signal_filename + '.png'
-        state['wav_list'] = [input_signal_filename+'split1.wav',input_signal_filename+'split2.wav']
+        state['wav_list'] = [input_signal_filename + 'split1.wav',input_signal_filename + 'split2.wav']
         
 
     return render_template('index.html',
@@ -84,8 +85,8 @@ def upload():
         return redirect('index.html')
     if upload_file and allowed_file(upload_file.filename): 
         app.logger.info('In the upload')   
-        upload_file.save('/Users/aganesh/trial_flask/sound/app/resources/' + upload_file.filename)    
-        #state['input_signal_url'] = '/resources/noisy_input.wav'
+
+        upload_file.save(project_root + '/resources/' + upload_file.filename)
         state['input_signal_url'] = '/resources/' + upload_file.filename
 
     return render_template('index.html',
@@ -99,7 +100,7 @@ def upload():
 @app.route('/resources/<string:file_name>',methods = ['GET','POST'])
 def resources(file_name):
     app.logger.info('In the resources')
-    return send_file('/Users/aganesh/trial_flask/sound/app/resources/'+file_name)
+    return send_file(project_root + '/resources/'+ file_name)
 
 def specdecomp(signal,samplerate=16000,winlen=0.025,winstep=0.01,
               nfft=512,lowfreq=0,highfreq=None,preemph=0.97,
@@ -129,32 +130,13 @@ def specdecomp(signal,samplerate=16000,winlen=0.025,winstep=0.01,
     return spect
 
 def plot_spectogram(features,file_path):
-    '''pylab.figure(num=None, figsize=(19, 12))
-    pylab.subplot(111)
-    pylab.title('spectrogram of noisy signal')
-    pylab.specgram(features, Fs=16000)
-    pylab.savefig(file_path)'''
     plt.clf()
-
     plt.imshow(np.sqrt(features.T) , origin='lower' ,cmap='bone_r')
-    
-
-    '''plt.imshow(np.log(features),aspect=0.4)
-    plt.title('Original spectrum')
-    plt.colorbar() 
-    plt.ylabel('Time (Sample)')'''
     plt.savefig(file_path)
 
 
-
 def mfcc_feature_extractor(noisy_signal):
-    nfilt=64
-    numcep=64
-    nfft=512
-    winlen=0.01
-    winstep=0.005
-    ceplifter=0
-    fs = 16000
+   
     mfcc_feat = mfcc(noisy_signal,fs,nfilt=nfilt,numcep=numcep,nfft=nfft,
                  winlen=winlen,winstep=winstep,ceplifter=ceplifter,
                  appendEnergy=False)
@@ -163,15 +145,6 @@ def mfcc_feature_extractor(noisy_signal):
 
 def feature_extractor(noisy_signal):
     
-    # Parameters
-    nfilt=64
-    numcep=64
-    nfft=512
-    winlen=0.01
-    winstep=0.005
-    ceplifter=0
-    fs = 16000
-
     mfcc_magni = specdecomp(noisy_signal,samplerate=fs,nfft=nfft,
                         winlen=winlen,winstep=winstep,decomp='abs')
     mfcc_phase = specdecomp(noisy_signal,samplerate=fs,nfft=nfft,
@@ -187,11 +160,6 @@ def mask_prediction(model_path, signal_features):
     return mask
 
 def signal_reconstruction(mask,mag,phase):
-
-    rate = 16000
-    winlen=0.01
-    fs = 16000
-    winstep=0.005
 
     recon_signal = (mask * mag) * np.exp( 1j *  phase)
     recon_signal = np.fft.irfft(recon_signal)
