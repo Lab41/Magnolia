@@ -80,7 +80,7 @@ class Hdf5Iterator:
                 logger.debug("dim {}: {}".format(j , dim))
                 if j < len(shape) and shape[j] is None:
                     shape[j] = dim
-                   
+
             logger.debug("shape: {}".format(shape))
 
             # fail if this slice is out of bounds
