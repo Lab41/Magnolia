@@ -8,13 +8,34 @@ from . import spectral_features
 class LmfIterator:
     def __init__(self, spectrograms, transform_which=None,
                 sample_rate=10000, num_filters=40,
-                window_size=0.05, window_step=0.025,
                 diff_features=False):
+        ''' Iterator over log mel-frequency features, given an iterator over STFT
+        features.
+
+        Args:
+            spectrograms (iterable): should yield an iterable
+              (e.g. a tuple) of STFT features, each one of shape
+              (time x frequency [x ...])
+            transform_which (tuple or None): if not None, which of the STFT
+              features yielded from spectrograms should be transformed?
+              For example, if spectrograms yields a 3-tuple of STFT features,
+              `transform_which=(0,)` means that only the first member of that
+              tuple is transformed
+            sample_rate (float): sample rate of the signals represented in
+              spectrograms
+            num_filters (int): number of filters to generate; determines
+              output dimension of log mel-frequency features
+            diff_features (bool): If true, generate first- and second-order
+              difference features in time
+
+        Yields:
+            tuple, same shape as the elements of `spectrograms`, with one or more
+              feature sets transformed into leg mel-frequency filterbank
+              features
+        '''
         self.sample_rate = sample_rate
         self.num_fft = None
         self.num_filters = num_filters
-        self.window_size = window_size
-        self.window_step = window_step
         self.spectrograms = spectrograms
         self.transform_which = transform_which
         self.diff_features = diff_features
@@ -36,6 +57,7 @@ class LmfIterator:
         return self
 
     def _transform(self, spectrogram):
+        '''Transform STFT features into log mel-frequency filterbank features'''
         # handle multiple spectrograms at once
         spec_dim = len(spectrogram.shape)
         if spec_dim > 2:
