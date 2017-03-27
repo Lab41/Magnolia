@@ -24,12 +24,16 @@ setup(
     description='Audio source separation and denoising',
     long_description=long_description,
 
+    maintainer='Lab41',
+
     # The project's main homepage.
     url='https://github.com/lab41/magnolia',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=find_packages(exclude=['contrib', 'docs', 'tests']),
+    packages=find_packages(where='src',
+                            exclude=['contrib', 'docs', 'tests']),
+    #packages=['features','factorization','utils'],
     package_dir={'': 'src'},
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
@@ -46,6 +50,8 @@ setup(
        'scikit-learn',
        'seaborn',
        'soundfile',
-    ]
+    ],
+
+    version = '0.1.0'
 
 )
