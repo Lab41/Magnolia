@@ -7,7 +7,7 @@ from . import spectral_features
 
 class LmfIterator:
     def __init__(self, spectrograms, transform_which=None,
-                sample_rate=10000, num_filters=40,
+                sample_rate=10000, num_filters=40, fft_type='one_sided',
                 diff_features=False):
         ''' Iterator over log mel-frequency features, given an iterator over STFT
         features.
@@ -25,6 +25,12 @@ class LmfIterator:
               spectrograms
             num_filters (int): number of filters to generate; determines
               output dimension of log mel-frequency features
+            fft_type (str): 'one_sided' or 'one_sided_plus_one'
+                if 'one_sided', the filterbank size will be based on the
+                assumption that the spectrogram frequency bin count is NFFT//2;
+                if 'one_sided_plus_one', the freq bin count should be
+                NFFT//2 + 1
+                'two_sided' will raise a NotImplementedError
             diff_features (bool): If true, generate first- and second-order
               difference features in time
 
@@ -44,7 +50,14 @@ class LmfIterator:
         spectrograms = next(self.spectrograms)
         # Initialize number of bins
         if self.num_fft is None:
-            self.num_fft = 2*(spectrograms[0].shape[1]-1)
+            if self.fft_type == 'one_sided_plus_one':
+                self.num_fft = 2*(spectrograms[0].shape[1]-1)
+            elif self.fft_type == 'one_sided':
+                self.num_fft = 2*spectrograms[0].shape[1]
+            elif self.fft_type == 'two_sided':
+                raise NotImplementedError
+            else:
+                raise ValueError("Unrecognized FFT type")
         transformed_spectrograms = []
         for i, spectrogram in enumerate(spectrograms):
             if self.transform_which is None or i in self.transform_which:
