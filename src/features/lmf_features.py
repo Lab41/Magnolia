@@ -73,6 +73,8 @@ class LmfIterator:
         '''Transform STFT features into log mel-frequency filterbank features'''
         # handle multiple spectrograms at once
         spec_dim = len(spectrogram.shape)
+        # Move time and frequency to the end of dim list,
+        # if there are other dimensions
         if spec_dim > 2:
             new_shape = [*range(2,spec_dim), 0, 1]
             print(new_shape)
@@ -87,6 +89,7 @@ class LmfIterator:
         energies = np.dot(mag_spec,fb.T) # compute the filterbank energies
         energies = np.where(energies == 0,np.finfo(float).eps,energies)
         log_energies = np.log(energies)
+        # Move time and frequency back to the start of the dim list
         if spec_dim > 2:
             old_shape = [spec_dim-2, spec_dim-1, *list(range(spec_dim-2))]
             print(old_shape)
