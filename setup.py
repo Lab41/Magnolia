@@ -45,7 +45,6 @@ setup(
        'numpy',
        'python_speech_features',
        'scipy',
-       'tensorflow',
        'scikit-learn',
        'seaborn',
        'soundfile',
