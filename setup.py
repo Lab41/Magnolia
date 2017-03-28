@@ -31,10 +31,9 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=find_packages(where='src',
-                            exclude=['contrib', 'docs', 'tests']),
+    package_dir={'magnolia': 'src'},
+    packages=['magnolia','magnolia.features','magnolia.factorization','magnolia.utils'],
     #packages=['features','factorization','utils'],
-    package_dir={'': 'src'},
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
