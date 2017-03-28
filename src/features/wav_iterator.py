@@ -11,7 +11,7 @@ import numpy as np
 import python_speech_features as psf
 from scipy.io import wavfile
 
-import features.spectral_features as spectral_features
+from . import spectral_features
 
 def wav_mixer(wav_dir, mix_random=False, num_to_mix=2, sig_length=100*512+1, mask="_src.wav", dtype=np.int16):
     """
