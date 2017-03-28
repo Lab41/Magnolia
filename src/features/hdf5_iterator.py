@@ -77,9 +77,10 @@ class Hdf5Iterator:
 
             # Replace nones in shape with dims from next_item
             for j, dim in enumerate(next_item.shape):
-                if shape[j] is None:
+                logger.debug("dim {}: {}".format(j , dim))
+                if j < len(shape) and shape[j] is None:
                     shape[j] = dim
-                    logger.debug("dim {}: {}".format(j , dim))
+                   
             logger.debug("shape: {}".format(shape))
 
             # fail if this slice is out of bounds
@@ -99,7 +100,7 @@ class Hdf5Iterator:
                 slices.append(slice(slice_start, slice_end))
             output_slice = next_item[tuple(slices)]
             logger.debug("slices: {}".format(slices))
-            assert output_slice.shape == tuple(shape), "Result shape {} does not match " \
+            assert output_slice.shape[:len(shape)] == tuple(shape), "Result shape {} does not match " \
                     "target shape {}".format(output_slice.shape, shape)
             logger.debug("Returning.")
             return output_slice
