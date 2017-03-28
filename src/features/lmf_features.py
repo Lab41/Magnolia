@@ -86,7 +86,7 @@ class LmfIterator:
                                 self.sample_rate/2)
         mag_spec = np.absolute(spectrogram)
         pow_spec = 1.0/self.num_fft * np.square(mag_spec)
-        energies = np.dot(mag_spec,fb.T) # compute the filterbank energies
+        energies = np.dot(pow_spec,fb.T) # compute the filterbank energies
         energies = np.where(energies == 0,np.finfo(float).eps,energies)
         log_energies = np.log(energies)
         # Move time and frequency back to the start of the dim list
