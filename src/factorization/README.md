@@ -13,11 +13,11 @@ Current libraries:
 
 All notebooks are standalone at present. Their descriptions are as follows:
 
-| iPython Notebook | Audio Sources    | Channels / Mixing | Software Packages | Notes |
-| ---------------- | ---------------- | ---------------- | ---------------- | ---------------- |
-|`main-ica.ipynb`  | Synthesized (Saw/Sin/Gaus) | Synthesized (Gaussian) | scikit-learn's toolbox | Time-domain separation |
-|`main-audio-ica.ipynb`  | 20-Source Single Audio | Synthesized (Gaussian) | scikit-learn's toolbox | |
-|`main-real-ica.ipynb`  | 5-Source Mixed Audio | 5 iPhones | scikit-learn's toolbox | |
-|`implemented-fastica.ipynb`  | Synthesized waveforms | 5 iPhones | Implemented from [Wikipedia](https://en.wikipedia.org/wiki/FastICA) | |
-|`implemented-nmf.ipynb` | 2-Source Mixed Audio | 1 Channel | Implemented from [Stanford slides](https://ccrma.stanford.edu/~njb/teaching/sstutorial/part2.pdf) | Separation with spectrum (STFT) |
+| iPython Notebook            | Audio Sources              | Channels / Mixing | Software Packages | Time/Freq Domain |
+| ----------------            | ----------------           | ---------------- | ---------------- | ---------------- |
+|`main-ica.ipynb`             | Synthesized (Saw/Sin/Gaus) | Synthesized (Gaussian) | scikit-learn's toolbox | Time-domain |
+|`main-audio-ica.ipynb`       | 20-Source Single Audio     | Synthesized (Gaussian) | scikit-learn's toolbox | |
+|`main-real-ica.ipynb`        | 5-Source Mixed Audio       | 5 iPhones | scikit-learn's toolbox | |
+|`implemented-fastica.ipynb`  | Synthesized waveforms      | 5 iPhones | Implemented from [Wikipedia](https://en.wikipedia.org/wiki/FastICA) | |
+|`implemented-nmf.ipynb`      | 2-Source Mixed Audio       | 1 (Monaural) | Implemented from [Stanford slides](https://ccrma.stanford.edu/~njb/teaching/sstutorial/part2.pdf) | STFT |
 
