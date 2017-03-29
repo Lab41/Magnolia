@@ -9,7 +9,8 @@ from .hdf5_iterator import Hdf5Iterator
 
 class FeatureMixer:
 
-    def __init__(self, iterators, mix_method='sum', shape=None, pos=None, seed=0 ):
+    def __init__(self, iterators, mix_method='sum', shape=None, pos=None, seed=0, 
+                 diffseed=True, return_key=False ):
         '''
         FeatureMixer: Mixes feature iterators together, yielding an
         iterator over both the original input iterators and the mixed
@@ -27,6 +28,10 @@ class FeatureMixer:
                 from the given position on that dimension. If None, slices
                 will be extracted from random positions in that dimension.
 
+        Optional Arguments:
+            seed: (int) random seed to initialize each iterator (default 0)
+            diffseed: (bool) do you want a different random seed for each iterator? 
+
         Iterator yields:
             tuple (mix, *features), total length equal to length of iterators + 1,
                 and mix is the sum of the input features
@@ -34,7 +39,8 @@ class FeatureMixer:
         self.iterators = []
         for i, iterator in enumerate(iterators):
             if isinstance(iterator, str):
-                self.iterators.append(Hdf5Iterator(iterator,shape=shape,pos=pos,seed=seed+i))
+                iseed = seed + int(diffseed)*i
+                self.iterators.append(Hdf5Iterator(iterator,shape=shape,pos=pos,seed=iseed, return_key=return_key))
             else:
                 self.iterators.append(iterator)
         self.mix_method = mix_method
@@ -42,10 +48,9 @@ class FeatureMixer:
     def __next__(self):
         next_example = next(zip(*self.iterators))
         logger = logging.getLogger(__name__)
-        logger.debug("dtype of first dataset: {}".format(
-            next_example[0].dtype))
-        logger.debug(len(next_example))
-        logger.debug(','.join([str(x.dtype) for x in next_example if isinstance(x, np.ndarray)]))
+        # logger.debug("dtype of first dataset: {}".format( next_example[0].dtype))
+        # logger.debug(len(next_example))
+        # logger.debug(','.join([str(x.dtype) for x in next_example if isinstance(x, np.ndarray)]))
         if self.mix_method == 'sum':
             mixed_example = np.sum(np.array(next_example), axis=0)
             return (mixed_example, *next_example)
