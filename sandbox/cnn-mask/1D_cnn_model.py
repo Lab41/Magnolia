@@ -7,36 +7,44 @@ import tensorflow as tf
 from tf_utils import scope_decorator, leaky_relu, conv1d_layer
 
 class 1DConvModel:
-    def __init__(self, X_input, y_input,
-                 filter_length, num_filters, embedding_size,
-                 learning_rate):
+    def __init__(self, input_shape, output_shape,
+                 filter_length, num_filters, embedding_size):
         """
         Create a model consisting of a 1D convolution, followed by two
         dense layers.
 
         Inputs:
-            X_input:  Placeholder tensor to store input features
-            y_input:  Placeholder tensor to store target values
+            input_shape:  List containing the shape of the inputs
+            output_shape: List containing the shape of the outputs
 
             filter_length:  Integer number of previous time slices to include in
                             convolution
             num_filters:    Integer number of convolutional filters to use
             embedding_size: Integer length of embedding vectors
-
-            learning_rate:  Placeholder tensor to store learning rate
         """
-        self.X_input = X_input
-        self.y_input = y_input
-        self.F = tf.shape(X_input)[2]
+        graph = tf.Graph()
+        with graph.as_default():
+            self.X_input = tf.placeholder("float", input_shape)
+            self.y_input = tf.placeholder("float", output_shape)
+            self.F = input_shape[2]
 
-        self.filter_length = filter_length
-        self.num_filters = num_filters
-        self.embedding_size = embedding_size
+            self.filter_length = filter_length
+            self.num_filters = num_filters
+            self.embedding_size = embedding_size
 
-        self.network
-        self.cost
-        self.optimizer
-        self.predict
+            self.learning_rate = tf.placeholder("float")
+
+            self.network
+            self.cost
+            self.optimizer
+
+        self.sess = tf.Session(graph=graph)
+
+    def __del__(self):
+        """
+        Deletes the model
+        """
+        self.sess.close()
 
     @scope_decorator
     def network(self):
@@ -102,10 +110,10 @@ class 1DConvModel:
         opt = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
         return opt.minimize(self.cost)
 
-    @scope_decorator
-    def predict(self):
+    def predict(self, X):
         """
         Gets the prediction from the inputs to the network
         """
-        _, _, prediction = self.network
+        _, _, prediction = self.sess.run(self.network, feed_dict={X_input: X})
+
         return prediction 
