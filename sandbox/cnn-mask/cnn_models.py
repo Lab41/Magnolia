@@ -39,6 +39,7 @@ class Conv1DModel:
             self.optimizer
 
         self.sess = tf.Session(graph=graph)
+        self.saver = tf.train.Saver()
 
     def __del__(self):
         """
@@ -117,3 +118,15 @@ class Conv1DModel:
         _, _, prediction = self.sess.run(self.network, feed_dict={X_input: X})
 
         return prediction 
+
+    def save(self, path):
+        """
+        Saves the model to the path specified
+        """
+        self.saver.save(self.sess, path)
+
+    def load(self, path):
+        """
+        Loads the model from the path specified
+        """
+        self.saver.restore(self.sess, path)
