@@ -46,7 +46,7 @@ def istft(X, fs, recon_size, hop, two_sided=True):
     Output:
         x - a 1-D array holding reconstructed time-domain audio signal
     '''
-    x = scipy.zeros(recon_size*fs)
+    x = scipy.zeros(int(recon_size*fs))
     hopsamp = int(hop*fs)
     if two_sided:
         framesamp = X.shape[1]
