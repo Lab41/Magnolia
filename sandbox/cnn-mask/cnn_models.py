@@ -38,8 +38,9 @@ class Conv1DModel:
             self.cost
             self.optimizer
 
+            self.saver = tf.train.Saver()
+
         self.sess = tf.Session(graph=graph)
-        self.saver = tf.train.Saver()
 
     def __del__(self):
         """
