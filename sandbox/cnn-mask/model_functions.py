@@ -66,6 +66,7 @@ def separate_sources(signal_path, model,
         complex_spectrogram = y_output[0,:,:,i]*np.exp(phases*1.0j)
         waveform = istft(complex_spectrogram,
                          sample_rate, duration, overlap, two_sided=False)
+        source_list.append(sources)
 
     sources = np.stack(source_list)
 
