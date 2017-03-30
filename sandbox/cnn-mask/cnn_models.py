@@ -41,7 +41,6 @@ class Conv1DModel:
             self.saver = tf.train.Saver()
 
         self.sess = tf.Session(graph=graph)
-        self.sess.run(tf.initialize_all_variables())
 
     def __del__(self):
         """
