@@ -24,6 +24,8 @@ class Conv1DModel:
         """
         graph = tf.Graph()
         with graph.as_default():
+            tf.reset_default_graph()
+
             self.X_input = tf.placeholder("float", input_shape)
             self.y_input = tf.placeholder("float", output_shape)
             self.F = input_shape[2]
@@ -41,6 +43,7 @@ class Conv1DModel:
             self.saver = tf.train.Saver()
 
         self.sess = tf.Session(graph=graph)
+        self.sess.run(tf_initialize_all_variables())
 
     def __del__(self):
         """
