@@ -112,6 +112,31 @@ class Hdf5Iterator:
     def __iter__(self):
         return self
 
+    '''
+    def get_batch(self, batchsize=32):
+
+        if self.return_key:
+            truth = []
+
+        if self.shape[-1]:
+            data = np.zeros( (batchsize,)+ self.shape ) + 0j
+        else:
+            raise ValueError("Getting a batch from HDF5 file requires shape to be specified")
+
+        for i in range(batchsize):
+            tupledata = next(self)
+
+            if self.return_key:
+                truth += [tupledata[0]]
+            data[i] = tupledata[1]
+               
+        if self.return_key:
+            data = (truth, data)
+ 
+        return data
+    '''
+
+
 def mock_hdf5(hdf5_path="._test.h5"):
     # make small test hdf5 object
     datasets = np.random.randn(5, 10, 15, 20)
