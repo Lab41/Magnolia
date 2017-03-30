@@ -54,7 +54,7 @@ class Conv1DModel:
         """
 
         # 1D convolution with num_filters filters
-        shape = tf.shape(X_input)
+        shape = tf.shape(self.X_input)
         reshaped = tf.reshape(self.X_input, [shape[0],shape[1],self.F])
         conv_layer = conv1d_layer(reshaped,
                                   [self.filter_length,self.F,self.num_filters])
