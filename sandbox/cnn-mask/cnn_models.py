@@ -24,8 +24,6 @@ class Conv1DModel:
         """
         graph = tf.Graph()
         with graph.as_default():
-            tf.reset_default_graph()
-
             self.X_input = tf.placeholder("float", input_shape)
             self.y_input = tf.placeholder("float", output_shape)
             self.F = input_shape[2]
