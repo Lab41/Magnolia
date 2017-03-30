@@ -86,7 +86,7 @@ def conv1d_layer(x, shape):
     standard deviations set to account for the fan in.
     """
     fan_in = tf.sqrt(2/(shape[1] + shape[2]))
-    weights = weight_variable(shape)
+    weights = weight_variable(shape, stddev=fan_in)
     biases = bias_variable([shape[-1]])
 
     return conv1d(x, weights) + biases
