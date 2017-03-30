@@ -52,6 +52,9 @@ def separate_sources(signal_path, model,
     # Get model inputs
     X_input, phases, normalization = featurize_spectrogram(spectrogram)
 
+    # Reshape the input to the form the model expects
+    X_input = np.reshape((1,X_input.shape[0],X_input.shape[1],1))
+
     # Get the model output for this input
     y_output = model.predict(X_input)
 
