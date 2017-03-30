@@ -116,9 +116,9 @@ class Conv1DModel:
         """
         Gets the prediction from the inputs to the network
         """
-        _, _, prediction = self.sess.run(self.network, feed_dict={X_input: X})
+        _, _, prediction = self.sess.run(self.network, feed_dict={self.X_input: X})
 
-        return prediction 
+        return prediction
 
     def save(self, path):
         """
