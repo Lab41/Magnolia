@@ -112,7 +112,6 @@ class Hdf5Iterator:
     def __iter__(self):
         return self
 
-    '''
     def get_batch(self, batchsize=32):
 
         if self.return_key:
@@ -134,7 +133,6 @@ class Hdf5Iterator:
             data = (truth, data)
  
         return data
-    '''
 
 
 def mock_hdf5(hdf5_path="._test.h5"):
