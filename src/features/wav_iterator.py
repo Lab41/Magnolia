@@ -66,7 +66,7 @@ def batcher(feature_iter, batch_size=256, return_key=False):
 
             # Code if we require the key to be returned
             if return_key:
-                if not type(feature_iter)==mixer.FeatureMixer: 
+                if type(feature_iter)!=mixer.FeatureMixer: 
                     yield ( list(data_slice[0]), np.array(data_slice[1]) )
                 else: 
                     yield ( list( zip(*iter_slice ) ) for iter_slice in data_slice )
