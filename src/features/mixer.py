@@ -71,7 +71,7 @@ class FeatureMixer:
 
         batches = ()
         for iterator in self.iterators:
-            batches += iterator.get_batch(batchsize)
+            batches += (iterator.get_batch(batchsize),)
 
         if self.mix_method=='sum' or self.mix_method=='add':
             mixed = np.sum( ibatch[1] for ibatch in batches )
