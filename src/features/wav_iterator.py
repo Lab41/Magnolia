@@ -12,6 +12,7 @@ import python_speech_features as psf
 from scipy.io import wavfile
 
 from . import spectral_features
+from . import mixer 
 
 def wav_mixer(wav_dir, mix_random=False, num_to_mix=2, sig_length=100*512+1, mask="_src.wav", dtype=np.int16):
     """
@@ -43,7 +44,7 @@ def wav_iterator(wav_dir, **kwargs):
     while True:
         yield wav_mixer(wav_dir, **kwargs)
 
-def batcher(feature_iter, batch_size=256):
+def batcher(feature_iter, batch_size=256, return_key=False):
     '''
     Yield batches from an iterator over examples.
     batch_size examples from feature_iter will be collected from feature_iter
@@ -61,12 +62,23 @@ def batcher(feature_iter, batch_size=256):
         # grouped together
         try:
             batch_transposed = []
-            for dataset in list(zip(*new_batch)):
+            data_slice = list(zip(*new_batch))
+
+            # Code if we require the key to be returned
+            if return_key:
+                if type(feature_iter)!=mixer.FeatureMixer: 
+                    yield ( list(data_slice[0]), np.array(data_slice[1]) )
+                else: 
+                    yield ( list( zip(*iter_slice ) ) for iter_slice in data_slice )
+                    
+            for dataset in data_slice:
                 try:
                     batch_transposed.append(np.array(dataset))
                 except ValueError:
                     batch_transposed.append(tuple(dataset))
+
             yield tuple(batch_transposed)
+
         except ValueError:
             raise StopIteration
 

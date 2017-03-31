@@ -11,7 +11,7 @@ import h5py
 import numpy as np
 
 class Hdf5Iterator:
-    def __init__(self, hdf5_path, shape=None, pos=None, seed=41):
+    def __init__(self, hdf5_path, shape=None, pos=None, seed=41, return_key=False):
         '''
         Args:
             hdf5_path (str): path to HDF5 file
@@ -36,6 +36,7 @@ class Hdf5Iterator:
         for group in self.h5_groups:
             self.h5_items += [ group + '/' + item for item in self.h5[group] ]
         self.rng = np.random.RandomState(seed)
+        self.return_key=return_key
 
         # Handle unspecified dimensionality for shape and pos
         if shape is None and pos is None:
@@ -66,7 +67,8 @@ class Hdf5Iterator:
         logger = logging.getLogger(__name__)
         num_tries = 5
         for i in range(num_tries):
-            next_item = self.h5[self.rng.choice(self.h5_items)]
+            next_key = self.rng.choice(self.h5_items)
+            next_item = self.h5[next_key]
             logger.debug("next_item.shape: {}".format(next_item.shape))
             # Ensure that Nones in self.shape
             # will yield the maximum size on the given dimension
@@ -102,11 +104,36 @@ class Hdf5Iterator:
             assert output_slice.shape[:len(shape)] == tuple(shape), "Result shape {} does not match " \
                     "target shape {}".format(output_slice.shape, shape)
             logger.debug("Returning.")
+            if self.return_key:
+                output_slice = (next_key, output_slice)
             return output_slice
         raise ValueError("Failed to find a slice. Slice size too big?")
 
     def __iter__(self):
         return self
+
+    def get_batch(self, batchsize=32):
+
+        if self.return_key:
+            truth = []
+
+        if self.shape[-1]:
+            data = np.zeros( (batchsize,)+ self.shape ) + 0j
+        else:
+            raise ValueError("Getting a batch from HDF5 file requires shape to be specified")
+
+        for i in range(batchsize):
+            tupledata = next(self)
+
+            if self.return_key:
+                truth += [tupledata[0]]
+            data[i] = tupledata[1]
+               
+        if self.return_key:
+            data = (truth, data)
+ 
+        return data
+
 
 def mock_hdf5(hdf5_path="._test.h5"):
     # make small test hdf5 object
