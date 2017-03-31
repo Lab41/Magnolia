@@ -12,3 +12,6 @@ $$\mathbf{C} = \mathcal{DCT} \left\{ \Phi \log |\mathcal{DFT}(\hat\mathbf{x})|  
 
 ![Mel Frequencies](images/melfreq.png)
 
+
+## Including iterators in this directory, of which we have:
+
