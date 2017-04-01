@@ -92,7 +92,6 @@ if __name__ == "__main__":
 
 
     logger = logging.getLogger(__name__)
-    print(logger.getEffectiveLevel())
     logger.debug("Acquired a sample")
     # Check that b has the right number of features
     assert len(mix) == 3
