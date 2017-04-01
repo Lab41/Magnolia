@@ -81,8 +81,10 @@ class FeatureMixer:
 
 
 if __name__ == "__main__":
+    # To install and test, try: pip install -U --no-deps .; python -m src.features.mixer
     # Some tests and examples
-    from features.hdf5_iterator import mock_hdf5
+    import timeit
+    from magnolia.features.hdf5_iterator import mock_hdf5
     mock_hdf5()
     h = Hdf5Iterator("._test.h5")
     d = FeatureMixer((h,'._test.h5'))
@@ -102,3 +104,25 @@ if __name__ == "__main__":
 
     # Check that one example is different from the next
     assert np.sum(mix - next(d)[0]) != 0
+
+    # Try batching
+    # Use larger mock-up
+    del h; del d; mock_hdf5(scale = 10)
+    d = FeatureMixer([Hdf5Iterator('._test.h5', (1,20), return_key=True, seed=41) for i in range(6)], return_key=True)
+    # Timing
+    nbatches = 10
+    batchsize = 1024
+    # Time get_batch
+    times = timeit.timeit(lambda: d.get_batch(batchsize=batchsize), number=nbatches)
+    print("Test get_batch:\nIn {} batches of {}, avg {:0.2f} secs per batch".format(nbatches, batchsize, times/nbatches))
+    # Time batcher
+    from magnolia.features.wav_iterator import batcher
+    b = batcher(d, batchsize, return_key=True)
+    times = timeit.timeit(lambda: type(next(b)), number=nbatches)
+    print("batcher")
+    print("In {} batches of {}, avg {:0.2f} secs per batch".format(nbatches, batchsize, times/nbatches))
+    c = next(b)
+    print("Batch type:", type(c))
+    print("Type of 'columns' in batch:", [type(x) for x in c])
+    print("First dim of 'columns' in batch:", [len(x) for x in c])
+    print("Done")
