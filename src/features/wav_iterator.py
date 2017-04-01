@@ -5,6 +5,7 @@ and featurize them using stft, then iterate over the results
 
 """
 
+import sys
 import os
 from itertools import islice
 import numpy as np
@@ -12,7 +13,7 @@ import python_speech_features as psf
 from scipy.io import wavfile
 
 from . import spectral_features
-from . import mixer 
+#from . import mixer
 
 def wav_mixer(wav_dir, mix_random=False, num_to_mix=2, sig_length=100*512+1, mask="_src.wav", dtype=np.int16):
     """
