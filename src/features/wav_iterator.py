@@ -65,18 +65,15 @@ def batcher(feature_iter, batch_size=256, return_key=False):
             batch_transposed = []
             data_slice = list(zip(*new_batch))
 
-            # Code if we require the key to be returned
-            if return_key:
-                if type(feature_iter)!=mixer.FeatureMixer: 
-                    yield ( list(data_slice[0]), np.array(data_slice[1]) )
-                else: 
-                    yield ( list( zip(*iter_slice ) ) for iter_slice in data_slice )
-                    
+
+
             for dataset in data_slice:
-                try:
-                    batch_transposed.append(np.array(dataset))
-                except ValueError:
-                    batch_transposed.append(tuple(dataset))
+                # Transpose again inside each column if we require the key to be returned
+                if return_key:
+                    dataset = list(zip(*dataset))
+                    dataset = [array_if_you_can(column) for column in dataset]
+                    #yield (tuple([list( zip(*iter_slice ) ) for iter_slice in data_slice]))
+                batch_transposed.append(array_if_you_can(dataset))
 
             yield tuple(batch_transposed)
 
