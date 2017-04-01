@@ -146,6 +146,7 @@ def mock_hdf5(hdf5_path="._test.h5", scale=1):
                 grp.create_dataset(str(j), data=dataset)
 
 if __name__ == "__main__":
+    import timeit
     logging.basicConfig(level=logging.WARNING)
 
     mock_hdf5()
@@ -211,8 +212,24 @@ if __name__ == "__main__":
         fail_test = False
     assert not fail_test
 
-    # Loop through infinite examples
-    h = Hdf5Iterator('._test.h5', (2, 5))
-    a = next(h)
-    for a in h:
-        print(a)
+    # Test batching with metadata
+    # Use larger mock-up
+    del h; mock_hdf5(scale = 10)
+    h2 = zip(*[Hdf5Iterator('._test.h5', (1,20), return_key=True, seed=41) for i in range(6)])
+    # Timing
+    nbatches = 128
+    batchsize = 2048
+    # Time batcher
+    from magnolia.features.wav_iterator import batcher
+    b = batcher(h2, batchsize, return_key=True)
+    times = timeit.timeit(lambda: type(next(b)), number=nbatches)
+    print("batcher")
+    print("In {} batches of {}, avg {:0.2f} secs per batch".format(nbatches, batchsize, times/nbatches))
+    c = next(b)
+    print(type(c))
+    print([type(x) for x in c])
+    print([len(x) for x in c])
+    print("Data type:", [type(x[1]) for x in c])
+    print(c[0][0])
+    print(c[0][1][0:5])
+    print("Done")
