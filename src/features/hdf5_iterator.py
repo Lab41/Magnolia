@@ -128,16 +128,16 @@ class Hdf5Iterator:
             if self.return_key:
                 truth += [tupledata[0]]
             data[i] = tupledata[1]
-               
+
         if self.return_key:
             data = (truth, data)
- 
+
         return data
 
 
-def mock_hdf5(hdf5_path="._test.h5"):
+def mock_hdf5(hdf5_path="._test.h5", scale=1):
     # make small test hdf5 object
-    datasets = np.random.randn(5, 10, 15, 20)
+    datasets = np.random.randn(5*scale, 10*scale, 15*scale, 20*scale)
     with h5py.File('._test.h5', mode='w') as f:
         key_names = list('abcde')
         for i, k in enumerate(key_names):
