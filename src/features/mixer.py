@@ -9,7 +9,7 @@ from .hdf5_iterator import Hdf5Iterator
 
 class FeatureMixer:
 
-    def __init__(self, iterators, mix_method='sum', shape=None, pos=None, seed=0, 
+    def __init__(self, iterators, mix_method='sum', shape=None, pos=None, seed=0,
                  diffseed=True, return_key=False ):
         '''
         FeatureMixer: Mixes feature iterators together, yielding an
@@ -19,7 +19,7 @@ class FeatureMixer:
         Args:
             iterators (list): a list of hdf5 file names or a list of iterators
             mix_method (str): how to mix features together. Supported methods:
-		'sum': add features together over the first axis
+		        'sum': add features together over the first axis
                 'ident': do not modify inputs
             shape (tuple): dimension of slices to extract; if None, will yield
                 the full size for each dataset in the HDF5 file
@@ -30,7 +30,7 @@ class FeatureMixer:
 
         Optional Arguments:
             seed: (int) random seed to initialize each iterator (default 0)
-            diffseed: (bool) do you want a different random seed for each iterator? 
+            diffseed: (bool) do you want a different random seed for each iterator?
 
         Iterator yields:
             tuple (mix, *features), total length equal to length of iterators + 1,
