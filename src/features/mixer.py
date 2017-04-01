@@ -49,12 +49,10 @@ class FeatureMixer:
     def __next__(self):
         next_example = next(zip(*self.iterators))
         logger = logging.getLogger(__name__)
-        # logger.debug("dtype of first dataset: {}".format( next_example[0].dtype))
-        # logger.debug(len(next_example))
-        # logger.debug(','.join([str(x.dtype) for x in next_example if isinstance(x, np.ndarray)]))
+
         if self.mix_method == 'sum' or self.mix_method == 'add':
             if self.return_key:
-                mixed_example = np.array( list( zip( *next_example ) )[1] ).sum(axis=0)
+                mixed_example = np.array(list(zip(*next_example))[1]).sum(axis=0)
             else:
                 mixed_example = np.sum(np.array(next_example), axis=0)
             return (mixed_example, *next_example)
