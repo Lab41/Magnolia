@@ -80,6 +80,19 @@ def batcher(feature_iter, batch_size=256, return_key=False):
         except ValueError:
             raise StopIteration
 
+def array_if_you_can(data):
+    """
+    Data should iterate over 'columns' of similar data, which
+    will be cast to array if possible, tuple as a fallback
+
+    Returns
+        array or tuple, containing values in data
+    """
+    try:
+        return np.array(data)
+    except ValueError:
+        return tuple(data)
+
 def test_batcher():
     # Basic functionality: transpose for non-array-like data; cast to array when possible
     features = [[2, 0], [5, 3], [8, 10], [2, -4]]
