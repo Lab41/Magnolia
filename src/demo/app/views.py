@@ -11,6 +11,7 @@ import matplotlib.pylab as plt
 import pylab
 import collections
 import os
+from .tflow_functions import tflow_separate
 
 
 project_root = app.root_path
@@ -62,7 +63,17 @@ def index():
       
         state['spec_file'] = 'spec_' + input_signal_filename + '.png'
         state['wav_list'] = [input_signal_filename + 'split1.wav',input_signal_filename + 'split2.wav']
+
+    elif request.method == 'POST' and request.form['btn'] == 'Tflow_Separate':  
         
+        #Separate speakers 
+        signals = tflow_separate(project_root + state['input_signal_url'])
+        state['wav_list'][:] = [] 
+        for index,speaker in enumerate(signals):
+            wav.write(project_root + '/resources/' + input_signal_filename + 'tflowsplit'+str(index)+'.wav',10000,speaker) 
+            state['wav_list'].append(input_signal_filename + 'tflowsplit'+str(index)+'.wav')
+
+        state['spec_file'] = 'spec_' + input_signal_filename + '.png'    
 
     return render_template('index.html',
                            title='Home',
