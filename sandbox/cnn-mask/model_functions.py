@@ -74,6 +74,7 @@ def separate_sources(signal_path, model,
         waveform = istft(complex_spectrogram,
                          sample_rate, duration, overlap, two_sided=False)
         waveform = undo_preemphasis(waveform)
+        waveform = (waveform - waveform.mean())/waveform.std()
         source_list.append(waveform)
 
     sources = np.stack(source_list)
