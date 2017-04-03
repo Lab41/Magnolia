@@ -53,14 +53,10 @@ class FeatureMixer:
 
         if self.mix_method == 'sum' or self.mix_method == 'add':
             if self.return_key:
-<<<<<<< HEAD
-                mixed_example = np.array(list(zip(*next_example))[1]).sum(axis=0)
-=======
                 # If we're returning keys, then the iterator returns a tuple, where the
                 # first element is the key itself, the second element is the data. Thus,
-                # the mixed sample will be the sum next_example[1]. 
+                # the mixed sample will be the sum next_example[1].
                 mixed_example = np.array( list( zip( *next_example ) )[1] ).sum(axis=0)
->>>>>>> 7018b4bccbbae042db796cec0b6225639025d413
             else:
                 mixed_example = np.sum(np.array(next_example), axis=0)
             return (mixed_example, *next_example)
