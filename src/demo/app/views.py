@@ -36,27 +36,29 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-state = {'wav_list':[],'spec_file':None, 'input_signal_url':'/static/mixed_signal.wav'}
+#state = {'wav_list':[],'spec_file':None, 'input_signal_url':'/static/mixed_signal.wav'}
+state = {'wav_list':[],'spec_file':None, 'input_signal_url':None}
 
 @app.route('/',methods = ['GET','POST'])
 @app.route('/index.html',methods = ['GET','POST'])
 def index():
     
     recon_signal = 1
-    input_signal_filename = os.path.splitext(os.path.basename(state['input_signal_url']))[0]
-    
+    if(state['input_signal_url'] != None):
+        input_signal_filename = os.path.splitext(os.path.basename(state['input_signal_url']))[0]
+    '''
     if request.method == 'POST' and request.form['btn'] == 'Visualize':
-        '''fs,noisy_signal = wav.read(project_root + state['input_signal_url'])
+        fs,noisy_signal = wav.read(project_root + state['input_signal_url'])
         mfcc_feat = mfcc_feature_extractor(noisy_signal)
         plot_spectogram(mfcc_feat,project_root + '/resources/spec_'+ input_signal_filename + '.png')
         state['spec_file'] = 'spec_' + input_signal_filename + '.png'
-        '''
+        
         features = keras_spec(project_root + state['input_signal_url'])
         plot_spectogram(features,project_root + '/resources/spec_'+ input_signal_filename + '.png')
         state['spec_file'] = 'spec_' + input_signal_filename + '.png'
+    '''
 
-
-    elif request.method == 'POST' and request.form['btn'] == 'Separate':
+    if request.method == 'POST' and request.form['btn'] == 'Separate' and state['input_signal_url'] != None :
         '''fs,noisy_signal = wav.read(project_root + state['input_signal_url'])
         mfcc_feat = mfcc_feature_extractor(noisy_signal)
         mag,phase = feature_extractor(noisy_signal)
@@ -78,7 +80,7 @@ def index():
         state['spec_file'] = 'spec_' + input_signal_filename + '.png'   
 
 
-    elif request.method == 'POST' and request.form['btn'] == 'Tflow_Separate':  
+    elif request.method == 'POST' and request.form['btn'] == 'Tflow_Separate' and state['input_signal_url'] != None:  
         
         #Separate speakers 
         signals = tflow_separate(project_root + state['input_signal_url'])
@@ -114,6 +116,13 @@ def upload():
 
         upload_file.save(project_root + '/resources/' + upload_file.filename)
         state['input_signal_url'] = '/resources/' + upload_file.filename
+
+        #Plot spectogram with uploaded input file
+        input_signal_filename = os.path.splitext(os.path.basename(state['input_signal_url']))[0] 
+        features = keras_spec(project_root + state['input_signal_url'])
+        plot_spectogram(features,project_root + '/resources/spec_'+ input_signal_filename + '.png')
+        state['spec_file'] = 'spec_' + input_signal_filename + '.png'
+
 
     return render_template('index.html',
                            title='Home',

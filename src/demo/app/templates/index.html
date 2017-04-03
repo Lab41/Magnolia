@@ -9,17 +9,19 @@
          <input type="submit" name="btn" value="Upload">
     </form>
 
+  {% if input_sound is not none %}
   <audio controls>
   	<source src="{{input_sound}}" type="audio/wav">
   </audio>
+  {% endif %}
 
   {% if input_spec_url is not none %}
   <img src="/resources/{{input_spec_url}}" alt="spectogram" style="width:600px;height:200px;">
   {% endif %}
 
-  <form action="/" method="post">
+  <!--<form action="/" method="post">
   <input type = "submit" name="btn" value = "Visualize" />
-  </form>
+  </form>-->
 
   <form action="/" method="post">
   <input type = "submit" name="btn" value = "Separate" />
