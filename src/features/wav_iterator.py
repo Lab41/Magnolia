@@ -82,8 +82,7 @@ def batcher(feature_iter, batch_size=256, return_key=False):
 
 def array_if_you_can(data):
     """
-    Data should iterate over 'columns' of similar data, which
-    will be cast to array if possible, tuple as a fallback
+    Cast to array if possible, tuple as a fallback
 
     Returns
         array or tuple, containing values in data
