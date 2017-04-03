@@ -217,7 +217,7 @@ if __name__ == "__main__":
     del h; mock_hdf5(scale = 10)
     h2 = zip(*[Hdf5Iterator('._test.h5', (1,20), return_key=True, seed=41) for i in range(6)])
     # Timing
-    nbatches = 128
+    nbatches = 10
     batchsize = 2048
     # Time batcher
     from magnolia.features.wav_iterator import batcher

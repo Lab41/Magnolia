@@ -115,7 +115,7 @@ if __name__ == "__main__":
     del h; del d; mock_hdf5(scale = 10)
     d = FeatureMixer([Hdf5Iterator('._test.h5', (1,20), return_key=True, seed=41) for i in range(6)], return_key=True)
     # Timing
-    nbatches = 10
+    nbatches = 3
     batchsize = 1024
     # Time get_batch
     times = timeit.timeit(lambda: d.get_batch(batchsize=batchsize), number=nbatches)
@@ -129,5 +129,7 @@ if __name__ == "__main__":
     c = next(b)
     print("Batch type:", type(c))
     print("Type of 'columns' in batch:", [type(x) for x in c])
+    print("Type of 'keys' in data columns:", [type(x[0]) for x in c[1:]])
+    print("Type of 'values' in data columns:", [type(x[1]) for x in c[1:]])
     print("First dim of 'columns' in batch:", [len(x) for x in c])
     print("Done")
