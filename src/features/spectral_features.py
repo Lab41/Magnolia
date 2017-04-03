@@ -7,7 +7,7 @@ reconstructing time-domain audio signals from spectral features
 import numpy as np
 import scipy
 
-def stft(x, fs, framesz, hop, two_sided=True):
+def stft(x, fs, framesz, hop, two_sided=True, fft_size=None):
     '''
     Short Time Fourier Transform (STFT) - Spectral decomposition
 
@@ -22,14 +22,18 @@ def stft(x, fs, framesz, hop, two_sided=True):
     Output:
         X = 2d array time-frequency repr of x, time x frequency
     '''
+
     framesamp = int(framesz*fs)
     hopsamp = int(hop*fs)
+    # set size of FFT window
+    if fft_size is None:
+        fft_size = framesamp
     w = scipy.hanning(framesamp)
     if two_sided:
-        X = scipy.array([scipy.fft(w*x[i:i+framesamp])
+        X = scipy.array([scipy.fft(w*x[i:i+framesamp], n=fft_size)
                      for i in range(0, len(x)-framesamp, hopsamp)])
     else:
-        X = scipy.array([np.fft.fftpack.rfft(w*x[i:i+framesamp])
+        X = scipy.array([np.fft.fftpack.rfft(w*x[i:i+framesamp], n=fft_size)
              for i in range(0, len(x)-framesamp, hopsamp)])
 
     return X
