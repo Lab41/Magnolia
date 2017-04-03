@@ -13,7 +13,7 @@ from python_speech_features.sigproc import preemphasis
 def make_stft_features(signal, sample_rate,
                        output_sample_rate=1e4,
                        window_size=0.05, overlap=0.025,
-                       preemphasis_coeff=0.95):
+                       preemphasis_coeff=0.95, fft_size=0.0512):
     '''
     Function to take in a signal, resample it to output_sample_rate,
     normalize it, and compute the magnitude spectrogram.
@@ -25,6 +25,7 @@ def make_stft_features(signal, sample_rate,
         window_size: length of stft window in seconds (float)
         overlap: amount of overlap for stft windows (float)
         preemphasis: preemphasis coefficient (float)
+        fft_size: length (in seconds) of DFT window (float)
 
     Returns:
         spectrogram: 2D numpy array with (Time, Frequency) components of
@@ -43,7 +44,7 @@ def make_stft_features(signal, sample_rate,
 
     # Get the magnitude spectrogram
     spectrogram = stft(normalized,output_sample_rate,
-                       window_size,overlap,two_sided=False)
+                       window_size,overlap,two_sided=False,fft_size=fft_size)
 
     return spectrogram
 
@@ -51,7 +52,7 @@ def make_stft_dataset(data_dir, key_level, file_type, output_file,
                       output_sample_rate=1e4,
                       window_size=0.05, overlap=0.025,
                       preemphasis_coeff=0.95,
-                      track=None):
+                      track=None, fft_size=0.0512):
     '''
     Function to walk through a data directory data_dir and compute the stft
     features for each file of type file_type.  The computed features are
@@ -66,6 +67,7 @@ def make_stft_dataset(data_dir, key_level, file_type, output_file,
         overlap: Amount of window overlap in seconds (float)
         preemphasis_coeff: preemphasis coefficient (float)
         track: Track number to use for signals with multiple tracks (int)
+        fft_size: length (in seconds) of DFT window (float)
     '''
 
     # Open output file for writing
@@ -100,7 +102,8 @@ def make_stft_dataset(data_dir, key_level, file_type, output_file,
                     spectrogram = make_stft_features(signal,sample_rate,
                                                      output_sample_rate,
                                                      window_size,overlap,
-                                                     preemphasis_coeff)
+                                                     preemphasis_coeff,
+                                                     fft_size)
 
                     # Convert to 32 bit floats
                     spectrogram = spectrogram.astype(np.complex64)
@@ -109,4 +112,3 @@ def make_stft_dataset(data_dir, key_level, file_type, output_file,
                                                   data=spectrogram,
                                                   compression="gzip",
                                                   compression_opts=0)
-
