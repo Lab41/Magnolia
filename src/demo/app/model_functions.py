@@ -2,8 +2,6 @@
 Functions for interacting with model classes:
 """
 
-#sys.path.append('/Users/aganesh/PublicLab41/Magnolia/src/')
-
 import numpy as np
 import soundfile as sf
 from .cnn_models import Conv1DModel

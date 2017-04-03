@@ -12,7 +12,8 @@ import pylab
 import collections
 import os
 from .tflow_functions import tflow_separate
-
+import soundfile as sf
+from .keras_functions import keras_separate,keras_spec
 
 project_root = app.root_path
 
@@ -22,13 +23,13 @@ ALLOWED_EXTENSIONS = set(['wav'])
 
 app.config['SECRET_KEY'] = 'development key'
 
-nfilt=64
+'''nfilt=64
 numcep=64
 nfft=512
 winlen=0.01
 winstep=0.005
 ceplifter=0
-fs = 16000
+fs = 16000'''
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -45,14 +46,18 @@ def index():
     input_signal_filename = os.path.splitext(os.path.basename(state['input_signal_url']))[0]
     
     if request.method == 'POST' and request.form['btn'] == 'Visualize':
-        fs,noisy_signal = wav.read(project_root + state['input_signal_url'])
+        '''fs,noisy_signal = wav.read(project_root + state['input_signal_url'])
         mfcc_feat = mfcc_feature_extractor(noisy_signal)
         plot_spectogram(mfcc_feat,project_root + '/resources/spec_'+ input_signal_filename + '.png')
+        state['spec_file'] = 'spec_' + input_signal_filename + '.png'
+        '''
+        features = keras_spec(project_root + state['input_signal_url'])
+        plot_spectogram(features,project_root + '/resources/spec_'+ input_signal_filename + '.png')
         state['spec_file'] = 'spec_' + input_signal_filename + '.png'
 
 
     elif request.method == 'POST' and request.form['btn'] == 'Separate':
-        fs,noisy_signal = wav.read(project_root + state['input_signal_url'])
+        '''fs,noisy_signal = wav.read(project_root + state['input_signal_url'])
         mfcc_feat = mfcc_feature_extractor(noisy_signal)
         mag,phase = feature_extractor(noisy_signal)
         mask = mask_prediction(model_path,mfcc_feat)
@@ -62,7 +67,16 @@ def index():
         wav.write(project_root + '/resources/'+ input_signal_filename + 'split2.wav',fs,recon_signal)
       
         state['spec_file'] = 'spec_' + input_signal_filename + '.png'
-        state['wav_list'] = [input_signal_filename + 'split1.wav',input_signal_filename + 'split2.wav']
+        state['wav_list'] = [input_signal_filename + 'split1.wav',input_signal_filename + 'split2.wav']'''
+        #Separate speakers 
+        signals = keras_separate(project_root + state['input_signal_url'],project_root+'/static/overfitted_dnn_mask.h5')
+        state['wav_list'][:] = [] 
+        for index,speaker in enumerate(signals): 
+            sf.write(project_root + '/resources/' + input_signal_filename + 'kerassplit'+str(index)+'.wav',speaker,16000) 
+            state['wav_list'].append(input_signal_filename + 'kerassplit'+str(index)+'.wav')
+
+        state['spec_file'] = 'spec_' + input_signal_filename + '.png'   
+
 
     elif request.method == 'POST' and request.form['btn'] == 'Tflow_Separate':  
         
@@ -70,7 +84,8 @@ def index():
         signals = tflow_separate(project_root + state['input_signal_url'])
         state['wav_list'][:] = [] 
         for index,speaker in enumerate(signals):
-            wav.write(project_root + '/resources/' + input_signal_filename + 'tflowsplit'+str(index)+'.wav',10000,speaker) 
+            #wav.write(project_root + '/resources/' + input_signal_filename + 'tflowsplit'+str(index)+'.wav',10000,speaker) 
+            sf.write(project_root + '/resources/' + input_signal_filename + 'tflowsplit'+str(index)+'.wav',speaker,10000) 
             state['wav_list'].append(input_signal_filename + 'tflowsplit'+str(index)+'.wav')
 
         state['spec_file'] = 'spec_' + input_signal_filename + '.png'    
@@ -113,6 +128,13 @@ def resources(file_name):
     app.logger.info('In the resources')
     return send_file(project_root + '/resources/'+ file_name)
 
+
+def plot_spectogram(features,file_path):
+    plt.clf()
+    plt.imshow(np.sqrt(features.T) , origin='lower' ,cmap='bone_r')
+    plt.savefig(file_path)
+
+'''
 def specdecomp(signal,samplerate=16000,winlen=0.025,winstep=0.01,
               nfft=512,lowfreq=0,highfreq=None,preemph=0.97,
               winfunc=lambda x:np.ones((x,)),decomp='complex'):
@@ -178,5 +200,5 @@ def signal_reconstruction(mask,mag,phase):
     recon_signal = deframesig(recon_signal, 0, int(fs*winlen), int(fs*winstep))
 
     return recon_signal
-
+'''
 
