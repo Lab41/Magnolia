@@ -1,6 +1,7 @@
 import sys
+from . import app
 
-sys.path.append('/Users/aganesh/PublicLab41/Magnolia/src/')
+sys.path.append(app.root_path + '/../..')
 
 from .cnn_models import Conv1DModel
 from .model_functions import separate_sources
@@ -19,7 +20,7 @@ def tflow_separate(input_path):
 	wav_list = []
 
 	model = Conv1DModel([None,None,251,1],[None,None,251,2],20,600,50)
-	model.load('/Users/aganesh/PublicLab41/Magnolia/src/demo/app/static/cnn-mask-model.ckpt')
+	model.load(app.root_path + '/static/cnn-mask-model.ckpt')
 
 	outputs = separate_sources(input_path,model)
 	for row in outputs:
