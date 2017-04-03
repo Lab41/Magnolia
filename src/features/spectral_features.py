@@ -28,6 +28,8 @@ def stft(x, fs, framesz, hop, two_sided=True, fft_size=None):
     # set size of FFT window
     if fft_size is None:
         fft_size = framesamp
+    else:
+        fft_size = int(fft_size * fs)
     w = scipy.hanning(framesamp)
     if two_sided:
         X = scipy.array([scipy.fft(w*x[i:i+framesamp], n=fft_size)
