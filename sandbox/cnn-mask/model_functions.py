@@ -21,7 +21,7 @@ def featurize_spectrogram(spectrogram):
 
     # Normalize the magnitude spectrogram
     normalization = X_input.max() - X_input.min()
-    X_input = X_input/normalization
+    X_input = (X_input - X_input.min())/normalization
 
     return X_input, phases, normalization
 
