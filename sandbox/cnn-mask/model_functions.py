@@ -20,6 +20,7 @@ def featurize_spectrogram(spectrogram):
     phases = np.unwrap(np.angle(spectrogram))
 
     # Normalize the magnitude spectrogram
+    X_input = np.sqrt(X_input)
     normalization = X_input.max() - X_input.min()
     X_input = (X_input - X_input.min())/normalization
 
