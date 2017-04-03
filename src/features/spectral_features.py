@@ -44,14 +44,15 @@ def istft(X, fs, recon_size, hop, two_sided=True):
     Input:
         X - set of 1D time-windowed spectra, time x frequency
         fs - sampling frequency (in Hz)
-        recon_size - total length of reconstruction willing to be performed
-        hop - skip rate
+        recon_size - total length of reconstruction
+        hop - skip rate between successive windows
 
     Output:
         x - a 1-D array holding reconstructed time-domain audio signal
     '''
     x = scipy.zeros(int(recon_size*fs))
     hopsamp = int(hop*fs)
+    # TODO: do we need to mess with the framewise reconstruction size?
     if two_sided:
         framesamp = X.shape[1]
         inverse_transform = scipy.ifft
