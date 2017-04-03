@@ -18,6 +18,7 @@ def stft(x, fs, framesz, hop, two_sided=True, fft_size=None):
         hop - skip length (in seconds)
         two_sided - return full spectrogram if True
             or just positive frequencies if False
+        fft_size - length (in seconds) of DFT window
 
     Output:
         X = 2d array time-frequency repr of x, time x frequency
