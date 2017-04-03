@@ -40,6 +40,7 @@ class FeatureMixer:
         self.return_key = return_key
         for i, iterator in enumerate(iterators):
             if isinstance(iterator, str):
+                # Only add to the seed if `diffseed` is true
                 iseed = seed + int(diffseed)*i
                 self.iterators.append(Hdf5Iterator(iterator,shape=shape,pos=pos,seed=iseed, return_key=return_key))
             else:
@@ -52,7 +53,14 @@ class FeatureMixer:
 
         if self.mix_method == 'sum' or self.mix_method == 'add':
             if self.return_key:
+<<<<<<< HEAD
                 mixed_example = np.array(list(zip(*next_example))[1]).sum(axis=0)
+=======
+                # If we're returning keys, then the iterator returns a tuple, where the
+                # first element is the key itself, the second element is the data. Thus,
+                # the mixed sample will be the sum next_example[1]. 
+                mixed_example = np.array( list( zip( *next_example ) )[1] ).sum(axis=0)
+>>>>>>> 7018b4bccbbae042db796cec0b6225639025d413
             else:
                 mixed_example = np.sum(np.array(next_example), axis=0)
             return (mixed_example, *next_example)
@@ -71,6 +79,8 @@ class FeatureMixer:
         for iterator in self.iterators:
             batches += (iterator.get_batch(batchsize),)
 
+        # Resultant size of `mixed` is the same as any iterator's batch size as it is the
+        # sum of all the signals together.
         if self.mix_method=='sum' or self.mix_method=='add':
             mixed = np.sum( ibatch[1] for ibatch in batches )
             batches = (mixed,)+batches
