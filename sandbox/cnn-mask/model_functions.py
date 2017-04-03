@@ -8,6 +8,7 @@ from cnn_models import Conv1DModel
 
 from magnolia.features.spectral_features import stft, istft
 from magnolia.features.data_preprocessing import make_stft_features
+from magnolia.features.data_preprocessing import undo_preemphasis
 
 def featurize_spectrogram(spectrogram):
     """
@@ -66,6 +67,7 @@ def separate_sources(signal_path, model,
         complex_spectrogram = y_output[0,:,:,i]*np.exp(phases*1.0j)
         waveform = istft(complex_spectrogram,
                          sample_rate, duration, overlap, two_sided=False)
+        waveform = undo_preemphasis(waveform)
         source_list.append(waveform)
 
     sources = np.stack(source_list)
