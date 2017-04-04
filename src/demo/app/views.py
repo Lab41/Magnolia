@@ -84,8 +84,13 @@ def upload():
 
         #Plot spectogram with uploaded input file
         input_signal_filename = os.path.splitext(os.path.basename(state['input_signal_url']))[0] 
-        features = keras_spec(project_root + state['input_signal_url'])
-        plot_spectogram(features,project_root + '/resources/spec_'+ input_signal_filename + '.png')
+
+        #features = keras_spec(project_root + state['input_signal_url'])
+        f,t,Sxx = keras_spec(project_root + state['input_signal_url'])
+
+        #plot_spectogram(features,project_root + '/resources/spec_'+ input_signal_filename + '.png')
+        plot_spectogram(f,t,Sxx,project_root + '/resources/spec_'+ input_signal_filename + '.png')
+
         state['spec_file'] = 'spec_' + input_signal_filename + '.png'
 
 
@@ -103,9 +108,12 @@ def resources(file_name):
     return send_file(project_root + '/resources/'+ file_name)
 
 
-def plot_spectogram(features,file_path):
-    plt.clf()
-    plt.imshow(np.sqrt(features.T) , origin='lower' ,cmap='bone_r')
+def plot_spectogram(f,t,Sxx,file_path):
+    #plt.clf()
+    #plt.imshow(np.sqrt(features.T) , origin='lower' ,cmap='bone_r')
+    plt.pcolormesh(t, f, Sxx)
+    plt.ylabel('Frequency [Hz]')
+    plt.xlabel('Time [sec]')
     plt.savefig(file_path)
 
 

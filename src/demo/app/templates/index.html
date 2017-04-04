@@ -1,38 +1,69 @@
 <html>
   <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Bootstrap core CSS -->
+    <link href="../static/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="../static/css/jumbotron-narrow.css" rel="stylesheet">
+
     <title>{{ title }} - microblog</title>
   </head>
   
-  <h1>Upload new File</h1>
-    <form action="/upload" method="post" enctype="multipart/form-data">
-      <p><input type="file" name="file">
-         <input type="submit" name="btn" value="Upload">
-    </form>
+  <body>
+    <div class="container">
 
-  {% if input_sound is not none %}
-  <audio controls>
-  	<source src="{{input_sound}}" type="audio/wav">
-  </audio>
-  {% endif %}
+      <div class="jumbotron">
+        <h1>Jumbotron heading</h1>
+        <p class="lead">Cras justo odio, dapibus ac facilisis in, egestas eget quam. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>
+        <p><a class="btn btn-lg btn-success" href="#" role="button">Choose File</a></p>
+        <p><a class="btn btn-lg btn-success" href="#" role="button">Upload</a></p>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+          <p><input class="btn btn-lg btn-success" type="file" name="file">
+            <input class="btn btn-lg btn-success" type="submit" name="btn" value="Upload">
+        </form>
+      </div>
 
-  {% if input_spec_url is not none %}
-  <img src="/resources/{{input_spec_url}}" alt="spectogram" style="width:600px;height:200px;">
-  {% endif %}
 
-  <form action="/" method="post">
-  <input type = "submit" name="btn" value = "Separate" />
-  </form>
 
-  <form action="/" method="post">
-  <input type = "submit" name="btn" value = "Tflow_Separate" />
-  </form>
+      <h1>Upload new File</h1>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+          <p><input type="file" name="file">
+            <input type="submit" name="btn" value="Upload">
+        </form>
 
-  
-  {% for x in wav_files %}
-  <audio controls>
-  	<source src="/resources/{{x}}" type="audio/wav">
-  </audio>
-  	
-  {% endfor %}
+      {% if input_sound is not none %}
+      <audio controls>
+      	<source src="{{input_sound}}" type="audio/wav">
+      </audio>
+      {% endif %}
 
+      {% if input_spec_url is not none %}
+      <!--<img src="/resources/{{input_spec_url}}" alt="spectogram" style="width:600px;height:200px;">-->
+        <img src="/resources/{{input_spec_url}}" alt="spectogram" style="width:600px;height:600px;">
+      {% endif %}
+
+      <form action="/" method="post">
+      <input type = "submit" name="btn" value = "Separate" />
+      </form>
+
+      <form action="/" method="post">
+      <input type = "submit" name="btn" value = "Tflow_Separate" />
+      </form>
+
+      
+      {% for x in wav_files %}
+      <audio controls>
+      	<source src="/resources/{{x}}" type="audio/wav">
+      </audio>	
+      {% endfor %}
+
+    </div> <!-- /container -->
+  </body>
 </html>
