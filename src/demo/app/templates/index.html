@@ -20,17 +20,64 @@
     <div class="container">
 
       <div class="jumbotron">
-        <h1>Jumbotron heading</h1>
-        <p class="lead">Cras justo odio, dapibus ac facilisis in, egestas eget quam. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>
-        <p><a class="btn btn-lg btn-success" href="#" role="button">Choose File</a></p>
-        <p><a class="btn btn-lg btn-success" href="#" role="button">Upload</a></p>
-        <form action="/upload" method="post" enctype="multipart/form-data">
-          <p><input class="btn btn-lg btn-success" type="file" name="file">
-            <input class="btn btn-lg btn-success" type="submit" name="btn" value="Upload">
+        <h1>Magnolia</h1>
+        <p class="lead">Blind signal separation (BSS), also known as blind source separation, is the separation of a set of source signals from a set of mixed signals, without the aid of information (or with very little information) about the source signals or the mixing process.</p>
+        <script>
+          function wavFileSubmit(){
+            document.getElementById("submit_form").submit();
+          }
+        </script>
+
+        <form id = "submit_form" action="/upload" method="post" enctype="multipart/form-data">
+            <label class="btn btn-block btn-success">
+                Browse&hellip; <input type="file" style="display: none;" name="file" onchange="wavFileSubmit()">
+            </label>
         </form>
+
+        {% if input_sound is not none %}
+          <audio controls>
+          <source src="{{input_sound}}" type="audio/wav">
+        </audio>
+        {% endif %}
+        <p> </p>
+
+        {% if input_spec_url is not none %}
+        <img src="/resources/{{input_spec_url}}" alt="spectogram" style="width:300px;height:300px;">
+        {% endif %}
+
       </div>
 
+      
 
+      <div class="row marketing">
+        <div class="col-lg-6">
+          <h4>
+            <form action="/" method="post">
+            <input class="btn btn-block btn-primary" type = "submit" name="btn" value = "Separate"/>
+            </form>
+          </h4>
+          <p>This is an algorithm that Karl made and its pretty good.</p>
+
+          <h4>Subheading</h4>
+          <p>Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Cras mattis consectetur purus sit amet fermentum.</p>
+
+          <h4>Subheading</h4>
+          <p>Maecenas sed diam eget risus varius blandit sit amet non magna.</p>
+        </div>
+
+        <div class="col-lg-6">
+          <h4>Subheading</h4>
+          <p>Donec id elit non mi porta gravida at eget metus. Maecenas faucibus mollis interdum.</p>
+
+          <h4>Subheading</h4>
+          <p>Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Cras mattis consectetur purus sit amet fermentum.</p>
+
+          <h4>Subheading</h4>
+          <p>Maecenas sed diam eget risus varius blandit sit amet non magna.</p>
+        </div>
+      </div>
+
+      <!--
 
       <h1>Upload new File</h1>
         <form action="/upload" method="post" enctype="multipart/form-data">
@@ -45,7 +92,6 @@
       {% endif %}
 
       {% if input_spec_url is not none %}
-      <!--<img src="/resources/{{input_spec_url}}" alt="spectogram" style="width:600px;height:200px;">-->
         <img src="/resources/{{input_spec_url}}" alt="spectogram" style="width:600px;height:600px;">
       {% endif %}
 
@@ -62,7 +108,7 @@
       <audio controls>
       	<source src="/resources/{{x}}" type="audio/wav">
       </audio>	
-      {% endfor %}
+      {% endfor %}   -->
 
     </div> <!-- /container -->
   </body>
