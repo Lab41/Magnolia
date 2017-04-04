@@ -46,9 +46,7 @@
         {% endif %}
 
       </div>
-
       
-
       <div class="row marketing">
         <div class="col-lg-6">
           <h4>
@@ -56,25 +54,31 @@
             <input class="btn btn-block btn-primary" type = "submit" name="btn" value = "Separate"/>
             </form>
           </h4>
-          <p>This is an algorithm that Karl made and its pretty good.</p>
+          <p>This is an algorithm that Karl made and its pretty good.Independent component analysis attempts to decompose a multivariate signal into independent non-Gaussian signals. As an example, sound is usually a signal that is composed of the numerical addition, at each time t, of signals from several sources.</p>
 
-          <h4>Subheading</h4>
-          <p>Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Cras mattis consectetur purus sit amet fermentum.</p>
+          <h4><a class="btn btn-block btn-primary" role="button">ICA</a></h4>
+          <p>In signal processing, independent component analysis (ICA) is a computational method for separating a multivariate signal into additive subcomponents. This is done by assuming that the subcomponents are non-Gaussian signals and that they are statistically independent from each other.</p>
 
-          <h4>Subheading</h4>
-          <p>Maecenas sed diam eget risus varius blandit sit amet non magna.</p>
         </div>
 
         <div class="col-lg-6">
-          <h4>Subheading</h4>
-          <p>Donec id elit non mi porta gravida at eget metus. Maecenas faucibus mollis interdum.</p>
+          <h4>
+            <form action="/" method="post">
+            <input class="btn btn-block btn-primary" type = "submit" name="btn" value = "Tflow_Separate"/>
+            </form>
+          </h4>
+          <p>This is an algorithm that Cory made and its pretty good.In machine learning, a convolutional neural network (CNN, or ConvNet) is a type of feed-forward artificial neural network in which the connectivity pattern between its neurons is inspired by the organization of the animal visual cortex.</p>
 
-          <h4>Subheading</h4>
-          <p>Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Cras mattis consectetur purus sit amet fermentum.</p>
-
-          <h4>Subheading</h4>
-          <p>Maecenas sed diam eget risus varius blandit sit amet non magna.</p>
+          <h4><a class="btn btn-block btn-primary" role="button">PCA</a></h4>
+          <p>Principal component analysis (PCA) is a statistical procedure that uses an orthogonal transformation to convert a set of observations of possibly correlated variables into a set of values of linearly uncorrelated variables called principal components (or sometimes, principal modes of variation).</p>
         </div>
+
+        {% for x in wav_files %}
+        <audio controls>
+          <source src="/resources/{{x}}" type="audio/wav">
+        </audio>  
+        {% endfor %}  
+
       </div>
 
       <!--
