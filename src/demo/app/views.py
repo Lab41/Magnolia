@@ -112,7 +112,7 @@ def resources(file_name):
 def plot_spectogram(f,t,Sxx,file_path):
     #plt.clf()
     #plt.imshow(np.sqrt(features.T) , origin='lower' ,cmap='bone_r')
-    plt.pcolormesh(t, f, Sxx)
+    plt.pcolormesh(t, f, Sxx, cmap='bone_r')
     plt.ylabel('Frequency [Hz]')
     plt.xlabel('Time [sec]')
     plt.savefig(file_path)
