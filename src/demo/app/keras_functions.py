@@ -4,6 +4,7 @@ from python_speech_features.sigproc import deframesig
 import scipy.io.wavfile as wav
 from python_speech_features import mfcc
 import numpy as np
+from scipy import signal
 
 def specdecomp(signal,samplerate=16000,winlen=0.025,winstep=0.01,
               nfft=512,lowfreq=0,highfreq=None,preemph=0.97,
@@ -102,11 +103,13 @@ def keras_spec(signal_path):
 
     fs,noisy_signal = wav.read(signal_path)
 
-    mfcc_feat = mfcc(noisy_signal,fs,nfilt=nfilt,numcep=numcep,nfft=nfft,
-                 winlen=winlen,winstep=winstep,ceplifter=ceplifter,
-                 appendEnergy=False)
+    #mfcc_feat = mfcc(noisy_signal,fs,nfilt=nfilt,numcep=numcep,nfft=nfft,
+    #             winlen=winlen,winstep=winstep,ceplifter=ceplifter,
+    #             appendEnergy=False)
 
-    return mfcc_feat
+    #return mfcc_feat
+    f,t,Sxx = signal.spectrogram(noisy_signal,fs)
+    return [f,t,np.log(Sxx)]
 
 
 
