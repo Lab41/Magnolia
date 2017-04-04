@@ -33,6 +33,7 @@ def index():
         input_signal_filename = os.path.splitext(os.path.basename(state['input_signal_url']))[0]
     
     if request.method == 'POST' and request.form['btn'] == 'Separate' and state['input_signal_url'] != None :
+        app.logger.info('In the separate')
         #Separate speakers 
         signals = keras_separate(project_root + state['input_signal_url'],project_root+'/static/overfitted_dnn_mask.h5')
         state['wav_list'][:] = [] 
