@@ -108,3 +108,17 @@ if __name__=="__main__":
         print("Trouble 2")
         print(sys.exc_info())
         raise
+
+    # Try fft_size
+    try:
+        sig = np.array([0,1,0.5,0.1]*10)
+        sig_stft = stft(sig, 1, 8, 4, two_sided=False, fft_size=16)
+        print(sig_stft)
+        print(sig_stft.shape)
+        sig_recon = istft(sig_stft, 1, None, 4, two_sided=False, fft_size=16)
+        print(sig_recon)
+        print(sig_recon.shape)
+    except:
+        print("Trouble 3")
+        print(sys.exc_info())
+        raise
