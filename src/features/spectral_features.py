@@ -4,8 +4,11 @@ Functions for featurizing audio using spectral analysis, as well as for
 reconstructing time-domain audio signals from spectral features
 '''
 
+import sys
+import logging
 import numpy as np
 import scipy
+import scipy.signal
 
 def stft(x, fs, framesz, hop, two_sided=True, fft_size=None):
     '''
@@ -26,19 +29,11 @@ def stft(x, fs, framesz, hop, two_sided=True, fft_size=None):
 
     framesamp = int(framesz*fs)
     hopsamp = int(hop*fs)
-    # set size of FFT window
-    if fft_size is None:
-        fft_size = framesamp
+    overlap_samp = framesamp - hopsamp
 
-    w = scipy.hanning(framesamp)
-    if two_sided:
-        X = scipy.array([scipy.fft(w*x[i:i+framesamp], n=fft_size)
-                     for i in range(0, len(x)-framesamp, hopsamp)])
-    else:
-        X = scipy.array([np.fft.fftpack.rfft(w*x[i:i+framesamp], n=fft_size)
-             for i in range(0, len(x)-framesamp, hopsamp)])
-
-    return X
+    _, _, X = scipy.signal.stft(x, fs, window='hann', nperseg=framesamp,
+        noverlap=overlap_samp, nfft=fft_size, return_onesided=not two_sided)
+    return X.T
 
 def istft(X, fs, recon_size, hop, two_sided=True, fft_size=None):
     ''' Inverse Short Time Fourier Transform (iSTFT) - Spectral reconstruction
@@ -46,27 +41,28 @@ def istft(X, fs, recon_size, hop, two_sided=True, fft_size=None):
     Input:
         X - set of 1D time-windowed spectra, time x frequency
         fs - sampling frequency (in Hz)
-        recon_size - total length of reconstruction
+        recon_size - Not used
         hop - skip rate between successive windows
         fft_size - number of DFT points
 
     Output:
         x - a 1-D array holding reconstructed time-domain audio signal
     '''
-    x = scipy.zeros(int(recon_size*fs))
-    hopsamp = int(hop*fs)
-    # TODO: do we need to mess with the framewise reconstruction size?
     if two_sided:
         framesamp = X.shape[1]
-        inverse_transform = scipy.ifft
     else:
-        framesamp = (X.shape[1] - 1) * 2
-        inverse_transform = np.fft.fftpack.irfft
-    if fft_size is None:
-        fft_size = framesamp
+        framesamp = 2*(X.shape[1] - 1)
+    hopsamp = int(hop*fs)
+    overlap_samp = framesamp - hopsamp
 
-    for n,i in enumerate(range(0, len(x)-framesamp, hopsamp)):
-        x[i:i+framesamp] += scipy.real(inverse_transform(X[n], n=fft_size))
+
+    _, x = scipy.signal.istft(X.T, fs, window='hann', nperseg=framesamp,
+        nfft=fft_size, noverlap = overlap_samp,
+        input_onesided=not two_sided)
+    if recon_size is not None and recon_size != x.shape[0]:
+        logger = logging.getLogger(__name__)
+        logger.warn("Size of reconstruction ({}) does not match value of "
+        "deprecated recon_size parameter ({}).".format(x.shape[0], recon_size))
     return x
 
 def reconstruct(spec_mag, spec_phase, fs, window_size, step_size):
