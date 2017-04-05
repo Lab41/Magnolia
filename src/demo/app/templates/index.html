@@ -29,7 +29,7 @@
         </script>
 
         <form id = "submit_form" action="/upload" method="post" enctype="multipart/form-data">
-            <label class="btn btn-block btn-success">
+            <label class="btn btn-block btn-success btn-lg">
                 Browse&hellip; <input type="file" style="display: none;" name="file" onchange="wavFileSubmit()">
             </label>
         </form>
@@ -45,13 +45,41 @@
         <img src="/resources/{{input_spec_url}}" alt="spectogram" style="width:300px;height:300px;">
         {% endif %}
 
+        <br></br>
 
-        {% for x in wav_files %}
-        <audio controls>
-          <source src="/resources/{{x}}" type="audio/wav">
-        </audio>  
-        {% endfor %}  
+        <div class="row">
+          <div class="col-lg-3" >  
+            <form action="/" method="post">
+            <input class="btn btn-primary btn-lg" type = "submit" name="btn" value = "Separate"/>
+            </form>
+          </div>  
 
+          <div class="col-lg-3">  
+            <form action="/" method="post">
+            <input class="btn btn-primary btn-lg" type = "submit" name="btn" value = "Tflow_Separate"/>
+            </form>
+          </div>   
+
+          <div class="col-lg-3">  
+            <a class="btn btn-primary btn-lg" role="button">ICA</a>
+          </div>  
+
+          <div class="col-lg-3">
+            <a class="btn btn-primary btn-lg" role="button">PCA</a>
+          </div>    
+        </div>
+
+        <div class="row">
+          {% for x in wav_files %}
+          <div class="col-lg-6">
+            <p>{{x}}</p>
+          <audio controls>
+            <source src="/resources/{{x}}" type="audio/wav">
+          </audio>
+          </div>
+          {% endfor %}  
+        </div>
+        
       </div>
       
       <div class="row marketing">
