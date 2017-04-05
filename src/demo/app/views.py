@@ -32,17 +32,17 @@ def index():
     if(state['input_signal_url'] != None):
         input_signal_filename = os.path.splitext(os.path.basename(state['input_signal_url']))[0]
     
-    if request.method == 'POST' and request.form['btn'] == 'Separate' and state['input_signal_url'] != None :
+    if request.method == 'POST' and request.form['btn'] == 'KNet' and state['input_signal_url'] != None :
         app.logger.info('In the separate')
         #Separate speakers 
-        signals = keras_separate(project_root + state['input_signal_url'],project_root+'/static/overfitted_dnn_mask.h5')
+        signals = keras_separate(project_root + state['input_signal_url'],project_root+'/static/models/overfitted_dnn_mask.h5')
         state['wav_list'][:] = [] 
         for index,speaker in enumerate(signals): 
             sf.write(project_root + '/resources/' + input_signal_filename + 'kerassplit'+str(index)+'.wav',speaker,16000) 
             state['wav_list'].append(input_signal_filename + 'kerassplit'+str(index)+'.wav')
   
 
-    elif request.method == 'POST' and request.form['btn'] == 'Tflow_Separate' and state['input_signal_url'] != None:  
+    elif request.method == 'POST' and request.form['btn'] == 'CNet' and state['input_signal_url'] != None:  
         
         #Separate speakers 
         signals = tflow_separate(project_root + state['input_signal_url'])
@@ -110,7 +110,7 @@ def resources(file_name):
 
 
 def plot_spectogram(f,t,Sxx,file_path):
-    #plt.clf()
+    plt.clf()
     #plt.imshow(np.sqrt(features.T) , origin='lower' ,cmap='bone_r')
     plt.pcolormesh(t, f, Sxx, cmap='bone_r')
     plt.ylabel('Frequency [Hz]')

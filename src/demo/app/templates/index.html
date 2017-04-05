@@ -50,30 +50,30 @@
         <div class="row">
           <div class="col-lg-3" >  
             <form action="/" method="post">
-            <input class="btn btn-primary btn-lg" type = "submit" name="btn" value = "Separate"/>
+            <input class="btn btn-primary btn-lg full-width-elem" type = "submit" name="btn" value = "KNet" style="background-color: #337ab7"/>
             </form>
           </div>  
 
           <div class="col-lg-3">  
             <form action="/" method="post">
-            <input class="btn btn-primary btn-lg" type = "submit" name="btn" value = "Tflow_Separate"/>
+            <input class="btn btn-primary btn-lg full-width-elem" type="submit" name="btn" value = "CNet" style="background-color: #d9534f"/>
             </form>
           </div>   
 
           <div class="col-lg-3">  
-            <a class="btn btn-primary btn-lg" role="button">ICA</a>
+            <a class="btn btn-primary btn-lg full-width-elem" role="button" style="background-color: #5bc0de">ICA</a>
           </div>  
 
           <div class="col-lg-3">
-            <a class="btn btn-primary btn-lg" role="button">PCA</a>
+            <a class="btn btn-primary btn-lg full-width-elem" role="button" style="background-color: #f0ad4e">PCA</a>
           </div>    
         </div>
 
         <div class="row">
           {% for x in wav_files %}
           <div class="col-lg-6">
-            <p>{{x}}</p>
-          <audio controls>
+            <p>Speaker {{ loop.index }}</p>
+          <audio controls class="full-width-elem">
             <source src="/resources/{{x}}" type="audio/wav">
           </audio>
           </div>
@@ -82,8 +82,25 @@
         
       </div>
       
-      <div class="row marketing">
-        <div class="col-lg-6">
+      <div class="row marketing center-elem">
+        <div class="row">
+          <h4 class="col-lg-6" style="color:#337ab7;">KNet</h4> 
+          <h4 class="col-lg-6" style="color:#d9534f">CNet</h4>   
+        </div>
+        <div class="row">
+          <p class="col-lg-6">This is an algorithm that Karl made and its pretty good.Independent component analysis attempts to decompose a multivariate signal into independent non-Gaussian signals. As an example, sound is usually a signal that is composed of the numerical addition, at each time t, of signals from several sources.</p>
+          <p class="col-lg-6">This is an algorithm that Cory made and its pretty good.In machine learning, a convolutional neural network (CNN, or ConvNet) is a type of feed-forward artificial neural network in which the connectivity pattern between its neurons is inspired by the organization of the animal visual cortex.</p>
+        </div>
+        <div class="row">
+          <h4 class="col-lg-6" style="color:#5bc0de;">ICA</h4> 
+          <h4 class="col-lg-6" style="color:#f0ad4e;">PCA</h4>   
+        </div>
+        <div class="row">
+          <p class="col-lg-6">In signal processing, independent component analysis (ICA) is a computational method for separating a multivariate signal into additive subcomponents. This is done by assuming that the subcomponents are non-Gaussian signals and that they are statistically independent from each other.</p>
+          <p class="col-lg-6">Principal component analysis (PCA) is a statistical procedure that uses an orthogonal transformation to convert a set of observations of possibly correlated variables into a set of values of linearly uncorrelated variables called principal components (or sometimes, principal modes of variation).</p>
+        </div>  
+      </div>  
+        <!--<div class="row-lg-6">
           <h4>
             <form action="/" method="post">
             <input class="btn btn-block btn-primary" type = "submit" name="btn" value = "Separate"/>
@@ -96,21 +113,20 @@
 
         </div>
 
-        <div class="col-lg-6">
+        <div class="row-lg-6">
           <h4>
             <form action="/" method="post">
             <input class="btn btn-block btn-primary" type = "submit" name="btn" value = "Tflow_Separate"/>
             </form>
           </h4>
-          <p>This is an algorithm that Cory made and its pretty good.In machine learning, a convolutional neural network (CNN, or ConvNet) is a type of feed-forward artificial neural network in which the connectivity pattern between its neurons is inspired by the organization of the animal visual cortex.</p>
+          <p>This is an algorithm that Cory made and its pretty good.In machine learning, a convolutional neural network (CNN, or ConvNet) is a type of feed-forward artificial neural network in which the connectivity pattern between its neurons is inspired by the organization of the animal visual cortex.Principal component analysis</p>
 
           <h4><a class="btn btn-block btn-primary" role="button">PCA</a></h4>
           <p>Principal component analysis (PCA) is a statistical procedure that uses an orthogonal transformation to convert a set of observations of possibly correlated variables into a set of values of linearly uncorrelated variables called principal components (or sometimes, principal modes of variation).</p>
         </div>
-
+      -->
         
 
-      </div>
 
       <!--
 
