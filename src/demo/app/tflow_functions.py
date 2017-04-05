@@ -20,7 +20,7 @@ def tflow_separate(input_path):
 	wav_list = []
 
 	model = Conv1DModel([None,None,251,1],[None,None,251,2],20,600,50)
-	model.load(app.root_path + '/static/cnn-mask-model.ckpt')
+	model.load(app.root_path + '/static/models/cnn-mask-model.ckpt')
 
 	outputs = separate_sources(input_path,model)
 	for row in outputs:
