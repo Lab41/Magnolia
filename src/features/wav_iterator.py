@@ -5,6 +5,7 @@ and featurize them using stft, then iterate over the results
 
 """
 
+import sys
 import os
 from itertools import islice
 import numpy as np
@@ -12,6 +13,7 @@ import python_speech_features as psf
 from scipy.io import wavfile
 
 from . import spectral_features
+#from . import mixer
 
 def wav_mixer(wav_dir, mix_random=False, num_to_mix=2, sig_length=100*512+1, mask="_src.wav", dtype=np.int16):
     """
@@ -43,7 +45,7 @@ def wav_iterator(wav_dir, **kwargs):
     while True:
         yield wav_mixer(wav_dir, **kwargs)
 
-def batcher(feature_iter, batch_size=256):
+def batcher(feature_iter, batch_size=256, return_key=False):
     '''
     Yield batches from an iterator over examples.
     batch_size examples from feature_iter will be collected from feature_iter
@@ -61,14 +63,34 @@ def batcher(feature_iter, batch_size=256):
         # grouped together
         try:
             batch_transposed = []
-            for dataset in list(zip(*new_batch)):
-                try:
-                    batch_transposed.append(np.array(dataset))
-                except ValueError:
-                    batch_transposed.append(tuple(dataset))
+            data_slice = list(zip(*new_batch))
+
+
+
+            for dataset in data_slice:
+                # Transpose again inside each column if we require the key to be returned
+                if return_key:
+                    dataset = list(zip(*dataset))
+                    dataset = [array_if_you_can(column) for column in dataset]
+                    #yield (tuple([list( zip(*iter_slice ) ) for iter_slice in data_slice]))
+                batch_transposed.append(array_if_you_can(dataset))
+
             yield tuple(batch_transposed)
+
         except ValueError:
             raise StopIteration
+
+def array_if_you_can(data):
+    """
+    Cast to array if possible, tuple as a fallback
+
+    Returns
+        array or tuple, containing values in data
+    """
+    try:
+        return np.array(data)
+    except ValueError:
+        return tuple(data)
 
 def test_batcher():
     # Basic functionality: transpose for non-array-like data; cast to array when possible
