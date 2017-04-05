@@ -18,7 +18,7 @@ def stft(x, fs, framesz, hop, two_sided=True, fft_size=None):
         hop - skip length (in seconds)
         two_sided - return full spectrogram if True
             or just positive frequencies if False
-        fft_size - length (in seconds) of DFT window
+        fft_size - number of DFT points
 
     Output:
         X = 2d array time-frequency repr of x, time x frequency
@@ -29,8 +29,7 @@ def stft(x, fs, framesz, hop, two_sided=True, fft_size=None):
     # set size of FFT window
     if fft_size is None:
         fft_size = framesamp
-    else:
-        fft_size = int(fft_size * fs)
+
     w = scipy.hanning(framesamp)
     if two_sided:
         X = scipy.array([scipy.fft(w*x[i:i+framesamp], n=fft_size)
@@ -41,7 +40,7 @@ def stft(x, fs, framesz, hop, two_sided=True, fft_size=None):
 
     return X
 
-def istft(X, fs, recon_size, hop, two_sided=True):
+def istft(X, fs, recon_size, hop, two_sided=True, fft_size=None):
     ''' Inverse Short Time Fourier Transform (iSTFT) - Spectral reconstruction
 
     Input:
@@ -49,6 +48,7 @@ def istft(X, fs, recon_size, hop, two_sided=True):
         fs - sampling frequency (in Hz)
         recon_size - total length of reconstruction
         hop - skip rate between successive windows
+        fft_size - number of DFT points
 
     Output:
         x - a 1-D array holding reconstructed time-domain audio signal
@@ -62,9 +62,11 @@ def istft(X, fs, recon_size, hop, two_sided=True):
     else:
         framesamp = (X.shape[1] - 1) * 2
         inverse_transform = np.fft.fftpack.irfft
+    if fft_size is None:
+        fft_size = framesamp
 
     for n,i in enumerate(range(0, len(x)-framesamp, hopsamp)):
-        x[i:i+framesamp] += scipy.real(inverse_transform(X[n]))
+        x[i:i+framesamp] += scipy.real(inverse_transform(X[n], n=fft_size))
     return x
 
 def reconstruct(spec_mag, spec_phase, fs, window_size, step_size):
