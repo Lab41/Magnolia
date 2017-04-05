@@ -77,3 +77,34 @@ def reconstruct(spec_mag, spec_phase, fs, window_size, step_size):
                  duration,
                  step_size,
                  two_sided=False)
+
+if __name__=="__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    # from scipy.signal import spectrogram
+    np.set_printoptions(precision=3,suppress=True)
+
+    # Try wrapper functions
+    try:
+        sig = np.array([0,1,0.5,0.1]*10)
+        sig_stft = stft(sig, 1, 8, 4, two_sided=False)
+        print(sig_stft)
+        print(sig_stft.shape)
+        sig_recon = istft(sig_stft, 1, 47, 4, two_sided=False)
+        print(sig_recon)
+        print(sig_recon.shape)
+    except:
+        print("Trouble 1")
+        print(sys.exc_info())
+        raise
+
+    # Cf. scipy.signal
+    try:
+        sig = np.array([0,1,0.5,0.1]*10)
+        _, _, sig_stft = scipy.signal.stft(sig, 1, 'hann', 8, 4, return_onesided=True)
+        print(sig_stft)
+        _, sig_recon = scipy.signal.istft(sig_stft, 1, 'hann', 8, 4, input_onesided=True)
+        print(sig_recon)
+    except:
+        print("Trouble 2")
+        print(sys.exc_info())
+        raise
