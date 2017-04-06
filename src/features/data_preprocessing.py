@@ -40,6 +40,34 @@ def undo_preemphasis(preemphasized_signal,coeff=0.95):
 
     return signal
 
+def undo_preemphasis(preemphasized_signal,coeff=0.95):
+    """
+    Function to undo the preemphasis of an input signal. The preemphasised
+    signal p is computed from the signal s by the relation
+                    p(n) = s(n) - coeff*s(n-1)
+    with p(0) = s(0).  The inverse operation constructs the signal from the
+    preemphasized signal with the recursion relation
+                    s(n) = p(n) + coeff*s(n-1)
+    Inputs:
+        preemphasized_signal:  numpy array containing preemphasised signal
+        coeff:   coefficient used to compute the preemphasized signal
+    Returns:
+        signal: numpy array containing the signal without preemphasis
+    """
+
+    # Get the length of the input and preallocate the output array
+    length = preemphasized_signal.shape[0]
+    signal = np.zeros(length)
+
+    # Set the initial element of the signal
+    signal[0] = preemphasized_signal[0]
+
+    # Use the recursion relation to compute the output signal
+    for i in range(1,length):
+        signal[i] = preemphasized_signal[i] + coeff*signal[i-1]
+
+    return signal
+
 def make_stft_features(signal, sample_rate,
                        output_sample_rate=1e4,
                        window_size=0.05, overlap=0.025,
@@ -47,7 +75,6 @@ def make_stft_features(signal, sample_rate,
     '''
     Function to take in a signal, resample it to output_sample_rate,
     normalize it, and compute the magnitude spectrogram.
-
     Inputs:
         signal: 1D numpy array containing signal to featurize (np.ndarray)
         sample_rate: sampling rate of signal (int)
@@ -87,7 +114,6 @@ def make_stft_dataset(data_dir, key_level, file_type, output_file,
     Function to walk through a data directory data_dir and compute the stft
     features for each file of type file_type.  The computed features are
     then stored in an hdf5 file with name output_file
-
     Inputs:
         data_dir: directory containing data (possibly in subdirs) (str)
         key_level: Use folders at this depth as keys in the hdf5 file (int)

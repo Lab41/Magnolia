@@ -8,6 +8,7 @@ from .cnn_models import Conv1DModel
 
 from features.spectral_features import stft, istft
 from features.data_preprocessing import make_stft_features
+from features.data_preprocessing import undo_preemphasis
 
 def featurize_spectrogram(spectrogram):
     """
@@ -19,10 +20,12 @@ def featurize_spectrogram(spectrogram):
     phases = np.unwrap(np.angle(spectrogram))
 
     # Normalize the magnitude spectrogram
-    normalization = X_input.max() - X_input.min()
-    X_input = X_input/normalization
+    X_input = np.sqrt(X_input)
+    X_max = X_input.max()
+    X_min = X_input.min()
+    X_input = (X_input - X_min)/(X_max - X_min)
 
-    return X_input, phases, normalization
+    return X_input, phases, X_max, X_min
 
 def separate_sources(signal_path, model,
                      sample_rate=1e4, window_size=0.05, overlap=0.025):
@@ -47,13 +50,17 @@ def separate_sources(signal_path, model,
                                      sample_rate, window_size, overlap)
 
     # Get model inputs
-    X_input, phases, normalization = featurize_spectrogram(spectrogram)
+    X_input, phases, X_max, X_min = featurize_spectrogram(spectrogram)
 
     # Reshape the input to the form the model expects
     X_input = np.reshape(X_input, (1,X_input.shape[0],X_input.shape[1],1))
 
     # Get the model output for this input
     y_output = model.predict(X_input)
+
+    # Undo the normalization
+    y_output = y_output*(X_max - X_min) + X_min
+    y_output = np.square(y_output)
 
     # Process these outputs back into waveforms
     duration = 1/2*(spectrogram.shape[0] + 1)*window_size
@@ -63,6 +70,8 @@ def separate_sources(signal_path, model,
         complex_spectrogram = y_output[0,:,:,i]*np.exp(phases*1.0j)
         waveform = istft(complex_spectrogram,
                          sample_rate, duration, overlap, two_sided=False)
+        waveform = undo_preemphasis(waveform)
+        waveform = (waveform - waveform.mean())/waveform.std()
         source_list.append(waveform)
 
     sources = np.stack(source_list)

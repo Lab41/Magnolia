@@ -61,8 +61,8 @@ body {
 .full-width-elem{
   width: 100%;
 }
-.center-elem{
-  text-align: center;
+.justify-elem{
+  text-align: justify;
 }
 
 /* Responsive: Portrait tablets and up */
