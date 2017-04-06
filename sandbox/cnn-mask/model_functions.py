@@ -28,7 +28,8 @@ def featurize_spectrogram(spectrogram):
     return X_input, phases, X_max, X_min
 
 def separate_sources(signal_path, model,
-                     sample_rate=1e4, window_size=0.05, overlap=0.025):
+                     sample_rate=1e4, window_size=0.05, overlap=0.025,
+                     fft_size=500):
     """
     Reads in the signal from signal_path and uses the model to separate it into
     component sources.
@@ -50,7 +51,8 @@ def separate_sources(signal_path, model,
 
     # Get complex spectrogram
     spectrogram = make_stft_features(signal, rate,
-                                     sample_rate, window_size, overlap)
+                                     sample_rate, window_size, overlap,
+                                     fft_size)
 
     # Get model inputs
     X_input, phases, X_max, X_min = featurize_spectrogram(spectrogram)
@@ -66,13 +68,14 @@ def separate_sources(signal_path, model,
     y_output = np.square(y_output)
 
     # Process these outputs back into waveforms
-    duration = 1/2*(spectrogram.shape[0] + 1)*window_size
     source_list = []
 
     for i in range(y_output.shape[3]):
         complex_spectrogram = y_output[0,:,:,i]*np.exp(phases*1.0j)
         waveform = istft(complex_spectrogram,
-                         sample_rate, duration, overlap, two_sided=False)
+                         sample_rate, None, overlap, two_sided=False,
+                         fft_size=500)
+
         waveform = undo_preemphasis(waveform)
         waveform = (waveform - waveform.mean())/waveform.std()
         source_list.append(waveform)
