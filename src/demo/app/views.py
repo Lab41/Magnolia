@@ -48,7 +48,7 @@ def index():
         signals = tflow_separate(project_root + state['input_signal_url'])
         state['wav_list'][:] = [] 
         for index,speaker in enumerate(signals): 
-            sf.write(project_root + '/resources/' + input_signal_filename + 'tflowsplit'+str(index)+'.wav',speaker,10000) 
+            sf.write(project_root + '/resources/' + input_signal_filename + 'tflowsplit'+str(index)+'.wav',speaker/speaker.max(),10000) 
             state['wav_list'].append(input_signal_filename + 'tflowsplit'+str(index)+'.wav')
   
 
