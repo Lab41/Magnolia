@@ -55,6 +55,7 @@ def make_stft_features(signal, sample_rate,
         window_size: length of stft window in seconds (float)
         overlap: amount of overlap for stft windows (float)
         preemphasis: preemphasis coefficient (float)
+        fft_size: length (in seconds) of DFT window (float)
 
     Returns:
         spectrogram: 2D numpy array with (Time, Frequency) components of
@@ -96,6 +97,7 @@ def make_stft_dataset(data_dir, key_level, file_type, output_file,
         overlap: Amount of window overlap in seconds (float)
         preemphasis_coeff: preemphasis coefficient (float)
         track: Track number to use for signals with multiple tracks (int)
+        fft_size: length (in seconds) of DFT window (float)
     '''
 
     # Open output file for writing
@@ -140,4 +142,3 @@ def make_stft_dataset(data_dir, key_level, file_type, output_file,
                                                   data=spectrogram,
                                                   compression="gzip",
                                                   compression_opts=0)
-

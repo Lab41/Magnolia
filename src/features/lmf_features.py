@@ -77,7 +77,6 @@ class LmfIterator:
         # if there are other dimensions
         if spec_dim > 2:
             new_shape = [*range(2,spec_dim), 0, 1]
-            print(new_shape)
             spectrogram = np.transpose(spectrogram, new_shape)
         # freely adapted from python_speech_features logfbank
         fb = psf.get_filterbanks(self.num_filters,
