@@ -71,7 +71,7 @@ def make_stft_features(signal, sample_rate,
     # Normalize the downsampled signal
     normalized = (preemphasised - preemphasised.mean())/preemphasised.std()
 
-    # Get the magnitude spectrogram
+    # Get the spectrogram
     spectrogram = stft(normalized,output_sample_rate,
                        window_size,overlap,two_sided=False, fft_size=fft_size)
 
@@ -80,7 +80,7 @@ def make_stft_features(signal, sample_rate,
 def make_stft_dataset(data_dir, key_level, file_type, output_file,
                       output_sample_rate=1e4,
                       window_size=0.0512, overlap=0.0256,
-                      preemphasis_coeff=0.95, fft_size=fft_size,
+                      preemphasis_coeff=0.95, fft_size=512,
                       track=None):
     '''
     Function to walk through a data directory data_dir and compute the stft
