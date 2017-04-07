@@ -7,8 +7,8 @@ import h5py
 import numpy as np
 import soundfile as sf
 from scipy.signal import resample_poly
-from features.spectral_features import stft, istft
 from python_speech_features.sigproc import preemphasis
+from .spectral_features import stft, istft
 
 def undo_preemphasis(preemphasized_signal,coeff=0.95):
     """
