@@ -4,10 +4,13 @@ Functions for featurizing audio using spectral analysis, as well as for
 reconstructing time-domain audio signals from spectral features
 '''
 
+import sys
+import logging
 import numpy as np
 import scipy
+import scipy.signal
 
-def stft(x, fs, framesz, hop, two_sided=True):
+def stft(x, fs, framesz, hop, two_sided=True, fft_size=None):
     '''
     Short Time Fourier Transform (STFT) - Spectral decomposition
 
@@ -18,45 +21,48 @@ def stft(x, fs, framesz, hop, two_sided=True):
         hop - skip length (in seconds)
         two_sided - return full spectrogram if True
             or just positive frequencies if False
+        fft_size - number of DFT points
 
     Output:
         X = 2d array time-frequency repr of x, time x frequency
     '''
+
     framesamp = int(framesz*fs)
     hopsamp = int(hop*fs)
-    w = scipy.hanning(framesamp)
-    if two_sided:
-        X = scipy.array([scipy.fft(w*x[i:i+framesamp])
-                     for i in range(0, len(x)-framesamp, hopsamp)])
-    else:
-        X = scipy.array([np.fft.fftpack.rfft(w*x[i:i+framesamp])
-             for i in range(0, len(x)-framesamp, hopsamp)])
+    overlap_samp = framesamp - hopsamp
 
-    return X
+    _, _, X = scipy.signal.stft(x, fs, window='hann', nperseg=framesamp,
+        noverlap=overlap_samp, nfft=fft_size, return_onesided=not two_sided)
+    return X.T
 
-def istft(X, fs, recon_size, hop, two_sided=True):
+def istft(X, fs, recon_size, hop, two_sided=True, fft_size=None):
     ''' Inverse Short Time Fourier Transform (iSTFT) - Spectral reconstruction
 
     Input:
         X - set of 1D time-windowed spectra, time x frequency
         fs - sampling frequency (in Hz)
-        recon_size - total length of reconstruction willing to be performed
-        hop - skip rate
+        recon_size - Not used
+        hop - skip rate between successive windows
+        fft_size - number of DFT points
 
     Output:
         x - a 1-D array holding reconstructed time-domain audio signal
     '''
-    x = scipy.zeros(int(recon_size*fs))
-    hopsamp = int(hop*fs)
     if two_sided:
         framesamp = X.shape[1]
-        inverse_transform = scipy.ifft
     else:
-        framesamp = (X.shape[1] - 1) * 2
-        inverse_transform = np.fft.fftpack.irfft
+        framesamp = 2*(X.shape[1] - 1)
+    hopsamp = int(hop*fs)
+    overlap_samp = framesamp - hopsamp
 
-    for n,i in enumerate(range(0, len(x)-framesamp, hopsamp)):
-        x[i:i+framesamp] += scipy.real(inverse_transform(X[n]))
+
+    _, x = scipy.signal.istft(X.T, fs, window='hann', nperseg=framesamp,
+        nfft=fft_size, noverlap = overlap_samp,
+        input_onesided=not two_sided)
+    if recon_size is not None and recon_size != x.shape[0]:
+        logger = logging.getLogger(__name__)
+        logger.warn("Size of reconstruction ({}) does not match value of "
+        "deprecated recon_size parameter ({}).".format(x.shape[0], recon_size))
     return x
 
 def reconstruct(spec_mag, spec_phase, fs, window_size, step_size):
@@ -71,3 +77,48 @@ def reconstruct(spec_mag, spec_phase, fs, window_size, step_size):
                  duration,
                  step_size,
                  two_sided=False)
+
+if __name__=="__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    # from scipy.signal import spectrogram
+    np.set_printoptions(precision=3,suppress=True)
+
+    # Try wrapper functions
+    try:
+        sig = np.array([0,1,0.5,0.1]*10)
+        sig_stft = stft(sig, 1, 8, 4, two_sided=False)
+        print(sig_stft)
+        print(sig_stft.shape)
+        sig_recon = istft(sig_stft, 1, 47, 4, two_sided=False)
+        print(sig_recon)
+        print(sig_recon.shape)
+    except:
+        print("Trouble 1")
+        print(sys.exc_info())
+        raise
+
+    # Cf. scipy.signal
+    try:
+        sig = np.array([0,1,0.5,0.1]*10)
+        _, _, sig_stft = scipy.signal.stft(sig, 1, 'hann', 8, 4, return_onesided=True)
+        print(sig_stft)
+        _, sig_recon = scipy.signal.istft(sig_stft, 1, 'hann', 8, 4, input_onesided=True)
+        print(sig_recon)
+    except:
+        print("Trouble 2")
+        print(sys.exc_info())
+        raise
+
+    # Try fft_size
+    try:
+        sig = np.array([0,1,0.5,0.1]*10)
+        sig_stft = stft(sig, 1, 8, 4, two_sided=False, fft_size=16)
+        print(sig_stft)
+        print(sig_stft.shape)
+        sig_recon = istft(sig_stft, 1, None, 4, two_sided=False, fft_size=16)
+        print(sig_recon)
+        print(sig_recon.shape)
+    except:
+        print("Trouble 3")
+        print(sys.exc_info())
+        raise
