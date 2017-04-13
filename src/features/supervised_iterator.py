@@ -7,14 +7,16 @@ from src.features.wav_iterator import batcher
 class SupervisedIterator(Hdf5Iterator):
     
     def __init__(self, *args, **kwargs):
+
+        kwargs['return_key']=True
         super(SupervisedIterator,self).__init__(*args, **kwargs)
-        
+       
         self.labels = [ flac.split('/')[0] for flac in self.h5_groups ]
         self.labels.sort()
         self.labeldict = {}
         for i,l in enumerate(self.labels):
             self.labeldict[ l ] = i
-    
+
     def make_random_embedding( self, hidden_units, num_labels=None ):
         ''' 
         Create a matrix that is of size hidden_units (the embedding
@@ -38,7 +40,8 @@ class SupervisedMixer(FeatureMixer):
         '''
         Currently only get_batch works; actual iteration does not.
         '''
-        
+
+        kwargs['return_key']=True
         super(SupervisedMixer, self).__init__(*args, **kwargs, Iterator=SupervisedIterator)
         
         # Aggregate all the labels
@@ -70,7 +73,7 @@ class SupervisedMixer(FeatureMixer):
         else:
             return np.random.randn( hidden_units, len(self.all_labels) )
         
-    def get_batch(self, num_samples, out_TF = -1, Y = None):
+    def get_batch(self, num_samples, out_TF = -1, Y = None, repeat_labels=True):
 
         '''
         Inputs:
@@ -111,6 +114,9 @@ class SupervisedMixer(FeatureMixer):
             I += [self.label2dict(X[0])]
 
         I = np.array(I).T
+
+        # Change all the 0's to -1's
+        Y = (Y-1)+Y
 
         return batch[0], Y, I
         

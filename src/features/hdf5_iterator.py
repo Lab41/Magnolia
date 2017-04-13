@@ -67,7 +67,10 @@ class Hdf5Iterator:
         logger = logging.getLogger(__name__)
         num_tries = 5
         for i in range(num_tries):
-            next_key = self.rng.choice(self.h5_items)
+            if not p:
+                next_key = self.rng.choice(self.h5_items)
+            else:
+                next_key = self.rng.choice(self.h5_items, p=p)
             next_item = self.h5[next_key]
             logger.debug("next_item.shape: {}".format(next_item.shape))
             # Ensure that Nones in self.shape
