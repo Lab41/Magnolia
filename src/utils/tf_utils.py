@@ -97,7 +97,9 @@ def BLSTM(x, size, scope, nonlinearity='logistic'):
         x: Tensor of shape (batch size, time steps, features)
         size: Even integer size of BLSTM layer
         scope: String that sets the variable scope.
-
+        nonlinearity: String specifying activation to use in the RNNs.
+                      options include 'logistic' for sigmoid activation and
+                      'tanh' for tanh activation.
     Returns:
         Tensor of shape (batch_size, time steps, size) corresponding to the
         output of the BLSTM for each batch at every time step
