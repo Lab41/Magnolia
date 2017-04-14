@@ -80,7 +80,7 @@ def conv1d(x, W):
 def conv1d_layer(x, shape):
     """
     Create a 1D convolutional layer with inputs x and filters defined to have
-    shape equal to the input shape list.  Weight variables are initialized with 
+    shape equal to the input shape list.  Weight variables are initialized with
     standard deviations set to account for the fan in.
     """
     fan_in = tf.sqrt(2/(shape[1] + shape[2]))
@@ -88,3 +88,38 @@ def conv1d_layer(x, shape):
     biases = bias_variable([shape[-1]])
 
     return conv1d(x, weights) + biases
+
+def BLSTM(x, size, scope):
+    """
+    Bidirectional LSTM layer with input vector x and size hidden units.
+
+    Inputs:
+        x: Tensor of shape (batch size, time steps, features)
+        size: Even integer size of BLSTM layer
+        scope: String that sets the variable scope.
+
+    Returns:
+        Tensor of shape (batch_size, time steps, size) corresponding to the
+        output of the BLSTM for each batch at every time step
+    """
+
+    # Get the forward input and reverse it for the backwards input
+    forward_input = x
+    backward_input = tf.reverse(x, [1])
+
+    # Define forward RNN
+    with tf.variable_scope('forward_' + scope):
+        forward_lstm = tf.contrib.rnn.BasicLSTMCell(size//2)
+        forward_out, f_state = tf.nn.dynamic_rnn(forward_lstm, forward_input,
+                                                 dtype=tf.float32)
+
+    # Define the backward RNN
+    with tf.variable_scope('backward_' + scope):
+        backward_lstm = tf.contrib.rnn.BasicLSTMCell(size//2)
+        backward_out, b_state = tf.nn.dynamic_rnn(backward_lstm, backward_input,
+                                                  dtype=tf.float32)
+
+    # Concatenate the RNN outputs and return
+    output = tf.concat([forward_out[:,:,:], backward_out[:,::-1,:]], 2)
+
+    return output
