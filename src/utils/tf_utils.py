@@ -60,8 +60,8 @@ def conv2d(x, W):
 
 def conv2d_layer(x, shape):
     """
-    Create a 2D convolutional layer with inputs x and filters defined to have shape
-    equal to the input shape list.  Weight variables are initialized with
+    Create a 2D convolutional layer with inputs x and filters defined to have
+    shape equal to the input shape list.  Weight variables are initialized with
     standard deviations set to account for the fan in.
     """
     fan_in = tf.sqrt(2/(shape[2] + shape[3]))
@@ -89,7 +89,7 @@ def conv1d_layer(x, shape):
 
     return conv1d(x, weights) + biases
 
-def BLSTM(x, size, scope):
+def BLSTM(x, size, scope, nonlinearity='logistic'):
     """
     Bidirectional LSTM layer with input vector x and size hidden units.
 
@@ -109,13 +109,25 @@ def BLSTM(x, size, scope):
 
     # Define forward RNN
     with tf.variable_scope('forward_' + scope):
-        forward_lstm = tf.contrib.rnn.BasicLSTMCell(size//2)
+        if nonlinearity == 'logistic':
+            forward_lstm = tf.contrib.rnn.BasicLSTMCell(size//2,
+                                                        activation=tf.sigmoid)
+        elif nonlinearity == 'tanh':
+            forward_lstm = tf.contrib.rnn.BasicLSTMCell(size//2,
+                                                        activation=tf.tanh)
+
         forward_out, f_state = tf.nn.dynamic_rnn(forward_lstm, forward_input,
                                                  dtype=tf.float32)
 
     # Define the backward RNN
     with tf.variable_scope('backward_' + scope):
-        backward_lstm = tf.contrib.rnn.BasicLSTMCell(size//2)
+        if nonlinearity == 'logistic':
+            backward_lstm = tf.contrib.rnn.BasicLSTMCell(size//2,
+                                                         activation=tf.sigmoid)
+        elif nonlinearity == 'tanh':
+            backward_lstm = tf.contrib.rnn.BasicLSTMCell(size//2,
+                                                         activation=tf.tanh)
+
         backward_out, b_state = tf.nn.dynamic_rnn(backward_lstm, backward_input,
                                                   dtype=tf.float32)
 
