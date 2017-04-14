@@ -1,38 +1,166 @@
 <html>
   <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Bootstrap core CSS -->
+    <link href="../static/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="../static/css/jumbotron-narrow.css" rel="stylesheet">
+
     <title>{{ title }} - microblog</title>
   </head>
   
-  <h1>Upload new File</h1>
-    <form action="/upload" method="post" enctype="multipart/form-data">
-      <p><input type="file" name="file">
-         <input type="submit" name="btn" value="Upload">
-    </form>
+  <body>
+    <div class="container">
 
-  {% if input_sound is not none %}
-  <audio controls>
-  	<source src="{{input_sound}}" type="audio/wav">
-  </audio>
-  {% endif %}
+      <div class="jumbotron">
+        <h1>Magnolia</h1>
+        <p class="lead">Blind signal separation (BSS), also known as blind source separation, is the separation of a set of source signals from a set of mixed signals, without the aid of information (or with very little information) about the source signals or the mixing process.</p>
+        <script>
+          function wavFileSubmit(){
+            document.getElementById("submit_form").submit();
+          }
+        </script>
 
-  {% if input_spec_url is not none %}
-  <img src="/resources/{{input_spec_url}}" alt="spectogram" style="width:600px;height:200px;">
-  {% endif %}
+        <form id = "submit_form" action="/upload" method="post" enctype="multipart/form-data">
+            <label class="btn btn-block btn-success btn-lg">
+                Browse&hellip; <input type="file" style="display: none;" name="file" onchange="wavFileSubmit()">
+            </label>
+        </form>
 
-  <form action="/" method="post">
-  <input type = "submit" name="btn" value = "Separate" />
-  </form>
+        {% if input_sound is not none %}
+          <audio controls>
+          <source src="{{input_sound}}" type="audio/wav">
+        </audio>
+        {% endif %}
+        <p> </p>
 
-  <form action="/" method="post">
-  <input type = "submit" name="btn" value = "Tflow_Separate" />
-  </form>
+        {% if input_spec_url is not none %}
+        <img src="/resources/{{input_spec_url}}" alt="spectogram" style="width:300px;height:300px;">
+        {% endif %}
 
-  
-  {% for x in wav_files %}
-  <audio controls>
-  	<source src="/resources/{{x}}" type="audio/wav">
-  </audio>
-  	
-  {% endfor %}
+        <br></br>
 
+        <div class="row">
+          <div class="col-lg-3" >  
+            <form action="/" method="post">
+            <input class="btn btn-primary btn-lg full-width-elem" type = "submit" name="btn" value = "KNet" style="background-color: #337ab7"/>
+            </form>
+          </div>  
+
+          <div class="col-lg-3">  
+            <form action="/" method="post">
+            <input class="btn btn-primary btn-lg full-width-elem" type="submit" name="btn" value = "CNet" style="background-color: #d9534f"/>
+            </form>
+          </div>   
+
+          <div class="col-lg-3">  
+            <a class="btn btn-primary btn-lg full-width-elem" role="button" style="background-color: #5bc0de">ICA</a>
+          </div>  
+
+          <div class="col-lg-3">
+            <a class="btn btn-primary btn-lg full-width-elem" role="button" style="background-color: #f0ad4e">PCA</a>
+          </div>    
+        </div>
+
+        <div class="row">
+          {% for x in wav_files %}
+          <div class="col-lg-6">
+            <p>Speaker {{ loop.index }}</p>
+          <audio controls class="full-width-elem">
+            <source src="/resources/{{x}}" type="audio/wav">
+          </audio>
+          </div>
+          {% endfor %}  
+        </div>
+        
+      </div>
+      
+      <div class="row marketing justify-elem">
+        <div class="row">
+          <h4 class="col-lg-6" style="color:#337ab7;">KNet</h4> 
+          <h4 class="col-lg-6" style="color:#d9534f">CNet</h4>   
+        </div>
+        <div class="row">
+          <p class="col-lg-6">This is an algorithm that Karl made and its pretty good.Independent component analysis attempts to decompose a multivariate signal into independent non-Gaussian signals. As an example, sound is usually a signal that is composed of the numerical addition, at each time t, of signals from several sources.</p>
+          <p class="col-lg-6">This is an algorithm that Cory made and its pretty good.In machine learning, a convolutional neural network (CNN, or ConvNet) is a type of feed-forward artificial neural network in which the connectivity pattern between its neurons is inspired by the organization of the animal visual cortex.</p>
+        </div>
+        <div class="row">
+          <h4 class="col-lg-6" style="color:#5bc0de;">ICA</h4> 
+          <h4 class="col-lg-6" style="color:#f0ad4e;">PCA</h4>   
+        </div>
+        <div class="row">
+          <p class="col-lg-6">In signal processing, independent component analysis (ICA) is a computational method for separating a multivariate signal into additive subcomponents. This is done by assuming that the subcomponents are non-Gaussian signals and that they are statistically independent from each other.</p>
+          <p class="col-lg-6">Principal component analysis (PCA) is a statistical procedure that uses an orthogonal transformation to convert a set of observations of possibly correlated variables into a set of values of linearly uncorrelated variables called principal components (or sometimes, principal modes of variation).</p>
+        </div>  
+      </div>  
+        <!--<div class="row-lg-6">
+          <h4>
+            <form action="/" method="post">
+            <input class="btn btn-block btn-primary" type = "submit" name="btn" value = "Separate"/>
+            </form>
+          </h4>
+          <p>This is an algorithm that Karl made and its pretty good.Independent component analysis attempts to decompose a multivariate signal into independent non-Gaussian signals. As an example, sound is usually a signal that is composed of the numerical addition, at each time t, of signals from several sources.</p>
+
+          <h4><a class="btn btn-block btn-primary" role="button">ICA</a></h4>
+          <p>In signal processing, independent component analysis (ICA) is a computational method for separating a multivariate signal into additive subcomponents. This is done by assuming that the subcomponents are non-Gaussian signals and that they are statistically independent from each other.</p>
+
+        </div>
+
+        <div class="row-lg-6">
+          <h4>
+            <form action="/" method="post">
+            <input class="btn btn-block btn-primary" type = "submit" name="btn" value = "Tflow_Separate"/>
+            </form>
+          </h4>
+          <p>This is an algorithm that Cory made and its pretty good.In machine learning, a convolutional neural network (CNN, or ConvNet) is a type of feed-forward artificial neural network in which the connectivity pattern between its neurons is inspired by the organization of the animal visual cortex.Principal component analysis</p>
+
+          <h4><a class="btn btn-block btn-primary" role="button">PCA</a></h4>
+          <p>Principal component analysis (PCA) is a statistical procedure that uses an orthogonal transformation to convert a set of observations of possibly correlated variables into a set of values of linearly uncorrelated variables called principal components (or sometimes, principal modes of variation).</p>
+        </div>
+      -->
+        
+
+
+      <!--
+
+      <h1>Upload new File</h1>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+          <p><input type="file" name="file">
+            <input type="submit" name="btn" value="Upload">
+        </form>
+
+      {% if input_sound is not none %}
+      <audio controls>
+      	<source src="{{input_sound}}" type="audio/wav">
+      </audio>
+      {% endif %}
+
+      {% if input_spec_url is not none %}
+        <img src="/resources/{{input_spec_url}}" alt="spectogram" style="width:600px;height:600px;">
+      {% endif %}
+
+      <form action="/" method="post">
+      <input type = "submit" name="btn" value = "Separate" />
+      </form>
+
+      <form action="/" method="post">
+      <input type = "submit" name="btn" value = "Tflow_Separate" />
+      </form>
+
+      
+      {% for x in wav_files %}
+      <audio controls>
+      	<source src="/resources/{{x}}" type="audio/wav">
+      </audio>	
+      {% endfor %}   -->
+
+    </div> <!-- /container -->
+  </body>
 </html>

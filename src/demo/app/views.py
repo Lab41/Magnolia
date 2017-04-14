@@ -32,22 +32,23 @@ def index():
     if(state['input_signal_url'] != None):
         input_signal_filename = os.path.splitext(os.path.basename(state['input_signal_url']))[0]
     
-    if request.method == 'POST' and request.form['btn'] == 'Separate' and state['input_signal_url'] != None :
+    if request.method == 'POST' and request.form['btn'] == 'KNet' and state['input_signal_url'] != None :
+        app.logger.info('In the separate')
         #Separate speakers 
-        signals = keras_separate(project_root + state['input_signal_url'],project_root+'/static/overfitted_dnn_mask.h5')
+        signals = keras_separate(project_root + state['input_signal_url'],project_root+'/static/models/overfitted_dnn_mask.h5')
         state['wav_list'][:] = [] 
         for index,speaker in enumerate(signals): 
             sf.write(project_root + '/resources/' + input_signal_filename + 'kerassplit'+str(index)+'.wav',speaker,16000) 
             state['wav_list'].append(input_signal_filename + 'kerassplit'+str(index)+'.wav')
   
 
-    elif request.method == 'POST' and request.form['btn'] == 'Tflow_Separate' and state['input_signal_url'] != None:  
+    elif request.method == 'POST' and request.form['btn'] == 'CNet' and state['input_signal_url'] != None:  
         
         #Separate speakers 
         signals = tflow_separate(project_root + state['input_signal_url'])
         state['wav_list'][:] = [] 
         for index,speaker in enumerate(signals): 
-            sf.write(project_root + '/resources/' + input_signal_filename + 'tflowsplit'+str(index)+'.wav',speaker,10000) 
+            sf.write(project_root + '/resources/' + input_signal_filename + 'tflowsplit'+str(index)+'.wav',speaker/speaker.max(),10000) 
             state['wav_list'].append(input_signal_filename + 'tflowsplit'+str(index)+'.wav')
   
 
@@ -84,8 +85,13 @@ def upload():
 
         #Plot spectogram with uploaded input file
         input_signal_filename = os.path.splitext(os.path.basename(state['input_signal_url']))[0] 
-        features = keras_spec(project_root + state['input_signal_url'])
-        plot_spectogram(features,project_root + '/resources/spec_'+ input_signal_filename + '.png')
+
+        #features = keras_spec(project_root + state['input_signal_url'])
+        f,t,Sxx = keras_spec(project_root + state['input_signal_url'])
+
+        #plot_spectogram(features,project_root + '/resources/spec_'+ input_signal_filename + '.png')
+        plot_spectogram(f,t,Sxx,project_root + '/resources/spec_'+ input_signal_filename + '.png')
+
         state['spec_file'] = 'spec_' + input_signal_filename + '.png'
 
 
@@ -103,9 +109,12 @@ def resources(file_name):
     return send_file(project_root + '/resources/'+ file_name)
 
 
-def plot_spectogram(features,file_path):
+def plot_spectogram(f,t,Sxx,file_path):
     plt.clf()
-    plt.imshow(np.sqrt(features.T) , origin='lower' ,cmap='bone_r')
+    #plt.imshow(np.sqrt(features.T) , origin='lower' ,cmap='bone_r')
+    plt.pcolormesh(t, f, Sxx, cmap='bone_r')
+    plt.ylabel('Frequency [Hz]')
+    plt.xlabel('Time [sec]')
     plt.savefig(file_path)
 
 
