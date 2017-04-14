@@ -74,7 +74,8 @@ class Conv1DModel:
         logits = conv1d_layer(flat_vectors,
                               [1,self.F*self.embedding_size,2*self.F])
         logits = tf.reshape(logits, [shape[0],shape[1],self.F,2])
-        mask = tf.nn.sigmoid(logits)
+
+        mask = tf.nn.softmax(logits)
 
         # Multiply the mask times the input to generate the prediction
         prediction = tf.mul(mask,self.X_input)
@@ -89,16 +90,12 @@ class Conv1DModel:
         # Get the logits from the network
         logits, _, _ = self.network
 
-        # Shape the network output and target values for use in computing the
-        # sigmoid cross entropy
-        shape = tf.shape(logits)
-        flat_logits = tf.reshape(logits,
-                                 [shape[0]*shape[1]*shape[2],shape[3]])
-        flat_labels = tf.reshape(self.y_input,
-                                 [shape[0]*shape[1]*shape[2],shape[3]])
+        # Compute the cross entropy cost on the mask
+        cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                                        labels=self.y_input,
+                                        logits=logits)
 
-        cost = tf.contrib.losses.sigmoid_cross_entropy(logits=flat_logits,
-                                               multi_class_labels=flat_labels)
+        cost = tf.reduce_mean(cross_entropy)
 
         return cost
 
