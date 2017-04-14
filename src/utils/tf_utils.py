@@ -1,5 +1,5 @@
 """
-Contains some utilities for creating convolutional networks in tensorflow
+Contains some utilities for creating models in tensorflow
 """
 
 import functools
