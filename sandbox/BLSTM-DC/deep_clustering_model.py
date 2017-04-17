@@ -104,7 +104,7 @@ class DeepClusteringModel:
 
         # Reshape the targets to be of shape (batch, T*F, c) and the vectors to
         # have shape (batch, T*F, K)
-        Y = tf.reshape(y, [shape[0], shape[1]*shape[2], shape[3]])
+        Y = tf.reshape(self.y, [shape[0], shape[1]*shape[2], shape[3]])
         V = tf.reshape(self.network,
                        [shape[0], shape[1]*shape[2], self.embedding_size])
 
