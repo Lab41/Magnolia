@@ -115,8 +115,11 @@ class SupervisedMixer(FeatureMixer):
 
         I = []
         for i, X in enumerate(batch[1:]):
-            Y[:,i,:] = 1  # Initially pass everything through the mask
 
+            # Initially, the mask is all 1
+            Y[:,i,:] = 1  
+
+            # Mask calculation. This is a bottleneck.
             if type(out_TF) == int:
                 Xsub = abs( X[1][:,out_TF] )
                 for Xcomp in batch[1:]:
