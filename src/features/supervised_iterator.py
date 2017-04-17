@@ -78,6 +78,7 @@ class SupervisedMixer(FeatureMixer):
         elif type(out_TF)==np.ndarray:
             TF = len(out_TF)*data_shape[-1]
         else: # type(out_TF) == None
+            out_TF = np.array( range(data_shape[-2]) )
             TF = np.prod( data_shape[-2:] )
 
         return np.random.randn( hidden_units, num_labels, TF )
@@ -111,32 +112,26 @@ class SupervisedMixer(FeatureMixer):
                 TF = len(out_TF)*data_shape[-1]
             else: # type(out_TF) == None    
                 TF = np.prod( data_shape[-2:] )
-            Y = np.zeros((data_shape[0],len(batch)-1, TF))
+            Y = np.ones((data_shape[0],len(batch)-1, TF), dtype=bool)
 
         I = []
-        for i, X in enumerate(batch[1:]):
+
+        absbatch = [ abs( X[1][:,out_TF]).reshape( *data_shape[:-2], TF ) for X in batch[1:] ]
+
+        for i, X in enumerate(absbatch):
 
             # Initially, the mask is all 1
-            Y[:,i,:] = 1  
+            # Y[:,i,:] = 1  
 
             # Mask calculation. This is a bottleneck.
-            if type(out_TF) == int:
-                Xsub = abs( X[1][:,out_TF] )
-                for Xcomp in batch[1:]:
-                    Y[:,i,:] *= abs(Xsub) >= abs(Xcomp[1][:, out_TF]) # No reshaping
-            elif type(out_TF) == np.ndarray:
-                Xsub = abs( X[1][:,out_TF].reshape( *data_shape[:-2],TF ) )
-                for Xcomp in batch[1:]:
-                    Y[:,i,:] *= abs(Xsub) >= abs(Xcomp[1][:, out_TF]).reshape( *data_shape[:-2],TF )
-            else:
-                Xsub = abs( X[1] )
-                for Xcomp in batch[1:]:
-                    Y[:,i,:] *= ( abs(Xsub) >= abs(Xcomp[1]) ).reshape( *data_shape[:-2],TF )
-            I += [self.label2dict(X[0])]
+            for Xcomp in absbatch:
+                Y[:,i,:] *= ( X >= Xcomp )
+            I += [self.label2dict(batch[i+1][0])]
 
         I = np.array(I).T
 
         # Change all the 0's to -1's
+        Y = Y.astype(np.float)
         Y = (Y-1)+Y
 
         return batch[0], Y, I
