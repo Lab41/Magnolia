@@ -135,7 +135,7 @@ class DeepClusteringModel:
         return tf.reduce_mean(cost)
 
     @tf_utils.scope_decorator
-    def optimizer(self)
+    def optimizer(self):
         """
         Constructs the optimizer op used to train the network
         """
