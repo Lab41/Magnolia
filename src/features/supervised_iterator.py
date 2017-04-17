@@ -117,19 +117,13 @@ class SupervisedMixer(FeatureMixer):
         I = []
 
         absbatch = [ abs( X[1][:,out_TF]).reshape( *data_shape[:-2], TF ) for X in batch[1:] ]
-
         for i, X in enumerate(absbatch):
-
-            # Initially, the mask is all 1
-            # Y[:,i,:] = 1  
-
             # Mask calculation. This is a bottleneck.
             for Xcomp in absbatch:
                 Y[:,i,:] *= ( X >= Xcomp )
             I += [self.label2dict(batch[i+1][0])]
 
         I = np.array(I).T
-
         # Change all the 0's to -1's
         Y = Y.astype(np.float)
         Y = (Y-1)+Y
