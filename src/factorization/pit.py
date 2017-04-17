@@ -227,8 +227,20 @@ def training_loop(model, source_a, source_b, features, references, sess,
     return losses
 
 if __name__=="__main__":
-    src1, src2 = sys.argv[1:]
+    try:
+        src1, src2, num_batches = sys.argv[1:]
+        num_batches = int(num_batches)
+    except:
+        print("Usage: pit src1 src2 num_batches\n"
+            "\tsrc1, src2: paths to hdf5 files of TF signals to mix\n"
+            "\tnum_batches: number of training iterations to run", file=sys.stderr)
+        sys.exit(-1)
     model, features, references, sess = training_setup(2, 51, 257)
-    training_loop(model, src1, src2, features, references, sess, 51, 257, 64, 100)
-    saver = tf.train.Saver([model])
-    saver.save(sess, './pit_trained')
+    losses = training_loop(model, src1, src2, features, references, sess, 51, 257, 64, num_batches)
+    saver = tf.train.Saver()
+    checkpoint_path = saver.save(sess, './pit_trained.ckpt')
+    print("Model saved at {checkpoint_path}".format(checkpoint_path=checkpoint_path))
+    with open("pit_losses.txt", "w") as f:
+        for loss in losses:
+            print(loss, file=f)
+    print("Losses saved at 'pit_losses.txt'")
