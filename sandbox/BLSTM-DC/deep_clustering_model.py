@@ -161,7 +161,7 @@ class DeepClusteringModel:
         """
 
         cost, _ = self.sess.run([self.cost, self.optimizer],
-                                {X: X_train, y: y_train})
+                                {self.X: X_train, self.y: y_train})
 
         return cost
 
@@ -170,14 +170,14 @@ class DeepClusteringModel:
         Compute the embedding vectors for the input spectrograms
         """
 
-        vectors = self.sess.run(self.network, {X: X_in})
+        vectors = self.sess.run(self.network, {self.X: X_in})
         return vectors
 
     def get_cost(self, X_in, y_in):
         """
         Computes the cost of a batch, but does not update any model parameters.
         """
-        cost = self.sess.run(self.cost, {X: X_in, y: y_in})
+        cost = self.sess.run(self.cost, {self.X: X_in, self.y: y_in})
         return cost
 
 def preprocess_signal(signal, sample_rate):
