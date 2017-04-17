@@ -8,8 +8,8 @@ from magnolia.features.data_preprocessing import make_stft_features
 from magnolia.utils import tf_utils
 
 class DeepClusteringModel:
-    def __init__(self, F = 257,
-                 layer_size = 600, embedding_size = 40,
+    def __init__(self, F=257,
+                 layer_size=600, embedding_size=40,
                  nonlinearity='logistic'):
         """
         Initializes the deep clustering model from [1].  Defaults correspond to
@@ -232,6 +232,7 @@ def get_cluster_masks(vectors, num_sources):
         masks[i,label] = 1
 
     masks = masks.reshape((shape[1], shape[2], num_sources))
+
     return masks
 
 def deep_clustering_separate(signal, sample_rate, model, num_sources):
