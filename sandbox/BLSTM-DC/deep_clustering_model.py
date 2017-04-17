@@ -140,7 +140,7 @@ class DeepClusteringModel:
         Constructs the optimizer op used to train the network
         """
         opt = tf.train.AdamOptimizer()
-        return opt.minimize(cost)
+        return opt.minimize(self.cost)
 
     def save(self, path):
         """
