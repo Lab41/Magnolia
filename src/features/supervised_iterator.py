@@ -63,26 +63,36 @@ class SupervisedMixer(FeatureMixer):
             return [ self.labeldict[l.split('/')[0]] for l in lookup] 
         return self.labeldict[lookup]
         
-    def make_random_embedding( self, hidden_units, num_labels=None ):
+    def make_random_embedding( self, hidden_units, out_TF=-1, num_labels=None ):
         ''' 
         Create a matrix that is of size hidden_units (the embedding
         size) x number_labels
         '''
-        if num_labels:
-            return np.random.randn( hidden_units, num_labels )
-        else:
-            return np.random.randn( hidden_units, len(self.all_labels) )
+        if not num_labels:
+            num_labels = len(self.all_labels)
+
+        data_shape = self.get_batch(1)[0].shape
+
+        if type(out_TF)==int:
+            TF = data_shape[-1]
+        elif type(out_TF)==np.ndarray:
+            TF = len(out_TF)*data_shape[-1]
+        else: # type(out_TF) == None
+            TF = np.prod( data_shape[-2:] )
+
+        return np.random.randn( hidden_units, num_labels, TF )
         
     def get_batch(self, num_samples, out_TF = -1, Y = None, repeat_labels=True):
 
         '''
         Inputs:
             out_TF - the indices of which time bins (all freqs) to use. 
-                     Default = None.
-                     -1 = last index of the spectrum
+                     None       - the entire TF spectrum
+                     -1         - last index of the spectrum
+                     indices    - (e.g., np.array( [ 5,6,7] ) )
             mask -  Current mask for data purposes. If not set (it should be!), 
                     will initialize to zeros
-            Y - output labels of size NumSpkrs x BatchSize x TimeFreq, where Y 
+            Y - output labels of size BatchSize NumSpkrs x TimeFreq, where Y 
                 is +1 if it's the max, -1 if not, and 0 if not referenced
         
         Returns:
@@ -96,7 +106,8 @@ class SupervisedMixer(FeatureMixer):
             data_shape = batch[0].shape
             if type(out_TF)==int:
                 TF = data_shape[-1]
-            elif type(out_TF)==np.ndarray:
+            elif type(out_TF)==np.ndarray or type(out_TF) == list:
+                out_TF = np.array(out_TF)
                 TF = len(out_TF)*data_shape[-1]
             else: # type(out_TF) == None    
                 TF = np.prod( data_shape[-2:] )
@@ -104,13 +115,20 @@ class SupervisedMixer(FeatureMixer):
 
         I = []
         for i, X in enumerate(batch[1:]):
-            if type(out_TF) == int or type(out_TF) == np.ndarray:
-                Xsub = abs( X[1][:, out_TF] )
-                Y[:,i,:] = 1
+            Y[:,i,:] = 1  # Initially pass everything through the mask
+
+            if type(out_TF) == int:
+                Xsub = abs( X[1][:,out_TF] )
                 for Xcomp in batch[1:]:
-                    Y[:,i,:] *= abs(Xsub) >= abs(Xcomp[1][:, out_TF])
+                    Y[:,i,:] *= abs(Xsub) >= abs(Xcomp[1][:, out_TF]) # No reshaping
+            elif type(out_TF) == np.ndarray:
+                Xsub = abs( X[1][:,out_TF].reshape( *data_shape[:-2],TF ) )
+                for Xcomp in batch[1:]:
+                    Y[:,i,:] *= abs(Xsub) >= abs(Xcomp[1][:, out_TF]).reshape( *data_shape[:-2],TF )
             else:
                 Xsub = abs( X[1] )
+                for Xcomp in batch[1:]:
+                    Y[:,i,:] *= ( abs(Xsub) >= abs(Xcomp[1]) ).reshape( *data_shape[:-2],TF )
             I += [self.label2dict(X[0])]
 
         I = np.array(I).T
