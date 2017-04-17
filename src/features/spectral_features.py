@@ -71,3 +71,13 @@ def reconstruct(spec_mag, spec_phase, fs, window_size, step_size):
                  duration,
                  step_size,
                  two_sided=False)
+
+def scale_spectrogram(spectrogram):
+    mag_spec = np.abs(spectrogram)
+    phases = np.unwrap(np.angle(spectrogram))
+
+    mag_spec = np.sqrt(mag_spec)
+    M = mag_spec.max()
+    m = mag_spec.min()
+
+    return (mag_spec - m)/(M - m), phases
