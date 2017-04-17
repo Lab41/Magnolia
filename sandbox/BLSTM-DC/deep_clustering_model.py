@@ -76,7 +76,7 @@ class DeepClusteringModel:
                                  nonlinearity=self.nonlinearity)
 
         # BLSTM layer two
-        BLSTM_1 = tf.utils.BLSTM(BLSTM_1, self.layer_size, 'two',
+        BLSTM_1 = tf_utils.BLSTM(BLSTM_1, self.layer_size, 'two',
                                  nonlinearity=self.nonlinearity)
 
         # Feedforward layer
