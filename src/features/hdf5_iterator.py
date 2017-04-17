@@ -11,7 +11,7 @@ import h5py
 import numpy as np
 
 class Hdf5Iterator:
-    def __init__(self, hdf5_path, shape=None, pos=None, seed=41):
+    def __init__(self, hdf5_path, shape=None, pos=None, seed=41, return_key=False):
         '''
         Args:
             hdf5_path (str): path to HDF5 file
@@ -36,6 +36,7 @@ class Hdf5Iterator:
         for group in self.h5_groups:
             self.h5_items += [ group + '/' + item for item in self.h5[group] ]
         self.rng = np.random.RandomState(seed)
+        self.return_key=return_key
 
         # Handle unspecified dimensionality for shape and pos
         if shape is None and pos is None:
@@ -66,7 +67,8 @@ class Hdf5Iterator:
         logger = logging.getLogger(__name__)
         num_tries = 5
         for i in range(num_tries):
-            next_item = self.h5[self.rng.choice(self.h5_items)]
+            next_key = self.rng.choice(self.h5_items)
+            next_item = self.h5[next_key]
             logger.debug("next_item.shape: {}".format(next_item.shape))
             # Ensure that Nones in self.shape
             # will yield the maximum size on the given dimension
@@ -102,15 +104,40 @@ class Hdf5Iterator:
             assert output_slice.shape[:len(shape)] == tuple(shape), "Result shape {} does not match " \
                     "target shape {}".format(output_slice.shape, shape)
             logger.debug("Returning.")
+            if self.return_key:
+                output_slice = (next_key, output_slice)
             return output_slice
         raise ValueError("Failed to find a slice. Slice size too big?")
 
     def __iter__(self):
         return self
 
-def mock_hdf5(hdf5_path="._test.h5"):
+    def get_batch(self, batchsize=32):
+
+        if self.return_key:
+            truth = []
+
+        if self.shape[-1]:
+            data = np.zeros( (batchsize,)+ self.shape ) + 0j
+        else:
+            raise ValueError("Getting a batch from HDF5 file requires shape to be specified")
+
+        for i in range(batchsize):
+            tupledata = next(self)
+
+            if self.return_key:
+                truth += [tupledata[0]]
+            data[i] = tupledata[1]
+
+        if self.return_key:
+            data = (truth, data)
+
+        return data
+
+
+def mock_hdf5(hdf5_path="._test.h5", scale=1):
     # make small test hdf5 object
-    datasets = np.random.randn(5, 10, 15, 20)
+    datasets = np.random.randn(5*scale, 10*scale, 15*scale, 20*scale)
     with h5py.File('._test.h5', mode='w') as f:
         key_names = list('abcde')
         for i, k in enumerate(key_names):
@@ -119,6 +146,7 @@ def mock_hdf5(hdf5_path="._test.h5"):
                 grp.create_dataset(str(j), data=dataset)
 
 if __name__ == "__main__":
+    import timeit
     logging.basicConfig(level=logging.WARNING)
 
     mock_hdf5()
@@ -184,8 +212,24 @@ if __name__ == "__main__":
         fail_test = False
     assert not fail_test
 
-    # Loop through infinite examples
-    h = Hdf5Iterator('._test.h5', (2, 5))
-    a = next(h)
-    for a in h:
-        print(a)
+    # Test batching with metadata
+    # Use larger mock-up
+    del h; mock_hdf5(scale = 10)
+    h2 = zip(*[Hdf5Iterator('._test.h5', (1,20), return_key=True, seed=41) for i in range(6)])
+    # Timing
+    nbatches = 10
+    batchsize = 2048
+    # Time batcher
+    from magnolia.features.wav_iterator import batcher
+    b = batcher(h2, batchsize, return_key=True)
+    times = timeit.timeit(lambda: type(next(b)), number=nbatches)
+    print("batcher")
+    print("In {} batches of {}, avg {:0.2f} secs per batch".format(nbatches, batchsize, times/nbatches))
+    c = next(b)
+    print(type(c))
+    print([type(x) for x in c])
+    print([len(x) for x in c])
+    print("Data type:", [type(x[1]) for x in c])
+    print(c[0][0])
+    print(c[0][1][0:5])
+    print("Done")
