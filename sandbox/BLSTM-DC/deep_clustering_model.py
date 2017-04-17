@@ -3,10 +3,11 @@ import tensorflow as tf
 
 from sklearn.cluster import KMeans
 
-from magnolia.features.spectral_features import stft, istft
+from magnolia.features.spectral_features import istft
+from magnolia.features.data_preprocessing import make_stft_features
 from magnolia.utils import tf_utils
 
-class DeepClusterModel:
+class DeepClusteringModel:
     def __init__(self, F = 257,
                  layer_size = 600, embedding_size = 40,
                  nonlinearity='logistic'):
@@ -178,3 +179,95 @@ class DeepClusterModel:
         """
         cost = self.sess.run(self.cost, {X: X_in, y: y_in})
         return cost
+
+def preprocess_signal(signal, sample_rate):
+    """
+    Preprocess a signal for input into  DeepClusteringModel
+
+    Inputs:
+        signal: Numpy 1D array containing waveform to process
+        sample_rate: Sampling rate of the input signal
+
+    Returns:
+        spectrogram: STFT of the signal after resampling to 10kHz and adding
+                 preemphasis.
+        X_in: Scaled STFT input feature for DeepClusteringModel
+    """
+
+    # Compute the spectrogram of the signal
+    spectrogram = make_stft_features(signal, sample_rate)
+
+    # Get the magnitude spectrogram
+    mag_spec = np.abs(spectrogram)
+
+    # Scale the magnitude spectrogram with a square root squashing, and percent
+    # normalization
+    X_in = np.sqrt(mag_spec)
+    m = X_in.min()
+    M = X_in.max()
+    X_in = (X_in - m)/(M - m)
+
+    return spectrogram, X_in
+
+def get_cluster_masks(vectors, num_sources):
+    """
+    Cluster the vectors using k-means with k=num_sources.  Use the cluster IDs
+    to create num_sources T-F masks.
+    """
+
+    # Get the shape of the input
+    shape = np.shape(vectors)
+
+    # Do k-means clustering
+    kmeans = KMeans(n_clusters=num_sources, random_state=0)
+    kmeans.fit(vectors[0].reshape((shape[1]*shape[2],shape[3])))
+
+    # Preallocate mask array
+    masks = np.zeros((shape[1]*shape[2], num_sources))
+
+    # Use cluster IDs to construct masks
+    labels = kmeans.labels_
+    for i in range(labels):
+        label = labels[i]
+        masks[i,label] = 1
+
+    masks = masks.reshape((shape[1], shape[2], num_sources))
+    return masks
+
+def deep_clustering_separate(signal, sample_rate, model, num_sources):
+    """
+    Takes in a signal and an instance of DeepClusterModel and returns the
+    specified number of output sources.
+
+    Inputs:
+        signal: Numpy 1D array containing waveform to separate.
+        sample_rate: Sampling rate of the input signal
+        model: Instance of DeepClusterModel to use to separate the signal
+        num_sources: Integer number of sources to separate into
+
+    Returns:
+        sources: Numpy ndarray of shape (num_sources, signal_length)
+    """
+
+    # Preprocess the signal into an input feature
+    spectrogram, X_in = preprocess_signal(signal, sample_rate)
+
+    # Reshape the input feature into the shape the model expects and compute
+    # the embedding vectors
+    X_in = np.reshape(X_in, (1, X_in.shape[0], X_in.shape[1]))
+    vectors = model.get_vectors(X_in)
+
+    # Run k-means clustering on the vectors with k=num_sources to recover the
+    # signal masks
+    masks = get_cluster_masks(vectors, num_sources)
+
+    # Apply the masks from the clustering to the input signal
+    masked_specs = [masks[:,:,i]*spectrogram for i in range(num_sources)]
+
+    # Invert the STFT to recover the output waveforms
+    waveforms = [istft(masked_specs[i], 1e4, None, 0.0256, two_sided=False,
+                       fft_size=512) for i in range(num_sources)]
+
+    sources = np.stack(waveforms)
+
+    return sources
