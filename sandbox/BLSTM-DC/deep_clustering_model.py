@@ -4,7 +4,8 @@ import tensorflow as tf
 from sklearn.cluster import KMeans
 
 from magnolia.features.spectral_features import istft
-from magnolia.features.data_preprocessing import make_stft_features
+from magnolia.features.data_preprocessing import make_stft_features, \
+                                                 undo_preemphasis
 from magnolia.utils import tf_utils
 
 class DeepClusteringModel:
@@ -265,9 +266,14 @@ def deep_clustering_separate(signal, sample_rate, model, num_sources):
     # Apply the masks from the clustering to the input signal
     masked_specs = [masks[:,:,i]*spectrogram for i in range(num_sources)]
 
-    # Invert the STFT to recover the output waveforms
-    waveforms = [istft(masked_specs[i], 1e4, None, 0.0256, two_sided=False,
-                       fft_size=512) for i in range(num_sources)]
+    # Invert the STFT to recover the output waveforms, remembering to undo the
+    # preemphasis
+    waveforms = []
+    for i in range(num_sources):
+        waveform = istft(masked_specs[i], 1e4, None, 0.0256, two_sided=False,
+                         fft_size=512)
+        unemphasized = undo_preemphasis(waveform)
+        waveforms.append(unemphasized)
 
     sources = np.stack(waveforms)
 
