@@ -13,7 +13,7 @@ from magnolia.features.data_preprocessing import make_stft_features, \
 
 def preprocess_signal(signal, sample_rate):
     """
-    Preprocess a signal for input into  DeepClusteringModel
+    Preprocess a signal for input into a model
 
     Inputs:
         signal: Numpy 1D array containing waveform to process
@@ -22,7 +22,7 @@ def preprocess_signal(signal, sample_rate):
     Returns:
         spectrogram: STFT of the signal after resampling to 10kHz and adding
                  preemphasis.
-        X_in: Scaled STFT input feature for DeepClusteringModel
+        X_in: Scaled STFT input feature for the model
     """
 
     # Compute the spectrogram of the signal
