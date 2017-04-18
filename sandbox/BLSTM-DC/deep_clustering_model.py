@@ -1,11 +1,6 @@
 import numpy as np
 import tensorflow as tf
 
-from sklearn.cluster import KMeans
-
-from magnolia.features.spectral_features import istft
-from magnolia.features.data_preprocessing import make_stft_features, \
-                                                 undo_preemphasis
 from magnolia.utils import tf_utils
 
 class DeepClusteringModel:
