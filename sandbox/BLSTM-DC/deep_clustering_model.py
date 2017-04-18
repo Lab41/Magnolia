@@ -227,7 +227,7 @@ def get_cluster_masks(vectors, num_sources):
 
     # Use cluster IDs to construct masks
     labels = kmeans.labels_
-    for i in range(labels):
+    for i in range(labels.shape[0]):
         label = labels[i]
         masks[i,label] = 1
 
