@@ -17,7 +17,7 @@ def scope_decorator(function):
     @functools.wraps(function)
     def decorator(self):
         if not hasattr(self,attribute):
-            with tf.device("/cpu:0"):
+            with tf.device("/gpu:0"):
                 with tf.variable_scope(name):
                     setattr(self,attribute,function(self))
         return getattr(self,attribute)
