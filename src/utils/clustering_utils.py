@@ -40,6 +40,30 @@ def preprocess_signal(signal, sample_rate):
 
     return spectrogram, X_in
 
+def get_vectors(signal, sample_rate, model):
+    """
+    Compute the T-F embedding vectors for a signal using the specified model.
+
+    Inputs:
+        signal: Numpy 1D array containing waveform to process
+        sample_rate: Sampling rate of the input signal
+        model: Instance of model to use to separate the signal
+
+    Returns:
+        vectors: Numpy array of shape (Timeslices, Frequency, Embedding)
+    """
+
+    # Preprocess the signal into an input feature
+    spectrogram, X_in = preprocess_signal(signal, sample_rate)
+
+    # Reshape the input feature into the shape the model expects and compute
+    # the embedding vectors
+    X_in = np.reshape(X_in, (1, X_in.shape[0], X_in.shape[1]))
+    vectors = model.get_vectors(X_in)
+
+    return vectors
+
+
 def get_cluster_masks(vectors, num_sources):
     """
     Cluster the vectors using k-means with k=num_sources.  Use the cluster IDs
