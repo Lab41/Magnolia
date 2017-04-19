@@ -147,7 +147,9 @@ class SpeakerIterator(Hdf5Iterator):
             speaker_keys = [speaker_keys]
         super(SpeakerIterator,self).__init__(*args, **kwargs)
         self.h5_groups = speaker_keys
-        self.h5_items = [ speaker_key + '/' + item for item in self.h5[speaker_key] ]
+        self.h5_items = []
+        for speaker_key in self.h5_groups:
+            self.h5_items += [ speaker_key + '/' + item for item in self.h5[speaker_key] ]
 
 def mock_hdf5(hdf5_path="._test.h5", scale=1):
     # make small test hdf5 object
