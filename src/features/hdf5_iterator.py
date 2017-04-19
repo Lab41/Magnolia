@@ -11,7 +11,8 @@ import h5py
 import numpy as np
 
 class Hdf5Iterator:
-    def __init__(self, hdf5_path, shape=None, pos=None, seed=41, return_key=False):
+    def __init__(self, hdf5_path, shape=None, pos=None, 
+                 seed=41, speaker_keys=None, return_key=False):
         '''
         Args:
             hdf5_path (str): path to HDF5 file
@@ -31,7 +32,11 @@ class Hdf5Iterator:
         '''
         self.hdf5_path = hdf5_path
         self.h5 = h5py.File(hdf5_path, 'r')
-        self.h5_groups = [key for key in self.h5]
+        self.h5_groups = []
+        if speaker_keys:
+            self.h5_groups = self.h5_groups.append( speaker_keys )
+        else:
+            self.h5_groups = [key for key in self.h5]
         self.h5_items = []
         for group in self.h5_groups:
             self.h5_items += [ group + '/' + item for item in self.h5[group] ]
@@ -133,23 +138,6 @@ class Hdf5Iterator:
             data = (truth, data)
 
         return data
-
-class SpeakerIterator(Hdf5Iterator):
-    def __init__(self, speaker_keys, *args, **kwargs):
-        '''
-        Iterates only over records from file at hdf5_path (see Hdf5Iterator)
-        with a first-level key in speaker_keys
-
-        Args:
-            speaker_keys (list or str): the keys that we want to iterate over
-        '''
-        if isinstance(speaker_keys, str):
-            speaker_keys = [speaker_keys]
-        super(SpeakerIterator,self).__init__(*args, **kwargs)
-        self.h5_groups = speaker_keys
-        self.h5_items = []
-        for speaker_key in self.h5_groups:
-            self.h5_items += [ speaker_key + '/' + item for item in self.h5[speaker_key] ]
 
 def mock_hdf5(hdf5_path="._test.h5", scale=1):
     # make small test hdf5 object
