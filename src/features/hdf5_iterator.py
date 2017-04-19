@@ -135,15 +135,19 @@ class Hdf5Iterator:
         return data
 
 class SpeakerIterator(Hdf5Iterator):
-    def __init__(self, speaker_key, *args, **kwargs):
+    def __init__(self, speaker_keys, *args, **kwargs):
         '''
         Iterates only over records from file at hdf5_path (see Hdf5Iterator)
-        with the first-level key speaker_key
-        '''
-        super(SpeakerIterator,self).__init__(*args, **kwargs)
-        self.h5_groups = [speaker_key]
-        self.h5_items = [ speaker_key + '/' + item for item in self.h5[speaker_key] ]
+        with a first-level key in speaker_keys
 
+        Args:
+            speaker_keys (list or str): the keys that we want to iterate over
+        '''
+        if isinstance(speaker_keys, str):
+            speaker_keys = [speaker_keys]
+        super(SpeakerIterator,self).__init__(*args, **kwargs)
+        self.h5_groups = speaker_keys
+        self.h5_items = [ speaker_key + '/' + item for item in self.h5[speaker_key] ]
 
 def mock_hdf5(hdf5_path="._test.h5", scale=1):
     # make small test hdf5 object
