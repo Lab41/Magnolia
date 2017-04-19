@@ -35,7 +35,7 @@ class DeepClusteringModel:
             self.X = tf.placeholder("float", [None, None, self.F])
 
             # Placeholder tensor for the labels/targets
-            self.y = tf.placeholder("float", [None, None, self.F, 2])
+            self.y = tf.placeholder("float", [None, None, self.F, None])
 
             # Model methods
             self.network
