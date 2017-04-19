@@ -39,6 +39,13 @@ def snmf(X, k, sparsity=0.1, num_iters=100, W=None, H=None, W_init=None, H_init=
 
     http://www.ee.columbia.edu/~grindlay/code.html
 
+    To train dictionaries, send in data from individual speakers on X and
+    collect the W matrices returned.
+    To do inference on mixtures, concatenate the appropriate speaker dictionaries
+    and send them in on W, with mixture data on X. The separated components
+    will be in the products W[:, i:j] @ H[i:j, :], where i and j index the components
+    in the concatenated dictionary corresponding to a particular speaker.
+
     Args:
         X (np.ndarray): 2-D n-by-m array to decompose
         k (int): number of components to use
