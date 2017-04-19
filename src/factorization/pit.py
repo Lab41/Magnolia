@@ -189,6 +189,50 @@ class PITModel:
         x = tf.nn.bidirectional_dynamic_rnn()
         return self.mask_ops(x, x)
 
+    def separate(self, mixture, sess=None):
+        '''
+        Perform separation on TF mixtures of arbitrary length
+
+        Args:
+            mixture: *one* input example (no support for batches right now),
+                will be separated
+            sess: tensorflow session
+        '''
+
+        window_length = self.num_steps
+        step_length = self.num_steps // 2
+        mix_length = mixture.shape[0]
+        spec_dtype = np.float32
+        features = tf.placeholder(tf.float32, (None, self.num_steps, self.num_freq_bins))
+        if sess is None:
+            sess = tf.get_default_session()
+
+        # Length of step must evenly divide into mixture length-window length
+        length_to_pad = (mix_length - window_length) % step_length
+        zeros_to_pad = np.zeros((length_to_pad, self.num_freq_bins))
+        mixture = np.concatenate((mixture, zeros_to_pad), axis=0)
+
+        # Window out input mixture, fill in reconstruction
+        output_spectrograms = np.zeros((self.num_srcs, *mixture.shape), dtype=spec_dtype)
+        window = np.hanning(window_length)
+        for win_start in range(0, mix_length-window_length, step_length):
+            win_end = win_start + window_length
+            mix_slice = np.array(mixture[win_start:win_end])
+            mix_slice = mix_slice.reshape(1, self.num_steps, self.num_freq_bins)
+            # get spectrograms
+            output_slice = sess.run(self.predict, { features: mix_slice })
+            # window output for each source and add to output
+            for src_id in range(self.num_srcs):
+                output_spectrograms[src_id, win_start:win_end] += \
+                    output_slice[0, src_id] * window
+
+        #TODO: take care of head and tail of reconstruction (not overlapped properly
+        return output_spectrograms
+
+
+
+
+
 def training_setup(num_srcs, num_steps, num_freq_bins):
     tf.reset_default_graph()
 
