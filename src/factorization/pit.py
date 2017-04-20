@@ -12,12 +12,12 @@ from ..features.spectral_features import scale_spectrogram
 from ..utils.tf_bits import scope
 
 class PITModel:
-    def __init__(self, X_in, y_in, method='pit-s-cnn', num_srcs=2, num_steps=50, num_freq_bins=513):
-        self.X_in = X_in
-        self.y_in = y_in
+    def __init__(self, method='pit-s-cnn', num_srcs=2, num_steps=50, num_freq_bins=513):
         self.num_steps = num_steps
         self.num_freq_bins = num_freq_bins
         self.num_srcs = num_srcs
+        self.X_in = tf.placeholder(tf.float32, (None, num_steps, num_freq_bins))
+        self.y_in = tf.placeholder(tf.float32, (None, num_srcs, num_steps, num_freq_bins))
 
         if method=='pit-s-cnn':
             self.network = self.cnn_mask
@@ -201,51 +201,71 @@ class PITModel:
 
         window_length = self.num_steps
         step_length = self.num_steps // 2
-        mix_length = mixture.shape[0]
+        # where window_length is odd, operations involving
+        # step_length on one side need step_length+1 on the other
+        step_length_complement = step_length+window_length%2
+        orig_mix_length = mixture.shape[0]
         spec_dtype = np.float32
-        features = tf.placeholder(tf.float32, (None, self.num_steps, self.num_freq_bins))
+
         if sess is None:
             sess = tf.get_default_session()
 
         # Length of step must evenly divide into mixture length-window length
-        length_to_pad = (mix_length - window_length) % step_length
+        length_to_pad = step_length - (orig_mix_length - window_length) % step_length
         zeros_to_pad = np.zeros((length_to_pad, self.num_freq_bins))
         mixture = np.concatenate((mixture, zeros_to_pad), axis=0)
+        mix_length = orig_mix_length + length_to_pad
+        print(mix_length)
 
         # Window out input mixture, fill in reconstruction
         output_spectrograms = np.zeros((self.num_srcs, *mixture.shape), dtype=spec_dtype)
-        window = np.hanning(window_length)
-        for win_start in range(0, mix_length-window_length, step_length):
+        window = np.bartlett(window_length)
+        window_starts = range(0, mix_length-window_length+1, step_length)
+
+        for win_start in window_starts:
             win_end = win_start + window_length
-            mix_slice = np.array(mixture[win_start:win_end])
+            mix_slice = np.array(mixture[win_start:win_end], dtype=np.float32)
             mix_slice = mix_slice.reshape(1, self.num_steps, self.num_freq_bins)
             # get spectrograms
-            output_slice = sess.run(self.predict, { features: mix_slice })
+            output_slice = sess.run(self.predict, {self.X_in: mix_slice})
             # window output for each source and add to output
             for src_id in range(self.num_srcs):
                 output_spectrograms[src_id, win_start:win_end] += \
-                    output_slice[0, src_id] * window
+                    (output_slice[0, src_id].T * window).T
 
-        #TODO: take care of head and tail of reconstruction (not overlapped properly
-        return output_spectrograms
+        #TODO: take care of head and tail of reconstruction (not overlapped properly)
+        mix_head = np.concatenate((
+            np.zeros((step_length_complement, self.num_freq_bins),
+            dtype=mixture.dtype),
+            mixture[:step_length]), axis=0)
+        mix_tail = np.concatenate((
+            mixture[:step_length],
+            np.zeros((step_length_complement, self.num_freq_bins),
+            dtype=mixture.dtype)), axis=0)
+        output_head = sess.run(self.predict,
+            {self.X_in: np.expand_dims(mix_head,0)})
+        output_tail = sess.run(self.predict,
+            {self.X_in: np.expand_dims(mix_tail,0)})
+        for src_id in range(self.num_srcs):
+            # add reconstruction of head to output
+            output_spectrograms[src_id, :step_length] += \
+                (output_head[0, src_id, step_length_complement:].T
+                * window[step_length_complement:]).T
 
 
-
+        return output_spectrograms[:, :orig_mix_length]
 
 
 def training_setup(num_srcs, num_steps, num_freq_bins):
     tf.reset_default_graph()
 
-    features = tf.placeholder(tf.float32, (None, num_steps, num_freq_bins))
-    references = tf.placeholder(tf.float32, (None, 2, num_steps, num_freq_bins))
-
-    model = PITModel(features, references, 'pit-s-dnn', num_srcs, num_steps, num_freq_bins)
+    model = PITModel('pit-s-dnn', num_srcs, num_steps, num_freq_bins)
     sess = tf.Session()
     sess.run(tf.global_variables_initializer())
 
     return model, features, references, sess
 
-def training_loop(model, source_a, source_b, features, references, sess,
+def training_loop(model, source_a, source_b, sess,
                   num_steps=51, num_freq_bins=257, batch_size=128, num_batches=10000):
     losses = []
     num_srcs = 2
@@ -260,8 +280,8 @@ def training_loop(model, source_a, source_b, features, references, sess,
         batch_ref2_norm, batch_ref2_norm_phase = scale_spectrogram(batch_ref2)
         batch_features_norm, batch_features_norm_phase = scale_spectrogram(batch_features)
         data = {
-            features: batch_features_norm,
-            references: np.stack((batch_ref1_norm, batch_ref2_norm), axis=1)
+            model.X_in: batch_features_norm,
+            model.y_in: np.stack((batch_ref1_norm, batch_ref2_norm), axis=1)
             }
         sess.run(model.optimize, feed_dict=data)
         loss = sess.run(model.loss, feed_dict=data)
