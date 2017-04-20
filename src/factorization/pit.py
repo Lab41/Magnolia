@@ -75,7 +75,7 @@ class PITModel:
         print(permuted_losses)
         cost = tf.reduce_min(permuted_losses,axis=1)
         print(cost)
-        cost = tf.reduce_sum(cost)
+        cost = tf.reduce_mean(cost)
         print(cost)
         return cost
 
