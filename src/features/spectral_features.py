@@ -68,15 +68,28 @@ def istft(X, fs, recon_size, hop, two_sided=True, fft_size=None):
 
 
 def reconstruct(spec_mag, spec_phase, fs, window_size, step_size):
+    '''
+    Reconstruct time-frequency signal from components representing 
+    magnitude and phase.
+    
+    Args:
+        spec_mag: potentially complex time-frequency representation whose
+            magnitude will be used in the reconstruction
+        spec_phase: complex time-frequency representation whose phase
+            will be used in reconstruction
+        fs: sampling frequency
+        window_size: not used
+        step_size: step size between STFT frames
+    '''
     mag = np.absolute(spec_mag)
     if spec_phase is None:
         phase = np.random.randn(*spec_mag.shape)
     else:
         phase = np.exp(1.0j*np.unwrap(np.angle(spec_phase)))
-    duration = (spec_mag.shape[0]-1)*step_size+window_size
+    
     return istft(mag * phase,
                  fs,
-                 duration,
+                 None,
                  step_size,
                  two_sided=False)
 
