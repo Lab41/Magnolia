@@ -40,6 +40,33 @@ def preprocess_signal(signal, sample_rate):
 
     return spectrogram, X_in
 
+def process_signal(signal, sample_rate, model):
+    """
+    Compute the spectrogram and T-F embedding vectors for a signal using the
+    specified model.
+
+    Inputs:
+        signal: Numpy 1D array containing waveform to process
+        sample_rate: Sampling rate of the input signal
+        model: Instance of model to use to separate the signal
+
+    Returns:
+        spectrogram: Numpy array of shape (Timeslices, Frequency) containing
+                     the complex spectrogram of the input signal.
+        vectors: Numpy array of shape (Timeslices, Frequency, Embedding)
+    """
+
+    # Preprocess the signal into an input feature
+    spectrogram, X_in = preprocess_signal(signal, sample_rate)
+
+    # Reshape the input feature into the shape the model expects and compute
+    # the embedding vectors
+    X_in = np.reshape(X_in, (1, X_in.shape[0], X_in.shape[1]))
+    vectors = model.get_vectors(X_in)
+
+    return spectrogram, vectors
+
+
 def get_cluster_masks(vectors, num_sources):
     """
     Cluster the vectors using k-means with k=num_sources.  Use the cluster IDs
@@ -75,6 +102,27 @@ def get_cluster_masks(vectors, num_sources):
 
     return masks
 
+def apply_masks(spectrogram, masks):
+    """
+    Takes in a signal spectrogram and apply a set of T-F masks to it to recover
+    the sources.
+
+    Inputs:
+        spectrogram: Numpy array of shape (T, F) containing the complex
+                     spectrogram of the signal to mask.
+        masks: Numpy array of shape (T, F, sources) containing the T-F masks for
+               each source.
+
+    Returns:
+        masked_spectrograms: Numpy array of shape (sources, T, F) containing
+                             the masked complex spectrograms for each source.
+    """
+    num_sources = masks.shape[2]
+
+    masked_specs = [masks[:,:,i]*spectrogram for i in range(num_sources)]
+
+    return masked_specs
+
 def clustering_separate(signal, sample_rate, model, num_sources):
     """
     Takes in a signal and a model which has a get_vectors method and returns
@@ -90,20 +138,15 @@ def clustering_separate(signal, sample_rate, model, num_sources):
         sources: Numpy ndarray of shape (num_sources, signal_length)
     """
 
-    # Preprocess the signal into an input feature
-    spectrogram, X_in = preprocess_signal(signal, sample_rate)
-
-    # Reshape the input feature into the shape the model expects and compute
-    # the embedding vectors
-    X_in = np.reshape(X_in, (1, X_in.shape[0], X_in.shape[1]))
-    vectors = model.get_vectors(X_in)
+    # Get the T-F embedding vectors for this signal from the model
+    spectrogram, vectors = process_signal(signal, sample_rate, model)
 
     # Run k-means clustering on the vectors with k=num_sources to recover the
     # signal masks
     masks = get_cluster_masks(vectors, num_sources)
 
     # Apply the masks from the clustering to the input signal
-    masked_specs = [masks[:,:,i]*spectrogram for i in range(num_sources)]
+    masked_specs = apply_masks(spectrogram, masks)
 
     # Invert the STFT to recover the output waveforms, remembering to undo the
     # preemphasis
