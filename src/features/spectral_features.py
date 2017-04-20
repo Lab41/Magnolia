@@ -57,7 +57,7 @@ def istft(X, fs, recon_size, hop, two_sided=True, fft_size=None):
     hopsamp = int(hop*fs)
     overlap_samp = framesamp - hopsamp
 
-    _, x = scipy.signal.istft(X.T, fs, window='hann', nperseg=framesamp,
+    _, x = scipy.signal.istft(X.T, fs=fs, window='hann', nperseg=framesamp,
         nfft=fft_size, noverlap = overlap_samp,
         input_onesided=not two_sided)
     if recon_size is not None and recon_size != x.shape[0]:
@@ -69,9 +69,9 @@ def istft(X, fs, recon_size, hop, two_sided=True, fft_size=None):
 
 def reconstruct(spec_mag, spec_phase, fs, window_size, step_size):
     '''
-    Reconstruct time-frequency signal from components representing 
+    Reconstruct time-frequency signal from components representing
     magnitude and phase.
-    
+
     Args:
         spec_mag: potentially complex time-frequency representation whose
             magnitude will be used in the reconstruction
@@ -86,7 +86,7 @@ def reconstruct(spec_mag, spec_phase, fs, window_size, step_size):
         phase = np.random.randn(*spec_mag.shape)
     else:
         phase = np.exp(1.0j*np.unwrap(np.angle(spec_phase)))
-    
+
     return istft(mag * phase,
                  fs,
                  None,

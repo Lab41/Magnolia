@@ -12,12 +12,14 @@ from ..features.spectral_features import scale_spectrogram
 from ..utils.tf_bits import scope
 
 class PITModel:
-    def __init__(self, method='pit-s-cnn', num_srcs=2, num_steps=50, num_freq_bins=513):
+    def __init__(self, method='pit-s-cnn', num_srcs=2,
+        num_steps=50, num_freq_bins=513, learning_rate=0.001):
         self.num_steps = num_steps
         self.num_freq_bins = num_freq_bins
         self.num_srcs = num_srcs
         self.X_in = tf.placeholder(tf.float32, (None, num_steps, num_freq_bins))
         self.y_in = tf.placeholder(tf.float32, (None, num_srcs, num_steps, num_freq_bins))
+        self.learning_rate = learning_rate
 
         if method=='pit-s-cnn':
             self.network = self.cnn_mask
@@ -79,7 +81,7 @@ class PITModel:
 
     @scope
     def optimize(self):
-        optimizer = tf.train.AdamOptimizer(0.001)
+        optimizer = tf.train.AdamOptimizer(self.learning_rate)
         return optimizer.minimize(self.loss)
 
     @scope
@@ -233,7 +235,7 @@ class PITModel:
                 output_spectrograms[src_id, win_start:win_end] += \
                     (output_slice[0, src_id].T * window).T
 
-        #TODO: take care of head and tail of reconstruction (not overlapped properly)
+        # take care of head and tail of reconstruction (not overlapped properly)
         mix_head = np.concatenate((
             np.zeros((step_length_complement, self.num_freq_bins),
             dtype=mixture.dtype),
