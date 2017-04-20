@@ -125,23 +125,23 @@ class PITModel:
         x = tf.layers.dense(x, 1024)
         x = tf.layers.dense(x, 1024)
         x = tf.layers.dense(x, 1024)
-        return self.mask_ops(x, x)
+        return self.mask_ops(x)
 
-    def mask_ops(self, y, z):
+    def mask_ops(self, x):
         '''
-        Calculate and apply 2 masks from a dense transformation of the input
+        Calculate and apply num_srcs masks from a dense transformation of the input
         tensors. Uses softmax to ensure masks sum to one across src id.
         '''
         # Predict mask
-        y_mask = tf.layers.dense(y, self.num_steps*self.num_freq_bins, None)
-        z_mask = tf.layers.dense(z, self.num_steps*self.num_freq_bins, None)
-        all_masks = tf.stack((y_mask, z_mask), axis=0)
+        all_masks = tf.layers.dense(x, self.num_srcs*self.num_steps*self.num_freq_bins)
+        all_masks = tf.reshape(all_masks, [-1, self.num_srcs, self.num_steps, self.num_freq_bins])
+        # Batch#,Mask#,T,F -> Mask#,Batch#,T,F for broadcasting across masks
+        all_masks = tf.transpose(all_masks, [1,0,2,3])
         all_masks = tf.nn.softmax(all_masks, dim=0)
-        all_masks = tf.reshape(all_masks, (2, -1, self.num_steps, self.num_freq_bins))
 
         # Reconstruct
         reconstructions = all_masks * self.X_in
-        # Source,N,T,F -> N,Source,T,F
+        # Mask#,Batch#,T,F -> Batch#,Mask#,T,F
         reconstructions = tf.transpose(reconstructions, [1, 0, 2, 3])
 
         return reconstructions, all_masks
@@ -179,7 +179,7 @@ class PITModel:
         x = flatten(x)
         x = tf.layers.dense(x, 1024, activation=tf.nn.relu, name='dense12')
 
-        return self.mask_ops(x, x)
+        return self.mask_ops(x)
 
     @scope
     def blstm_mask(self):
@@ -189,7 +189,7 @@ class PITModel:
         fwd_lstm = tf.contrib.rnn.BasicLSTMCell(896)
 
         x = tf.nn.bidirectional_dynamic_rnn()
-        return self.mask_ops(x, x)
+        return self.mask_ops(x)
 
     def separate(self, mixture, sess=None):
         '''
