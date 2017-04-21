@@ -133,16 +133,23 @@ class PITModel:
         tensors. Uses softmax to ensure masks sum to one across src id.
         '''
         # Predict mask
-        all_masks = tf.layers.dense(x, self.num_srcs*self.num_steps*self.num_freq_bins)
+        print("Masks")
+        all_masks = tf.layers.dense(x, self.num_srcs*self.num_steps*self.num_freq_bins, None)
+        print(all_masks)
         all_masks = tf.reshape(all_masks, [-1, self.num_srcs, self.num_steps, self.num_freq_bins])
+        print(all_masks)
         # Batch#,Mask#,T,F -> Mask#,Batch#,T,F for broadcasting across masks
         all_masks = tf.transpose(all_masks, [1,0,2,3])
-        all_masks = tf.nn.softmax(all_masks, dim=0)
+        print(all_masks)
+        all_masks = tf.exp(all_masks) / tf.reduce_sum(tf.exp(all_masks), 0)
+        print(all_masks)
 
         # Reconstruct
         reconstructions = all_masks * self.X_in
         # Mask#,Batch#,T,F -> Batch#,Mask#,T,F
         reconstructions = tf.transpose(reconstructions, [1, 0, 2, 3])
+        print("reconstructions")
+        print(reconstructions)
 
         return reconstructions, all_masks
 
