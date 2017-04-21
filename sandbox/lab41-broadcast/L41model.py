@@ -112,7 +112,7 @@ class L41Model:
         # Normalize the speaker vectors and collect the speaker vectors
         # correspinding to the speakers in batch
         speaker_vectors = tf.nn.l2_normalize(speaker_vectors, 1)
-        Vspeakers = tf.gather_nd(speaker_vectors, perm=[1,2,0]), I )
+        Vspeakers = tf.gather_nd(speaker_vectors, I)
 
         # Expand the dimensions in preparation for broadcasting
         Vspeakers_broad = tf.expand_dims(Vspeakers, 1)
