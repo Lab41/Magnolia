@@ -105,17 +105,16 @@ class PITModel:
         x = tf.layers.dense(x, 1000)
 
         # Split into two branches
-        y = tf.layers.dense(x, 500)
-        z = tf.layers.dense(x, 500)
+        branches = []
+        for src_id in range(self.num_srcs):
+            y = tf.layers.dense(x, 500)
 
-        # Reconstruct
-        y = tf.layers.dense(y, self.num_steps*self.num_freq_bins, None)
-        y = tf.reshape(y, data_shape)
+            # Reconstruct
+            y = tf.layers.dense(y, self.num_steps*self.num_freq_bins, None)
+            y = tf.reshape(y, data_shape) * self.X_in
+            branches.append(y)
 
-        z = tf.layers.dense(z, self.num_steps*self.num_freq_bins, None)
-        z = tf.reshape(z, data_shape)
-
-        return tf.stack((y,z), axis=1), None
+        return self.mask_ops(tf.stack(branches, axis=1))
 
     @scope
     def dense_mask(self):
