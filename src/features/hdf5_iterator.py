@@ -32,9 +32,8 @@ class Hdf5Iterator:
         '''
         self.hdf5_path = hdf5_path
         self.h5 = h5py.File(hdf5_path, 'r')
-        self.h5_groups = []
         if speaker_keys:
-            self.h5_groups = self.h5_groups.append( speaker_keys )
+            self.h5_groups = [speaker_keys] if isintance(speaker_keys, str) else speaker_keys
         else:
             self.h5_groups = [key for key in self.h5]
         self.h5_items = []
