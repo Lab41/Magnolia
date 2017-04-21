@@ -128,15 +128,17 @@ def snmf(X, k, sparsity=0.1, num_iters=100, W=None, H=None, W_init=None, H_init=
     for t in range(num_iters):
         # update H if requested
         if update_H:
+            WH = W@H + myeps
             k_by_m_penalty = W.T@Onm + sparsity
-            H = H * ((W.T @ (X / (W@H))) /
+            H = H * ((W.T @ (X / WH)) /
                 np.where(k_by_m_penalty>myeps, k_by_m_penalty, myeps))
             if H_norm:
                 H = normalize_H(H)
 
         # update W if requested
         if update_W:
-            R = X/(W@H)
+            WH = W@H + myeps
+            R = X/WH
             if W_norm == '1':
                 n_by_k_term = Onm@H.T + (Onn@(R@H.T * W))
                 n_by_k_term = np.where(n_by_k_term>myeps, n_by_k_term, myeps)
