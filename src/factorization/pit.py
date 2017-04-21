@@ -49,8 +49,9 @@ class PITModel:
         # compute pairwise costs
         # in 2-src case: either 1->2,2->1 or 1->1,2->2
         losses = []
+        print("Losses")
         for src_id, out_id in product(range(self.num_srcs), range(self.num_srcs)):
-            loss = tf.reduce_mean(tf.squared_difference(self.predict[:, out_id],
+            loss = tf.reduce_mean(self.X_in * tf.squared_difference(self.predict[:, out_id],
                                                         self.y_in[:, src_id]),
                                  axis=(1, 2))
             losses.append(loss)
@@ -75,7 +76,7 @@ class PITModel:
         print(permuted_losses)
         cost = tf.reduce_min(permuted_losses,axis=1)
         print(cost)
-        cost = tf.reduce_mean(cost)
+        cost = tf.reduce_sum(cost)
         print(cost)
         return cost
 
