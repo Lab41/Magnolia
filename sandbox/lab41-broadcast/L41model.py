@@ -43,6 +43,9 @@ class L41Model:
             # Placeholder tensor for the labels/targets
             self.y = tf.placeholder("float", [None, None, self.F, None])
 
+            # Placeholder for the speaker indicies
+            self.I = tf.placeholder(tf.int32, [None,None])
+
             # Model methods
             self.network
             self.cost
