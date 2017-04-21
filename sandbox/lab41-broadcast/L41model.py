@@ -34,8 +34,8 @@ class L41Model:
         self.embedding_size = embedding_size
         self.nonlinearity = nonlinearity
 
-        graph = tf.Graph()
-        with graph.as_default():
+        self.graph = tf.Graph()
+        with self.graph.as_default():
 
             # Placeholder tensor for the input data
             self.X = tf.placeholder("float", [None, None, self.F])
@@ -56,7 +56,7 @@ class L41Model:
 
 
         # Create a session to run this graph
-        self.sess = tf.Session(graph = graph)
+        self.sess = tf.Session(graph = self.graph)
 
     def __del__(self):
         """
