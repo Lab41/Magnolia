@@ -96,8 +96,7 @@ class PITModel:
     @scope
     def dense(self):
         '''
-        Home-brewed dense architecture, for testing. Regression-based (rather
-        than masking-based) approach
+        Home-brewed dense architecture, for testing. 
         '''
         data_shape = tf.shape(self.X_in)
         # Reduce dimensionality
