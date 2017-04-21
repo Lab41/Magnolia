@@ -57,6 +57,7 @@ class L41Model:
 
         # Create a session to run this graph
         self.sess = tf.Session(graph = graph)
+        self.sess.run(tf.global_variables_initializer())
 
     def __del__(self):
         """
