@@ -70,7 +70,8 @@ class L41Model:
         Initialize variables in the graph
         """
 
-        self.sess.run(tf.global_variables_initializer())
+        with self.graph.as_default():
+            self.sess.run(tf.global_variables_initializer())
 
     @tf_utils.scope_decorator
     def network(self):
