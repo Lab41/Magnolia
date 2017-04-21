@@ -57,7 +57,6 @@ class L41Model:
 
         # Create a session to run this graph
         self.sess = tf.Session(graph = graph)
-        self.sess.run(tf.global_variables_initializer())
 
     def __del__(self):
         """
@@ -65,6 +64,13 @@ class L41Model:
         """
 
         self.sess.close()
+
+    def initialize(self):
+        """
+        Initialize variables in the graph
+        """
+
+        self.sess.run(tf.global_variables_initializer())
 
     @tf_utils.scope_decorator
     def network(self):
