@@ -130,7 +130,7 @@ class L41Model:
         dot = tf.reduce_sum(Vspeakers_broad * embedding_broad, 4)
 
         # Compute the cost for every element
-        cost = -tf.log(tf.nn.sigmoid(self.Y * dot))
+        cost = -tf.log(tf.nn.sigmoid(self.y * dot))
 
         # Average the cost over all speakers in the input
         cost = tf.reduce_mean(cost, 3)
