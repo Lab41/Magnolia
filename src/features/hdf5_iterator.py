@@ -33,7 +33,7 @@ class Hdf5Iterator:
         self.hdf5_path = hdf5_path
         self.h5 = h5py.File(hdf5_path, 'r')
         if speaker_keys:
-            self.h5_groups = speaker_keys if type(speaker_keys)==list else [speaker_keys]
+            self.h5_groups = [speaker_keys] if isinstance(speaker_keys, str) else speaker_keys
         else:
             self.h5_groups = [key for key in self.h5]
         self.h5_items = []
