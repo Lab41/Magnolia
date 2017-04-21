@@ -11,7 +11,8 @@ import h5py
 import numpy as np
 
 class Hdf5Iterator:
-    def __init__(self, hdf5_path, shape=None, pos=None, seed=41, return_key=False):
+    def __init__(self, hdf5_path, shape=None, pos=None, 
+                 seed=41, speaker_keys=None, return_key=False):
         '''
         Args:
             hdf5_path (str): path to HDF5 file
@@ -31,7 +32,11 @@ class Hdf5Iterator:
         '''
         self.hdf5_path = hdf5_path
         self.h5 = h5py.File(hdf5_path, 'r')
-        self.h5_groups = [key for key in self.h5]
+        self.h5_groups = []
+        if speaker_keys:
+            self.h5_groups = self.h5_groups.append( speaker_keys )
+        else:
+            self.h5_groups = [key for key in self.h5]
         self.h5_items = []
         for group in self.h5_groups:
             self.h5_items += [ group + '/' + item for item in self.h5[group] ]
@@ -133,7 +138,51 @@ class Hdf5Iterator:
             data = (truth, data)
 
         return data
+    
+class SplitsIterator(Hdf5Iterator):
+    def __init__(self, split_ratio, *args, **kwargs):
+        '''
+        Iterates only over records from file at hdf5_path (see Hdf5Iterator)
+        with a first-level key in speaker_keys
+        Args:
+            split_ratio (list): a list with numbers that sum to 1.0
+            hdf5_path
+            split_index (int): which split you want to iterate over. This can be
+                               set anytime
+        '''
+        super(SplitsIterator,self).__init__(*args, **kwargs)
 
+        self.split_ratio = split_ratio
+        self.split_index = 0
+
+        # Build the split lists
+        split_list = [[] for i in split_ratio]
+        for group in self.h5_groups:
+            items = [item for item in self.h5[group] ]
+            items.sort()
+
+            split_lens = [ np.ceil( split_no*len(items)) for split_no in split_ratio ]
+            for i, split_no in enumerate(split_lens[1:]):
+                split_lens[i+1] += split_lens[i]
+
+            split_no = 0
+            for i, item in enumerate(items):
+                if i == split_lens[split_no]:
+                    split_no += 1
+                split_list[split_no] += [ group + '/' + item ]
+                
+        self.split_list = split_list
+        self.h5_items = split_list[self.split_index]
+
+    def set_split(self, index):
+        '''
+        Set the split index. (Typically training: 0, dev: 1, test: 2, etc.)
+        Args:
+            index: which split are you going to use?
+        '''
+        self.split_index = index
+        self.h5_items = self.split_list[index]
+            
 
 def mock_hdf5(hdf5_path="._test.h5", scale=1):
     # make small test hdf5 object
