@@ -164,14 +164,14 @@ class L41Model:
         """
         self.saver.restore(self.sess, path)
 
-    def train_on_batch(self, X_train, y_train):
+    def train_on_batch(self, X_train, y_train, I_train):
         """
         Train the model on a batch with input X and target y. Returns the cost
         computed on this batch.
         """
 
         cost, _ = self.sess.run([self.cost, self.optimizer],
-                                {self.X: X_train, self.y: y_train})
+                            {self.X: X_train, self.y: y_train, self.I:I_train})
 
         return cost
 
@@ -183,9 +183,11 @@ class L41Model:
         vectors = self.sess.run(self.network, {self.X: X_in})
         return vectors
 
-    def get_cost(self, X_in, y_in):
+    def get_cost(self, X_in, y_in, I_in):
         """
         Computes the cost of a batch, but does not update any model parameters.
         """
-        cost = self.sess.run(self.cost, {self.X: X_in, self.y: y_in})
+        cost = self.sess.run(self.cost,
+                            {self.X: X_in, self.y: y_in, self.I: I_in})
+
         return cost
