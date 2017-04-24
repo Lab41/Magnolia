@@ -46,6 +46,11 @@ class L41Model:
             # Placeholder for the speaker indicies
             self.I = tf.placeholder(tf.int32, [None,None])
 
+            # Define the speaker vectors to use during training
+            self.speaker_vectors = tf_utils.weight_variable(
+                                       [self.num_speakers,self.embedding_size],
+                                       tf.sqrt(2/self.embedding_size))
+
             # Model methods
             self.network
             self.cost
@@ -112,11 +117,6 @@ class L41Model:
         clusetering model
         """
 
-        # Define the speaker vectors to use during training
-        speaker_vectors = tf_utils.weight_variable(
-                                   [self.num_speakers,self.embedding_size],
-                                   tf.sqrt(2/self.embedding_size))
-
         # Get the embedded T-F vectors from the network
         embedding = self.network
 
@@ -125,7 +125,7 @@ class L41Model:
 
         # Normalize the speaker vectors and collect the speaker vectors
         # correspinding to the speakers in batch
-        speaker_vectors = tf.nn.l2_normalize(speaker_vectors, 1)
+        speaker_vectors = tf.nn.l2_normalize(self.speaker_vectors, 1)
         Vspeakers = tf.gather_nd(speaker_vectors, I)
 
         # Expand the dimensions in preparation for broadcasting
