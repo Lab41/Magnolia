@@ -65,8 +65,6 @@ class Hdf5Iterator:
         else:
             self.pos = pos
             
-            def __init__(self, *args, **kwargs):
-
         self.return_key=return_key
         if return_key:
             self.labels = [ flac.split('/')[0] for flac in self.h5_groups ]
