@@ -36,6 +36,8 @@ class PITModel:
 
         if method=='pit-s-cnn':
             self.network = self.cnn_mask
+        elif method=='pit-s-cnn-small':
+            self.network = self.cnn_mask_smaller
         elif method=='pit-s-dnn':
             self.network = self.dense_mask
         elif method=='dense':
@@ -67,7 +69,7 @@ class PITModel:
         for src_id, out_id in product(range(self.num_srcs), range(self.num_srcs)):
             loss = tf.reduce_mean(self.X_in * tf.squared_difference(self.predict[:, out_id],
                                                         self.y_in[:, src_id]),
-                                 axis=(1, 2))
+                                 axis=(1,2))
             losses.append(loss)
 
         # for each *permutation* of src->output assignments, look up the
@@ -164,6 +166,30 @@ class PITModel:
         print(reconstructions)
 
         return reconstructions, all_masks, x
+
+    @scope
+    def cnn_mask_smaller(self):
+        '''
+        Shorter version of PIT-S-CNN (see cnn_mask)
+        '''
+
+        x = tf.expand_dims(self.X_in, 3)
+        x = tf.layers.conv2d(x, 64, kernel_size=(3, 3), strides=(2,2),
+                             name='conv1', padding='SAME', activation=tf.nn.relu,
+                             kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d())
+        x = tf.layers.conv2d(x, 64, kernel_size=(3, 3), strides=(1,1),
+                             name='conv2', padding='SAME', activation=tf.nn.relu,
+                             kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d())
+        x = tf.layers.conv2d(x, 128, kernel_size=(3, 3), strides=(2,2),
+                             name='conv6', padding='SAME', activation=tf.nn.relu,
+                             kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d())
+        x = tf.layers.conv2d(x, 256, kernel_size=(3, 3), strides=(2,2),
+                             name='conv9', padding='SAME', activation=tf.nn.relu,
+                             kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d())
+        x = tf.nn.max_pool(x, ksize=[1,3,3,1], strides=[1,3,3,1], padding='SAME', name='maxpool11')
+        x = flatten(x)
+        x = tf.layers.dense(x, 1024, activation=None, name='dense12')
+        return self.mask_ops(x)
 
     @scope
     def cnn_mask(self):
