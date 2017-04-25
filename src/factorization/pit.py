@@ -33,6 +33,7 @@ class PITModel:
         # Register tensor operations as object attributes
         self.network
         self.mask
+        self.logits
         self.predict
         self.loss
         self.optimize
@@ -94,6 +95,10 @@ class PITModel:
         return self.network[1]
 
     @scope
+    def logits(self):
+        return self.network[2]
+
+    @scope
     def dense(self):
         '''
         Home-brewed dense architecture, for testing. 
@@ -150,7 +155,7 @@ class PITModel:
         print("reconstructions")
         print(reconstructions)
 
-        return reconstructions, all_masks
+        return reconstructions, all_masks, x
 
     @scope
     def cnn_mask(self):
