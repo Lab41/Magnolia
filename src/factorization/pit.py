@@ -9,7 +9,7 @@ from tensorflow.contrib.layers import flatten
 from ..features.mixer import FeatureMixer
 from ..features.wav_iterator import batcher
 from ..features.spectral_features import scale_spectrogram
-from ..utils.tf_bits import scope
+from ..utils.tf_utils import scope_decorator as scope
 
 class PITModel:
     def __init__(self, method='pit-s-cnn', num_srcs=2,
