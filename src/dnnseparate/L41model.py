@@ -1,10 +1,8 @@
-import sys
-sys.path.append('../../')
 
 import numpy as np
 import tensorflow as tf
 
-from src.utils import tf_utils
+from ..utils import tf_utils
 
 class L41Model:
     def __init__(self, F=257, num_speakers=251,
