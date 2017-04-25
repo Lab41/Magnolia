@@ -135,11 +135,13 @@ class PITModel:
         '''
         Replicates PIT-S-DNN architecture from Kolbaek et al. 2017
         '''
+        print("Dense (PIT-S-DNN) layers")
         x = flatten(self.X_in)
         x = tf.layers.dense(x, 1024)
         x = tf.layers.dense(x, 1024)
-        x = tf.layers.dense(x, 1024)
-        return self.mask_ops(x)
+        x = tf.layers.dense(x, 1024, None)
+        x = self.mask_ops(x)
+        return x
 
     def mask_ops(self, x):
         '''
