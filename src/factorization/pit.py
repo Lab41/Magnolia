@@ -150,7 +150,9 @@ class PITModel:
         '''
         # Predict mask
         print("Masks")
-        all_masks = tf.layers.dense(x, self.num_srcs*self.num_steps*self.num_freq_bins, None)
+        all_masks = tf.layers.dense(x, self.num_srcs*self.num_steps*self.num_freq_bins, None,
+            # kernel_initializer=tf.random_normal_initializer(stddev=0.001)
+            )
         print(all_masks)
         all_masks = tf.reshape(all_masks, [-1, self.num_srcs, self.num_steps, self.num_freq_bins])
         print(all_masks)
@@ -199,11 +201,14 @@ class PITModel:
         Attempts to replicate PIT-S-CNN architecture from Kolbaek et al. 2017
         Parameter count is high and I have had trouble training it so far.
         '''
-        x = tf.reshape(self.X_in, (-1, self.num_steps, self.num_freq_bins, 1))
+
+        x = tf.expand_dims(self.X_in, 3)
         x = tf.layers.conv2d(x, 64, kernel_size=(3, 3), strides=(2,2),
-                             name='conv1', padding='SAME', activation=tf.nn.relu)
+                             name='conv1', padding='SAME', activation=tf.nn.relu,
+                             kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d())
         x = tf.layers.conv2d(x, 64, kernel_size=(3, 3), strides=(1,1),
-                             name='conv2', padding='SAME', activation=tf.nn.relu)
+                             name='conv2', padding='SAME', activation=tf.nn.relu,
+                             kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d())
         x = tf.layers.conv2d(x, 64, kernel_size=(3, 3), strides=(1,1),
                              name='conv3', padding='SAME', activation=tf.nn.relu)
         x = tf.layers.conv2d(x, 64, kernel_size=(3, 3), strides=(1,1),
@@ -211,20 +216,23 @@ class PITModel:
         x = tf.layers.conv2d(x, 64, kernel_size=(3, 3), strides=(1,1),
                              name='conv5', padding='SAME', activation=tf.nn.relu)
         x = tf.layers.conv2d(x, 128, kernel_size=(3, 3), strides=(2,2),
-                             name='conv6', padding='SAME', activation=tf.nn.relu)
+                             name='conv6', padding='SAME', activation=tf.nn.relu,
+                             kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d())
         x = tf.layers.conv2d(x, 128, kernel_size=(3, 3), strides=(1,1),
                              name='conv7', padding='SAME', activation=tf.nn.relu)
         x = tf.layers.conv2d(x, 128, kernel_size=(3, 3), strides=(1,1),
                              name='conv8', padding='SAME', activation=tf.nn.relu)
         x = tf.layers.conv2d(x, 256, kernel_size=(3, 3), strides=(2,2),
-                             name='conv9', padding='SAME', activation=tf.nn.relu)
+                             name='conv9', padding='SAME', activation=tf.nn.relu,
+                             kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d())
         x = tf.layers.conv2d(x, 256, kernel_size=(3, 3), strides=(1,1),
                              name='conv10', padding='SAME', activation=tf.nn.relu)
         x = tf.layers.conv2d(x, 256, kernel_size=(3, 3), strides=(1,1),
                              name='conv11', padding='SAME', activation=tf.nn.relu)
         x = tf.nn.max_pool(x, ksize=[1,3,3,1], strides=[1,3,3,1], padding='SAME', name='maxpool11')
         x = flatten(x)
-        x = tf.layers.dense(x, 1024, activation=tf.nn.relu, name='dense12')
+        x = tf.layers.dense(x, 1024, activation=None, name='dense12')
+
 
         return self.mask_ops(x)
 
