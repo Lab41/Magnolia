@@ -14,6 +14,19 @@ from ..utils.tf_utils import scope_decorator as scope
 class PITModel:
     def __init__(self, method='pit-s-cnn', num_srcs=2,
         num_steps=50, num_freq_bins=513, learning_rate=0.001):
+        '''
+        Args:
+            method (str): one of {'pit-s-cnn','pit-s-cnn-small', 'pit-s-dnn',
+                or 'dense'}-- selects the network architecture to use with the
+                PIT loss
+            num_srcs (int): number of sources to output reconstructions for. Inference
+                on different numbers of speakers from the number the network was
+                trained on is not yet implemented.
+            num_steps (int): number of time steps to expect in the TF representation of
+                input audio exemplars
+            num_freq_bins (int): number of frequency bins in input spectrograms
+            learning_rate (float): learning rate for optimizer (Adam)
+        '''
         self.num_steps = num_steps
         self.num_freq_bins = num_freq_bins
         self.num_srcs = num_srcs
@@ -67,18 +80,13 @@ class PITModel:
                 permuted_loss.append(losses[loss_idx])
             # sum losses over assigned pairings and add to list of permuted losses
             permuted_loss = tf.stack(permuted_loss, axis=1)
-            print(permuted_loss)
             permuted_loss = tf.reduce_sum(permuted_loss, axis=1)
-            print(permuted_loss)
             permuted_losses.append(permuted_loss)
 
         # select the minimum loss across assignment permutations
         permuted_losses = tf.stack(permuted_losses,axis=1)
-        print(permuted_losses)
         cost = tf.reduce_min(permuted_losses,axis=1)
-        print(cost)
         cost = tf.reduce_sum(cost)
-        print(cost)
         return cost
 
     @scope
@@ -101,7 +109,7 @@ class PITModel:
     @scope
     def dense(self):
         '''
-        Home-brewed dense architecture, for testing. 
+        Home-brewed dense architecture, for testing.
         '''
         data_shape = tf.shape(self.X_in)
         # Reduce dimensionality
@@ -204,7 +212,8 @@ class PITModel:
 
     def separate(self, mixture, sess=None):
         '''
-        Perform separation on TF mixtures of arbitrary length
+        Perform separation on TF mixtures of arbitrary length, with
+        overlap-and-add (triangular windows)
 
         Args:
             mixture: *one* input example (no support for batches right now),
