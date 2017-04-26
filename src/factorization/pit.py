@@ -137,8 +137,8 @@ class PITModel:
         '''
         print("Dense (PIT-S-DNN) layers")
         x = flatten(self.X_in)
-        x = tf.layers.dense(x, 1024)
-        x = tf.layers.dense(x, 1024)
+        x = tf.layers.dense(x, 1024, tf.nn.relu)
+        x = tf.layers.dense(x, 1024, tf.nn.relu)
         x = tf.layers.dense(x, 1024, None)
         x = self.mask_ops(x)
         return x
