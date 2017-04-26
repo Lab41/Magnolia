@@ -36,6 +36,7 @@ class Hdf5Iterator:
             self.h5_groups = [speaker_keys] if isinstance(speaker_keys, str) else speaker_keys
         else:
             self.h5_groups = [key for key in self.h5]
+        self.speaker_keys = self.h5_groups
         self.h5_items = []
         for group in self.h5_groups:
             self.h5_items += [ group + '/' + item for item in self.h5[group] ]
@@ -72,6 +73,17 @@ class Hdf5Iterator:
             self.labeldict = {}
             for i,l in enumerate(self.labels):
                 self.labeldict[ l ] = i
+
+    def speaker_subset( self, speaker_keys=None ):
+        '''
+        Specify a speaker subset with the subset of splits. Takes in as an argument: 
+
+        speaker_keys = list of keys (Default to None if you want to reset)
+        '''
+        if speaker_keys:
+            self.h5_groups = speaker_keys
+        else:
+            self.h5_groups = self.speaker_keys
 
     def make_random_embedding( self, hidden_units, num_labels=None ):
         '''
