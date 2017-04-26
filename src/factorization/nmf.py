@@ -151,3 +151,30 @@ def snmf(X, k, sparsity=0.1, num_iters=100, W=None, H=None, W_init=None, H_init=
 
         # TODO: add error calculation and convergence checks
     return W, H
+
+def nmf_separate(mix, spkr_models, mask=False, num_iters=500):
+    '''
+    Args:
+        mix (array-like): matrix (magnitude spectrogram in F x T) to separate.
+        spkr_models (list): paired W,H matrices for each speaker. H can be any value; it is not used
+        mask (bool): return matrix products directly or use them as ratio masks on mix?
+    '''
+    w_all = np.concatenate([x[0] for x in spkr_models], axis=1)
+    new_h_all = []
+    reconstructions = []
+    num_spkrs = len(spkr_models)
+    total_components = w_all.shape[1]
+    components_per_spkr = total_components // num_spkrs
+    _, h_new = snmf(mix, total_components, num_iters=num_iters, sparsity=0.0, W=w_all)
+    for i in range(num_spkrs):
+        h_new_spkr = h_new[i*components_per_spkr:(i+1)*components_per_spkr]
+        new_h_all.append(h_new_spkr)
+        reconstruction = spkr_models[i][0] @ h_new_spkr
+        reconstructions.append(reconstruction)
+    if mask:
+        masks = np.array(reconstructions)
+        norm_mask = masks.sum(axis=0)
+        for i in range(num_spkrs):
+            masks[i] = masks[i] / norm_mask
+            reconstructions[i] = masks[i] * mix
+    return reconstructions
