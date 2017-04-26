@@ -116,12 +116,12 @@ class PITModel:
         data_shape = tf.shape(self.X_in)
         # Reduce dimensionality
         x = flatten(self.X_in)
-        x = tf.layers.dense(x, 1000)
+        x = tf.layers.dense(x, 1000, tf.nn.relu)
 
         # Split into two branches
         branches = []
         for src_id in range(self.num_srcs):
-            y = tf.layers.dense(x, 500)
+            y = tf.layers.dense(x, 500, tf.nn.relu)
 
             # Reconstruct
             y = tf.layers.dense(y, self.num_steps*self.num_freq_bins, None)
