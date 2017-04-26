@@ -83,6 +83,10 @@ class FeatureMixer:
 
         return batches
 
+    def speaker_subset( self, speaker_keys ):
+
+        for iterator in self.iterators:
+            iterator.speaker_subset( speaker_keys )
 
 
 
