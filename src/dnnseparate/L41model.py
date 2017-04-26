@@ -111,8 +111,7 @@ class L41Model:
     @tf_utils.scope_decorator
     def cost(self):
         """
-        Constuct the cost function op for the cost function used in the deep
-        clusetering model
+        Constuct the cost function op for the negative sampling cost
         """
 
         # Get the embedded T-F vectors from the network
