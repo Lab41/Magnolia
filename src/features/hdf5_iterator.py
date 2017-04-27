@@ -40,6 +40,8 @@ class Hdf5Iterator:
         self.h5_items = []
         for group in self.h5_groups:
             self.h5_items += [ group + '/' + item for item in self.h5[group] ]
+
+        self.original_items = self.h5_items
         self.rng = np.random.RandomState(seed)
 
         # Handle unspecified dimensionality for shape and pos
@@ -84,6 +86,12 @@ class Hdf5Iterator:
             self.h5_groups = speaker_keys
         else:
             self.h5_groups = self.speaker_keys
+
+        h5_items_original = set( self.original_items )
+        self.h5_items = []
+        for item in h5_items_original:
+            if item.split('/')[0] in self.h5_groups:
+                self.h5_items +=  [ item ]
 
     def make_random_embedding( self, hidden_units, num_labels=None ):
         '''
