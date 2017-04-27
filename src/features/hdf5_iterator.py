@@ -40,7 +40,6 @@ class Hdf5Iterator:
         for group in self.h5_groups:
             self.h5_items += [ group + '/' + item for item in self.h5[group] ]
         self.rng = np.random.RandomState(seed)
-        self.return_key=return_key
 
         # Handle unspecified dimensionality for shape and pos
         if shape is None and pos is None:
@@ -65,6 +64,31 @@ class Hdf5Iterator:
             self.pos = tuple(None for dim in self.shape)
         else:
             self.pos = pos
+            
+        self.return_key=return_key
+        if return_key:
+            self.labels = [ flac.split('/')[0] for flac in self.h5_groups ]
+            self.labels.sort()
+            self.labeldict = {}
+            for i,l in enumerate(self.labels):
+                self.labeldict[ l ] = i
+
+    def make_random_embedding( self, hidden_units, num_labels=None ):
+        '''
+        Create a matrix that is of size hidden_units (the embedding
+        size) x number_labels
+        '''
+        if num_labels:
+            return np.random.randn( hidden_units, num_labels )
+        else:
+            return np.random.randn( hidden_units, len(self.labels) )
+
+    def label2dict( self, lookup ):
+
+        lookup = lookup.split('/')[0]
+        if type(lookup)==list:
+            return [ self.labeldict[l] for l in lookup ]
+        return self.labeldict[lookup]
 
     def __next__(self):
         '''Randomly pick a dataset from the available options'''
