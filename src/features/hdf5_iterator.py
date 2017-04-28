@@ -224,6 +224,8 @@ class SplitsIterator(Hdf5Iterator):
         Args:
             index: which split are you going to use?
         '''
+        
+        self.speaker_subset( self.h5_groups )
         self.split_index = index
         self.h5_items = self.split_list[index]
             
