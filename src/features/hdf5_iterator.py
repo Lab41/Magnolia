@@ -32,16 +32,17 @@ class Hdf5Iterator:
         '''
         self.hdf5_path = hdf5_path
         self.h5 = h5py.File(hdf5_path, 'r')
-        self.h5_groups = []
         if speaker_keys:
-            self.h5_groups = self.h5_groups.append( speaker_keys )
+            self.h5_groups = [speaker_keys] if isinstance(speaker_keys, str) else speaker_keys
         else:
             self.h5_groups = [key for key in self.h5]
+        self.speaker_keys = self.h5_groups
         self.h5_items = []
         for group in self.h5_groups:
             self.h5_items += [ group + '/' + item for item in self.h5[group] ]
+
+        self.original_items = self.h5_items
         self.rng = np.random.RandomState(seed)
-        self.return_key=return_key
 
         # Handle unspecified dimensionality for shape and pos
         if shape is None and pos is None:
@@ -66,6 +67,49 @@ class Hdf5Iterator:
             self.pos = tuple(None for dim in self.shape)
         else:
             self.pos = pos
+
+        self.return_key=return_key
+        if return_key:
+            self.labels = [ flac.split('/')[0] for flac in self.h5_groups ]
+            self.labels.sort()
+            self.labeldict = {}
+            for i,l in enumerate(self.labels):
+                self.labeldict[ l ] = i
+
+    def speaker_subset( self, speaker_keys=None ):
+        '''
+        Specify a speaker subset with the subset of splits. Takes in as an
+        argument:
+
+        speaker_keys = list of keys (Default to None if you want to reset)
+        '''
+        if speaker_keys:
+            self.h5_groups = speaker_keys
+        else:
+            self.h5_groups = self.speaker_keys
+
+        h5_items_original = set( self.original_items )
+        self.h5_items = []
+        for item in h5_items_original:
+            if item.split('/')[0] in self.h5_groups:
+                self.h5_items +=  [ item ]
+
+    def make_random_embedding( self, hidden_units, num_labels=None ):
+        '''
+        Create a matrix that is of size hidden_units (the embedding
+        size) x number_labels
+        '''
+        if num_labels:
+            return np.random.randn( hidden_units, num_labels )
+        else:
+            return np.random.randn( hidden_units, len(self.labels) )
+
+    def label2dict( self, lookup ):
+
+        lookup = lookup.split('/')[0]
+        if type(lookup)==list:
+            return [ self.labeldict[l] for l in lookup ]
+        return self.labeldict[lookup]
 
     def __next__(self):
         '''Randomly pick a dataset from the available options'''
@@ -180,6 +224,8 @@ class SplitsIterator(Hdf5Iterator):
         Args:
             index: which split are you going to use?
         '''
+        
+        self.speaker_subset( self.h5_groups )
         self.split_index = index
         self.h5_items = self.split_list[index]
             

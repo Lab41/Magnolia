@@ -1,15 +1,16 @@
+
 import numpy as np
 import tensorflow as tf
 
-from magnolia.utils import tf_utils
+from ..utils import tf_utils
 
-class DeepClusteringModel:
-    def __init__(self, F=257,
+class L41Model:
+    def __init__(self, F=257, num_speakers=251,
                  layer_size=600, embedding_size=40,
                  nonlinearity='logistic'):
         """
-        Initializes the deep clustering model from [1].  Defaults correspond to
-        the parameters used by the best performing model in the paper.
+        Initializes Lab41's clustering model.  Default architecture comes from
+        the parameters used by the best performing model in the paper[1].
 
         [1] Hershey, John., et al. "Deep Clustering: Discriminative embeddings
             for segmentation and separation." Acoustics, Speech, and Signal
@@ -18,12 +19,15 @@ class DeepClusteringModel:
 
         Inputs:
             F: Number of frequency bins in the input data
+            num_speakers: Number of unique speakers to train on. only use in
+                          training.
             layer_size: Size of BLSTM layers
             embedding_size: Dimension of embedding vector
             nonlinearity: Nonlinearity to use in BLSTM layers
         """
 
         self.F = F
+        self.num_speakers = num_speakers
         self.layer_size = layer_size
         self.embedding_size = embedding_size
         self.nonlinearity = nonlinearity
@@ -36,6 +40,14 @@ class DeepClusteringModel:
 
             # Placeholder tensor for the labels/targets
             self.y = tf.placeholder("float", [None, None, self.F, None])
+
+            # Placeholder for the speaker indicies
+            self.I = tf.placeholder(tf.int32, [None,None])
+
+            # Define the speaker vectors to use during training
+            self.speaker_vectors = tf_utils.weight_variable(
+                                       [self.num_speakers,self.embedding_size],
+                                       tf.sqrt(2/self.embedding_size))
 
             # Model methods
             self.network
@@ -99,44 +111,43 @@ class DeepClusteringModel:
     @tf_utils.scope_decorator
     def cost(self):
         """
-        Constuct the cost function op for the cost function used in the deep
-        clusetering model
+        Constuct the cost function op for the negative sampling cost
         """
 
-        # Get the shape of the input
-        shape = tf.shape(self.y)
+        # Get the embedded T-F vectors from the network
+        embedding = self.network
 
-        # Reshape the targets to be of shape (batch, T*F, c) and the vectors to
-        # have shape (batch, T*F, K)
-        Y = tf.reshape(self.y, [shape[0], shape[1]*shape[2], shape[3]])
-        V = tf.reshape(self.network,
-                       [shape[0], shape[1]*shape[2], self.embedding_size])
+        # Reshape I so that it is of the correct dimension
+        I = tf.expand_dims( self.I, axis=2 )
 
-        # Compute the partition size vectors
-        ones = tf.ones([shape[0], shape[1]*shape[2], 1])
-        mul_ones = tf.matmul(tf.transpose(Y, perm=[0,2,1]), ones)
-        diagonal = tf.matmul(Y, mul_ones)
-        D = 1/tf.sqrt(diagonal)
-        D = tf.reshape(D, [shape[0], shape[1]*shape[2]])
+        # Normalize the speaker vectors and collect the speaker vectors
+        # correspinding to the speakers in batch
+        speaker_vectors = tf.nn.l2_normalize(self.speaker_vectors, 1)
+        Vspeakers = tf.gather_nd(speaker_vectors, I)
 
-        # Compute the matrix products needed for the cost function.  Reshapes
-        # are to allow the diagonal to be multiplied across the correct
-        # dimensions without explicitly constructing the full diagonal matrix.
-        DV  = D * tf.transpose(V, perm=[2,0,1])
-        DV = tf.transpose(DV, perm=[1,2,0])
-        VTV = tf.matmul(tf.transpose(V, perm=[0,2,1]), DV)
+        # Expand the dimensions in preparation for broadcasting
+        Vspeakers_broad = tf.expand_dims(Vspeakers, 1)
+        Vspeakers_broad = tf.expand_dims(Vspeakers_broad, 1)
+        embedding_broad = tf.expand_dims(embedding, 3)
 
-        DY = D * tf.transpose(Y, perm=[2,0,1])
-        DY = tf.transpose(DY, perm=[1,2,0])
-        VTY = tf.matmul(tf.transpose(V, perm=[0,2,1]), DY)
+        # Compute the dot product between the emebedding vectors and speaker
+        # vectors
+        dot = tf.reduce_sum(Vspeakers_broad * embedding_broad, 4)
 
-        YTY = tf.matmul(tf.transpose(Y, perm=[0,2,1]), DY)
+        # Compute the cost for every element
+        cost = -tf.log(tf.nn.sigmoid(self.y * dot))
 
-        # Compute the cost by taking the Frobenius norm for each matrix
-        cost = tf.norm(VTV, axis=[-2,-1]) -2*tf.norm(VTY, axis=[-2,-1]) + \
-               tf.norm(YTY, axis=[-2,-1])
+        # Average the cost over all speakers in the input
+        cost = tf.reduce_mean(cost, 3)
 
-        return tf.reduce_mean(cost)
+        # Average the cost over all batches
+        cost = tf.reduce_mean(cost, 0)
+
+        # Average the cost over all T-F elements.  Here is where weighting to
+        # account for gradient confidence can occur
+        cost = tf.reduce_mean(cost)
+
+        return cost
 
     @tf_utils.scope_decorator
     def optimizer(self):
@@ -158,14 +169,14 @@ class DeepClusteringModel:
         """
         self.saver.restore(self.sess, path)
 
-    def train_on_batch(self, X_train, y_train):
+    def train_on_batch(self, X_train, y_train, I_train):
         """
         Train the model on a batch with input X and target y. Returns the cost
         computed on this batch.
         """
 
         cost, _ = self.sess.run([self.cost, self.optimizer],
-                                {self.X: X_train, self.y: y_train})
+                            {self.X: X_train, self.y: y_train, self.I:I_train})
 
         return cost
 
@@ -177,9 +188,11 @@ class DeepClusteringModel:
         vectors = self.sess.run(self.network, {self.X: X_in})
         return vectors
 
-    def get_cost(self, X_in, y_in):
+    def get_cost(self, X_in, y_in, I_in):
         """
         Computes the cost of a batch, but does not update any model parameters.
         """
-        cost = self.sess.run(self.cost, {self.X: X_in, self.y: y_in})
+        cost = self.sess.run(self.cost,
+                            {self.X: X_in, self.y: y_in, self.I: I_in})
+
         return cost
