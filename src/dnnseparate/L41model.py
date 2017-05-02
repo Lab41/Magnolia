@@ -7,7 +7,7 @@ from ..utils import tf_utils
 class L41Model:
     def __init__(self, F=257, num_speakers=251,
                  layer_size=600, embedding_size=40,
-                 nonlinearity='logistic'):
+                 nonlinearity='logistic',normalize=False):
         """
         Initializes Lab41's clustering model.  Default architecture comes from
         the parameters used by the best performing model in the paper[1].
@@ -23,7 +23,9 @@ class L41Model:
                           training.
             layer_size: Size of BLSTM layers
             embedding_size: Dimension of embedding vector
-            nonlinearity: Nonlinearity to use in BLSTM layers
+            nonlinearity: Nonlinearity to use in BLSTM layers (default logistic)
+            normalize: Do you normalize vectors coming into the final layer? 
+                       (default False)
         """
 
         self.F = F
@@ -31,6 +33,7 @@ class L41Model:
         self.layer_size = layer_size
         self.embedding_size = embedding_size
         self.nonlinearity = nonlinearity
+        self.normalize = normalize
 
         self.graph = tf.Graph()
         with self.graph.as_default():
@@ -104,7 +107,8 @@ class L41Model:
                              [shape[0], shape[1], self.F, self.embedding_size])
 
         # Normalize the T-F vectors to get the network output
-        embedding = tf.nn.l2_normalize(embedding, 3)
+        if self.normalize:
+            embedding = tf.nn.l2_normalize(embedding, 3)
 
         return embedding
 
@@ -122,7 +126,10 @@ class L41Model:
 
         # Normalize the speaker vectors and collect the speaker vectors
         # correspinding to the speakers in batch
-        speaker_vectors = tf.nn.l2_normalize(self.speaker_vectors, 1)
+        if self.normalize:
+            speaker_vectors = tf.nn.l2_normalize(self.speaker_vectors, 1)
+        else:
+            speaker_vectors = self.speaker_vectors
         Vspeakers = tf.gather_nd(speaker_vectors, I)
 
         # Expand the dimensions in preparation for broadcasting
