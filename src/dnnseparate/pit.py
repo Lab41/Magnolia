@@ -53,6 +53,13 @@ class PITModel:
         self.loss
         self.optimize
 
+    def load(self, path, sess=None):
+        if sess is None:
+            sess = tf.get_default_session()
+        # with sess.as_default():
+        saver = tf.train.Saver()
+        saver.restore(sess, path)
+
     @scope
     def loss(self):
         '''
