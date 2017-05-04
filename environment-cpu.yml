@@ -1,18 +1,16 @@
-name: magnolia3
+name: magnolia3-cpu
 channels: !!python/tuple
 - defaults
 dependencies:
 - conda-forge::altair
 - conda-forge::pandas
 - conda-forge::matplotlib
-- python=3
+- python=3.5
 - numpy
 - scipy
 - scikit-learn
 - seaborn
 - pip:
-  - tensorflow
   - python_speech_features
   - theano
   - soundfile
-
