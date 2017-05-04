@@ -114,7 +114,7 @@ class Hdf5Iterator:
     def __next__(self):
         '''Randomly pick a dataset from the available options'''
         logger = logging.getLogger(__name__)
-        num_tries = 5
+        num_tries = 50
         for i in range(num_tries):
             next_key = self.rng.choice(self.h5_items)
             next_item = self.h5[next_key]
