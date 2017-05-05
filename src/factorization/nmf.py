@@ -32,12 +32,20 @@ def nmf(X, k, maxiter=1000):
 
     return W, H
 
+
 def snmf(X, k, sparsity=0.1, num_iters=100, W=None, H=None, W_init=None, H_init=None, W_norm='1', H_norm=None):
     '''
     Sparse Non-negative Matrix Factorization
     This function adapted from Graham Grindlay (grindlay@ee.columbia.edu)
 
     http://www.ee.columbia.edu/~grindlay/code.html
+
+    To train dictionaries, send in data from individual speakers on X and
+    collect the W matrices returned.
+    To do inference on mixtures, concatenate the appropriate speaker dictionaries
+    and send them in on W, with mixture data on X. The separated components
+    will be in the products W[:, i:j] @ H[i:j, :], where i and j index the components
+    in the concatenated dictionary corresponding to a particular speaker.
 
     Args:
         X (np.ndarray): 2-D n-by-m array to decompose
@@ -121,15 +129,17 @@ def snmf(X, k, sparsity=0.1, num_iters=100, W=None, H=None, W_init=None, H_init=
     for t in range(num_iters):
         # update H if requested
         if update_H:
+            WH = W@H + myeps
             k_by_m_penalty = W.T@Onm + sparsity
-            H = H * ((W.T @ (X / (W@H))) /
+            H = H * ((W.T @ (X / WH)) /
                 np.where(k_by_m_penalty>myeps, k_by_m_penalty, myeps))
             if H_norm:
                 H = normalize_H(H)
 
         # update W if requested
         if update_W:
-            R = X/(W@H)
+            WH = W@H + myeps
+            R = X/WH
             if W_norm == '1':
                 n_by_k_term = Onm@H.T + (Onn@(R@H.T * W))
                 n_by_k_term = np.where(n_by_k_term>myeps, n_by_k_term, myeps)
@@ -142,3 +152,30 @@ def snmf(X, k, sparsity=0.1, num_iters=100, W=None, H=None, W_init=None, H_init=
 
         # TODO: add error calculation and convergence checks
     return W, H
+
+def nmf_separate(mix, spkr_models, mask=False, num_iters=500):
+    '''
+    Args:
+        mix (array-like): matrix (magnitude spectrogram in F x T) to separate.
+        spkr_models (list): paired W,H matrices for each speaker. H can be any value; it is not used
+        mask (bool): return matrix products directly or use them as ratio masks on mix?
+    '''
+    w_all = np.concatenate([x[0] for x in spkr_models], axis=1)
+    new_h_all = []
+    reconstructions = []
+    num_spkrs = len(spkr_models)
+    total_components = w_all.shape[1]
+    components_per_spkr = total_components // num_spkrs
+    _, h_new = snmf(mix, total_components, num_iters=num_iters, sparsity=0.0, W=w_all)
+    for i in range(num_spkrs):
+        h_new_spkr = h_new[i*components_per_spkr:(i+1)*components_per_spkr]
+        new_h_all.append(h_new_spkr)
+        reconstruction = spkr_models[i][0] @ h_new_spkr
+        reconstructions.append(reconstruction)
+    if mask:
+        masks = np.array(reconstructions)
+        norm_mask = masks.sum(axis=0)
+        for i in range(num_spkrs):
+            masks[i] = masks[i] / norm_mask
+            reconstructions[i] = masks[i] * mix
+    return reconstructions
