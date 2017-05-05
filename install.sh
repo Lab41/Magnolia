@@ -48,7 +48,7 @@ if [[ "$TF_URL" == "" ]]; then
 fi
 
 if [[ "$GPU" == "true" ]]; then
-    conda create -f "$DIR"/environment-gpu.yml
+    conda env create -f "$DIR"/environment-gpu.yml
     # ungodly hack here (get path prefix for new environment)
     ENV_PREFIX=$(conda info --envs --json | python -c 'import json; import sys; print("\n".join([env for env in json.loads(sys.stdin.read())["envs"] if "magnolia3-gpu" in env]))')
     echo "New environment: $ENV_PREFIX"
