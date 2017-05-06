@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+'''
+Permutation-invariant cost for audio source separation.
+Based on Kolbaek et al. (2017) manuscript. Replicates the CNN and dense
+network from the paper, alongside a couple of alternatives.
+'''
 import sys
 from itertools import islice, permutations, product
 
@@ -321,6 +326,9 @@ class PITModel:
 
 
 def training_setup(num_srcs, num_steps, num_freq_bins):
+    '''
+    Utility function for running training from the command line
+    '''
     tf.reset_default_graph()
 
     model = PITModel('pit-s-dnn', num_srcs, num_steps, num_freq_bins)
@@ -331,6 +339,9 @@ def training_setup(num_srcs, num_steps, num_freq_bins):
 
 def training_loop(model, source_a, source_b, sess,
                   num_steps=51, num_freq_bins=257, batch_size=128, num_batches=10000):
+    '''
+    Implements a simple training loop for PIT and returns the losses.
+    '''
     losses = []
     num_srcs = 2
     mixed_features = FeatureMixer([source_a, source_b], shape=(num_steps, None))
@@ -354,6 +365,7 @@ def training_loop(model, source_a, source_b, sess,
 
     return losses
 
+# Running from command line mostly a toy application
 if __name__=="__main__":
     try:
         src1, src2, num_batches = sys.argv[1:]
