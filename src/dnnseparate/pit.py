@@ -280,7 +280,6 @@ class PITModel:
         zeros_to_pad = np.zeros((length_to_pad, self.num_freq_bins))
         mixture = np.concatenate((mixture, zeros_to_pad), axis=0)
         mix_length = orig_mix_length + length_to_pad
-        print(mix_length)
 
         # Window out input mixture, fill in reconstruction
         output_spectrograms = np.zeros((self.num_srcs, *mixture.shape), dtype=spec_dtype)
