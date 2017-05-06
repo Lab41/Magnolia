@@ -5,6 +5,8 @@ dependencies:
 - conda-forge::altair
 - conda-forge::pandas
 - conda-forge::matplotlib
+- flask
+- h5py
 - python=3.5
 - numpy
 - scipy
@@ -14,3 +16,4 @@ dependencies:
   - python_speech_features
   - theano
   - soundfile
+  - keras
