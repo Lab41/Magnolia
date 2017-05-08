@@ -280,6 +280,9 @@ class PITModel:
         if sess is None:
             sess = tf.get_default_session()
 
+        if orig_mix_length == self.num_steps:
+            return sess.run(self.predict, { self.X_in: np.expand_dims(mixture, 0) })
+
         # Length of step must evenly divide into mixture length-window length
         length_to_pad = step_length - (orig_mix_length - window_length) % step_length
         zeros_to_pad = np.zeros((length_to_pad, self.num_freq_bins))
@@ -320,7 +323,6 @@ class PITModel:
             output_spectrograms[src_id, :step_length] += \
                 (output_head[0, src_id, step_length_complement:].T
                 * window[step_length_complement:]).T
-
 
         return output_spectrograms[:, :orig_mix_length]
 
