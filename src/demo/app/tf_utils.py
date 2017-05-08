@@ -88,3 +88,51 @@ def conv1d_layer(x, shape):
     biases = bias_variable([shape[-1]])
 
     return conv1d(x, weights) + biases
+
+def BLSTM(x, size, scope, nonlinearity='logistic'):
+    """
+    Bidirectional LSTM layer with input vector x and size hidden units.
+    Inputs:
+        x: Tensor of shape (batch size, time steps, features)
+        size: Even integer size of BLSTM layer
+        scope: String that sets the variable scope.
+        nonlinearity: String specifying activation to use in the RNNs.
+                      options include 'logistic' for sigmoid activation and
+                      'tanh' for tanh activation.
+    Returns:
+        Tensor of shape (batch_size, time steps, size) corresponding to the
+        output of the BLSTM for each batch at every time step
+    """
+
+    # Get the forward input and reverse it for the backwards input
+    forward_input = x
+    backward_input = tf.reverse(x, [1])
+
+    # Define forward RNN
+    with tf.variable_scope('forward_' + scope):
+        if nonlinearity == 'logistic':
+            forward_lstm = tf.contrib.rnn.BasicLSTMCell(size//2,
+                                                        activation=tf.sigmoid)
+        elif nonlinearity == 'tanh':
+            forward_lstm = tf.contrib.rnn.BasicLSTMCell(size//2,
+                                                        activation=tf.tanh)
+
+        forward_out, f_state = tf.nn.dynamic_rnn(forward_lstm, forward_input,
+                                                 dtype=tf.float32)
+
+    # Define the backward RNN
+    with tf.variable_scope('backward_' + scope):
+        if nonlinearity == 'logistic':
+            backward_lstm = tf.contrib.rnn.BasicLSTMCell(size//2,
+                                                         activation=tf.sigmoid)
+        elif nonlinearity == 'tanh':
+            backward_lstm = tf.contrib.rnn.BasicLSTMCell(size//2,
+                                                         activation=tf.tanh)
+
+        backward_out, b_state = tf.nn.dynamic_rnn(backward_lstm, backward_input,
+                                                  dtype=tf.float32)
+
+    # Concatenate the RNN outputs and return
+    output = tf.concat([forward_out[:,:,:], backward_out[:,::-1,:]], 2)
+
+    return output    

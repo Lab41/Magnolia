@@ -11,9 +11,10 @@ import matplotlib.pylab as plt
 import pylab
 import collections
 import os
-from .tflow_functions import tflow_separate
+from .tflow_functions import tflow_separate,deep_cluster_separate
 import soundfile as sf
 from .keras_functions import keras_separate,keras_spec
+
 
 project_root = app.root_path
 
@@ -51,6 +52,15 @@ def index():
             sf.write(project_root + '/resources/' + input_signal_filename + 'tflowsplit'+str(index)+'.wav',speaker/speaker.max(),10000) 
             state['wav_list'].append(input_signal_filename + 'tflowsplit'+str(index)+'.wav')
   
+    elif request.method == 'POST' and request.form['btn'] == 'DeepC' and state['input_signal_url'] != None:  
+        
+        #Separate speakers 
+        signals = deep_cluster_separate(project_root + state['input_signal_url'])
+        state['wav_list'][:] = [] 
+        for index,speaker in enumerate(signals): 
+            sf.write(project_root + '/resources/' + input_signal_filename + 'dclustersplit'+str(index)+'.wav',speaker/speaker.max(),10000) 
+            state['wav_list'].append(input_signal_filename + 'dclustersplit'+str(index)+'.wav')        
+
 
     return render_template('index.html',
                            title='Home',
