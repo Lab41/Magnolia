@@ -1,7 +1,7 @@
 import numpy as np
-from src.features.hdf5_iterator import Hdf5Iterator
-from src.features.mixer import FeatureMixer
-from src.features.wav_iterator import batcher
+from .hdf5_iterator import Hdf5Iterator
+from .mixer import FeatureMixer
+from .wav_iterator import batcher
 
 
 class SupervisedIterator(Hdf5Iterator):
