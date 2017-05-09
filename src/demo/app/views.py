@@ -68,8 +68,8 @@ def index():
         #    sf.write(project_root + '/resources/' + input_signal_filename + 'dclustersplit'+str(index)+'.wav',speaker/speaker.max(),10000) 
         #    state['wav_list'].append(input_signal_filename + 'dclustersplit'+str(index)+'.wav') 
         if(input_signal_filename == 'mixed_signal'):
-            state['wav_list'].append('b_pit_mf_source_0.wav')
             state['wav_list'].append('b_pit_mf_source_1.wav')
+            state['wav_list'].append('b_pit_mf_source_0.wav')
             
 
     elif request.method == 'POST' and request.form['btn'] == 'NMF' and state['input_signal_url'] != None:
