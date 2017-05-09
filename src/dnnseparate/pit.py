@@ -265,7 +265,7 @@ class PITModel:
 
         Args:
             mixture: *one* input example (no support for batches right now),
-                will be separated
+                will be separated. txf
             sess: tensorflow session
         '''
 
