@@ -45,7 +45,15 @@ def index():
         if(input_signal_filename == 'mixed_signal'):
             state['wav_list'].append('l41_mf_source_0.wav')
             state['wav_list'].append('l41_mf_source_1.wav')
-
+        elif(input_signal_filename == 'expt-1-mix'):
+            state['wav_list'].append('expt-1-source-1.wav')   
+            state['wav_list'].append('expt-1-source-2.wav')
+        elif(input_signal_filename == 'expt-2-mix'):
+            state['wav_list'].append('expt-2-source-1.wav')   
+            state['wav_list'].append('expt-2-source-2.wav') 
+        elif(input_signal_filename == 'expt-4-mix'):
+            state['wav_list'].append('expt-4-source-1.wav')   
+            state['wav_list'].append('expt-4-source-2.wav')      
 
     elif request.method == 'POST' and request.form['btn'] == 'DeepNet' and state['input_signal_url'] != None:  
         
