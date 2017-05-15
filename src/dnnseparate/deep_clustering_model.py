@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from magnolia.utils import tf_utils
+from ..utils import tf_utils
 
 class DeepClusteringModel:
     def __init__(self, F=257,
