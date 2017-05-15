@@ -32,11 +32,17 @@ def nmf(X, k, maxiter=1000):
 
     return W, H
 
+<<<<<<< HEAD
 
 def snmf(X, k, sparsity=0.1, num_iters=100, W=None, H=None, W_init=None, H_init=None, W_norm='1', H_norm=None):
+=======
+def snmf(X, k, sparsity=0.1, num_iters=100, W=None, H=None, W_init=None, H_init=None, W_norm='1', H_norm=None,
+    return_errors=False, update_weight=1.0):
+>>>>>>> cf6addfdef442333927448047ba032ae236a0f98
     '''
     Sparse Non-negative Matrix Factorization
     This function adapted from Graham Grindlay (grindlay@ee.columbia.edu)
+    (nmf_kl_sparse_es)
 
     http://www.ee.columbia.edu/~grindlay/code.html
 
@@ -71,7 +77,7 @@ def snmf(X, k, sparsity=0.1, num_iters=100, W=None, H=None, W_init=None, H_init=
 
 
     n, m = X.shape
-    myeps = 10e-7
+    myeps = 10e-8
 
     # initialize W
     if W is None:
@@ -123,16 +129,17 @@ def snmf(X, k, sparsity=0.1, num_iters=100, W=None, H=None, W_init=None, H_init=
     Onn = np.ones((n,n))
     Onm = np.ones((n,m))
 
-    # I_errs = []
-    # s_errs = []
-    # errs = []
+    I_errs = []
+    s_errs = []
+    errs = []
     for t in range(num_iters):
         # update H if requested
         if update_H:
             WH = W@H + myeps
             k_by_m_penalty = W.T@Onm + sparsity
-            H = H * ((W.T @ (X / WH)) /
-                np.where(k_by_m_penalty>myeps, k_by_m_penalty, myeps))
+            H = ((1. - update_weight) * H +
+                update_weight * (H * ((W.T @ (X / WH)) /
+                np.where(k_by_m_penalty>myeps, k_by_m_penalty, myeps))))
             if H_norm:
                 H = normalize_H(H)
 
@@ -143,15 +150,31 @@ def snmf(X, k, sparsity=0.1, num_iters=100, W=None, H=None, W_init=None, H_init=
             if W_norm == '1':
                 n_by_k_term = Onm@H.T + (Onn@(R@H.T * W))
                 n_by_k_term = np.where(n_by_k_term>myeps, n_by_k_term, myeps)
-                W = W * ((R@H.T + (Onn@(Onm@H.T * W))) / n_by_k_term)
+                W = ((1. - update_weight) * W +
+                    update_weight * (W * ((R@H.T + (Onn@(Onm@H.T * W))) / n_by_k_term)))
             elif W_norm == 2:
                 n_by_k_term = Onm@H.T + W * (Onn@(R@H.T * W))
-                W = W * ((R@H.T + W * (Onn@(Onm@H.T * W))) /
-                           np.where(n_by_k_term>myeps, n_by_k_term, myeps))
+                W = ((1. - update_weight) * W +
+                    update_weight * (W * ((R@H.T + W * (Onn@(Onm@H.T * W))) /
+                           np.where(n_by_k_term>myeps, n_by_k_term, myeps))))
             W = normalize_W(W)
 
         # TODO: add error calculation and convergence checks
-    return W, H
+        #
+        # % compute squared error
+        # I_errs(t) = sum(V(:).*log(V(:)./R(:)) - V(:) + R(:));
+        # s_errs(t) = sum(H(:));
+        # errs(t) = I_errs(t) + alpha*s_errs(t);
+        WH = (W@H) + myeps
+        # I_errs.append(np.sum(X * np.log(X / WH + myeps) - X + WH))
+        I_errs.append(np.sum(np.square(X-WH)))
+        s_errs.append(np.sum(H))
+        errs.append(I_errs[-1] + sparsity * s_errs[-1])
+
+    if return_errors:
+        return W, H, I_errs, s_errs, errs
+    else:
+        return W, H
 
 def nmf_separate(mix, spkr_models, mask=False, num_iters=500):
     '''
