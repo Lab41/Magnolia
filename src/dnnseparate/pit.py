@@ -2,7 +2,15 @@
 '''
 Permutation-invariant cost for audio source separation.
 Based on Kolbaek et al. (2017) manuscript. Replicates the CNN and dense
-network from the paper, alongside a couple of alternatives.
+network from the paper, alongside an alternative, smaller CNN architecture.
+
+Permutation-invariant training (PIT) aims to overcome the limitation that the outputs
+of a multi-output neural network are order-sensitive, but the target truth is not. Any
+permutation of outputs that corresponds to a valid separation of speakers should
+be permitted by the objective function.
+
+PIT calculates all pairwise assignments of output to unique target, and chooses
+the minimum total loss over permutations of assignments during training.
 '''
 import sys
 from itertools import islice, permutations, product
@@ -21,9 +29,8 @@ class PITModel:
         num_steps=50, num_freq_bins=513, learning_rate=0.001):
         '''
         Args:
-            method (str): one of {'pit-s-cnn','pit-s-cnn-small', 'pit-s-dnn',
-                or 'dense'}-- selects the network architecture to use with the
-                PIT loss
+            method (str): one of {'pit-s-cnn','pit-s-cnn-small', or 'pit-s-dnn'}.
+                Selects the network architecture to use with the PIT loss
             num_srcs (int): number of sources to output reconstructions for. Inference
                 on different numbers of speakers from the number the network was
                 trained on is not yet implemented.
@@ -39,14 +46,13 @@ class PITModel:
         self.y_in = tf.placeholder(tf.float32, (None, num_srcs, num_steps, num_freq_bins))
         self.learning_rate = learning_rate
 
+        # Choose appropriate ops for the desired network architecture
         if method=='pit-s-cnn':
             self.network = self.cnn_mask
         elif method=='pit-s-cnn-small':
             self.network = self.cnn_mask_smaller
         elif method=='pit-s-dnn':
             self.network = self.dense_mask
-        elif method=='dense':
-            self.network = self.dense
         else:
             raise ValueError("Invalid network: {method}".format(method=method))
 
@@ -72,6 +78,8 @@ class PITModel:
         respecting that each example in the minibatch might
         have a different optimal mapping of truth to reconstruction
 
+        Returns:
+            TensorFlow op describe the minibatch loss of the model
         '''
 
         # compute pairwise costs
@@ -265,7 +273,7 @@ class PITModel:
 
         Args:
             mixture: *one* input example (no support for batches right now),
-                will be separated. txf
+                will be separated. Time x Frequency
             sess: tensorflow session
         '''
 
