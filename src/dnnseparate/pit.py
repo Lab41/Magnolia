@@ -65,11 +65,34 @@ class PITModel:
         self.optimize
 
     def load(self, path, sess=None):
+        '''
+        Load weights into the model graph from path.
+
+        Args:
+            path - path to Tensorflow checkpoint
+            sess - Tensorflow session; if None, will be assigned to the default
+                session
+        '''
         if sess is None:
             sess = tf.get_default_session()
         # with sess.as_default():
         saver = tf.train.Saver()
         saver.restore(sess, path)
+
+    def save(self, path, sess=None):
+        '''
+        Save weights from the model graph at path.
+
+        Args:
+            path - path to Tensorflow checkpoint
+            sess - Tensorflow session; if None, will be assigned to the default
+                session
+        '''
+        if sess is None:
+            sess = tf.get_default_session()
+        # with sess.as_default():
+        saver = tf.train.Saver()
+        saver.save(sess, path)
 
     @scope
     def loss(self):
