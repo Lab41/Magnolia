@@ -152,28 +152,6 @@ class PITModel:
         return self.network[2]
 
     @scope
-    def dense(self):
-        '''
-        Home-brewed dense architecture, for testing.
-        '''
-        data_shape = tf.shape(self.X_in)
-        # Reduce dimensionality
-        x = flatten(self.X_in)
-        x = tf.layers.dense(x, 1000, tf.nn.relu)
-
-        # Split into two branches
-        branches = []
-        for src_id in range(self.num_srcs):
-            y = tf.layers.dense(x, 500, tf.nn.relu)
-
-            # Reconstruct
-            y = tf.layers.dense(y, self.num_steps*self.num_freq_bins, None)
-            y = tf.reshape(y, data_shape) * self.X_in
-            branches.append(y)
-
-        return self.mask_ops(tf.stack(branches, axis=1))
-
-    @scope
     def dense_mask(self):
         '''
         Replicates PIT-S-DNN architecture from Kolbaek et al. 2017
@@ -282,12 +260,12 @@ class PITModel:
     @scope
     def blstm_mask(self):
         raise NotImplementedError("Haven't finished BLSTM yet")
-        x = flatten(self.X_in)
-
-        fwd_lstm = tf.contrib.rnn.BasicLSTMCell(896)
-
-        x = tf.nn.bidirectional_dynamic_rnn()
-        return self.mask_ops(x)
+        # x = flatten(self.X_in)
+        #
+        # fwd_lstm = tf.contrib.rnn.BasicLSTMCell(896)
+        #
+        # x = tf.nn.bidirectional_dynamic_rnn()
+        # return self.mask_ops(x)
 
     def separate(self, mixture, sess=None):
         '''
