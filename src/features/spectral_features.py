@@ -10,7 +10,6 @@ import numpy as np
 import scipy
 import scipy.signal
 
-
 def stft(x, fs, framesz, hop, two_sided=True, fft_size=None):
     '''
     Short Time Fourier Transform (STFT) - Spectral decomposition
