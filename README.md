@@ -2,7 +2,7 @@
 
 We will focus on three independent problems. These are:
 
-1. *Monaural source separation* Using [source contrastive estimation](https://arxiv.org/abs/1705.04662) (submitted to SiPS 2017).
+1. **Monaural source separation** Using [source contrastive estimation](https://arxiv.org/abs/1705.04662) (submitted to SiPS 2017).
 2. Removing a source (whose location is static) that is dynamic and loud.
 3. Multiple moving sources (i.e., the channel changes with time) 
 4. Standoff distance acoustic enhancement (dynamic gain adjustment in low SNR)
