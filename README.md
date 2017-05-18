@@ -28,17 +28,28 @@ magnolia/src/notebooks
 ```
 
 
-## Data
+## Subdirectory contents:
 
+### Data
 - Directory: [`data`](https://github.com/Lab41/Magnolia/tree/master/data)
 - Contents: Data.
 
-## Documentation
-
+### Documentation
 - Directory: [`docs`](https://github.com/Lab41/Magnolia/tree/master/docs)
 - Contents: Documentation, including initial pitch and planning.
 
-## Source Code 
-
+### Source Code 
 - Directory: [`src`](https://github.com/Lab41/Magnolia/tree/master/src)
 - Contents: Source code.
+
+### Sandbox
+- Directory: [`sandbox`](https://github.com/Lab41/Magnolia/tree/master/sandbox)
+- Contents: Code we used to play around with certain algorithms
+
+### Utility
+- Directory: [`util`](https://github.com/Lab41/Magnolia/tree/master/util)
+- Contents: Utility and reference, including required installation packages
+
+### Evaluation
+- Directory: [`evaluation`](https://github.com/Lab41/Magnolia/tree/master/evaluation)
+- Contents: Evaluation code
