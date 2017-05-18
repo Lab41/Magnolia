@@ -5,6 +5,10 @@ Monaural source separation using several deep neural network approaches.  Each
 
 Current Models:
 - _Lab41's model_ - in [L41model.py](L41model.py)  
+
+    Source contrastive estimation. Contribution on [arXiv](https://arxiv.org/abs/1705.04662) and in submission to SiPS 2017.
+    See notebooks for how to run these algorithms in the [notebooks folder](../notebooks)
+
 - _Deep clustering_ in [deep_clustering_model.py](deep_clustering_model.py)
 
     Hershey, John., et al. "Deep Clustering: Discriminative embeddings
