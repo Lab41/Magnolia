@@ -12,7 +12,8 @@ import numpy as np
 
 class Hdf5Iterator:
     def __init__(self, hdf5_path, shape=None, pos=None, 
-                 seed=41, speaker_keys=None, return_key=False):
+                 seed=41, speaker_keys=None, num_tries=10,
+                 return_key=False):
         '''
         Args:
             hdf5_path (str): path to HDF5 file
@@ -43,6 +44,7 @@ class Hdf5Iterator:
 
         self.original_items = self.h5_items
         self.rng = np.random.RandomState(seed)
+        self.num_tries = num_tries
 
         # Handle unspecified dimensionality for shape and pos
         if shape is None and pos is None:
@@ -114,7 +116,7 @@ class Hdf5Iterator:
     def __next__(self):
         '''Randomly pick a dataset from the available options'''
         logger = logging.getLogger(__name__)
-        num_tries = 50
+        num_tries = self.num_tries
         for i in range(num_tries):
             next_key = self.rng.choice(self.h5_items)
             next_item = self.h5[next_key]
@@ -182,7 +184,7 @@ class Hdf5Iterator:
             data = (truth, data)
 
         return data
-    
+
 class SplitsIterator(Hdf5Iterator):
     def __init__(self, split_ratio, *args, **kwargs):
         '''
@@ -214,7 +216,7 @@ class SplitsIterator(Hdf5Iterator):
                 if i == split_lens[split_no]:
                     split_no += 1
                 split_list[split_no] += [ group + '/' + item ]
-                
+
         self.split_list = split_list
         self.h5_items = split_list[self.split_index]
 
@@ -224,11 +226,11 @@ class SplitsIterator(Hdf5Iterator):
         Args:
             index: which split are you going to use?
         '''
-        
+
         self.speaker_subset( self.h5_groups )
         self.split_index = index
         self.h5_items = self.split_list[index]
-            
+
 
 def mock_hdf5(hdf5_path="._test.h5", scale=1):
     # make small test hdf5 object

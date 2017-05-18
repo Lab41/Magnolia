@@ -2,7 +2,15 @@
 '''
 Permutation-invariant cost for audio source separation.
 Based on Kolbaek et al. (2017) manuscript. Replicates the CNN and dense
-network from the paper, alongside a couple of alternatives.
+network from the paper, alongside an alternative, smaller CNN architecture.
+
+Permutation-invariant training (PIT) aims to overcome the limitation that the outputs
+of a multi-output neural network are order-sensitive, but the target truth is not. Any
+permutation of outputs that corresponds to a valid separation of speakers should
+be permitted by the objective function.
+
+PIT calculates all pairwise assignments of output to unique target, and chooses
+the minimum total loss over permutations of assignments during training.
 '''
 import sys
 from itertools import islice, permutations, product
@@ -11,8 +19,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.layers import flatten
 
-from ..features.mixer import FeatureMixer
-from ..features.wav_iterator import batcher
+from ..iterate.mixer import FeatureMixer
+from ..iterate.wav_iterator import batcher
 from ..features.spectral_features import scale_spectrogram
 from ..utils.tf_utils import scope_decorator as scope
 
@@ -21,9 +29,8 @@ class PITModel:
         num_steps=50, num_freq_bins=513, learning_rate=0.001):
         '''
         Args:
-            method (str): one of {'pit-s-cnn','pit-s-cnn-small', 'pit-s-dnn',
-                or 'dense'}-- selects the network architecture to use with the
-                PIT loss
+            method (str): one of {'pit-s-cnn','pit-s-cnn-small', or 'pit-s-dnn'}.
+                Selects the network architecture to use with the PIT loss
             num_srcs (int): number of sources to output reconstructions for. Inference
                 on different numbers of speakers from the number the network was
                 trained on is not yet implemented.
@@ -39,14 +46,13 @@ class PITModel:
         self.y_in = tf.placeholder(tf.float32, (None, num_srcs, num_steps, num_freq_bins))
         self.learning_rate = learning_rate
 
+        # Choose appropriate ops for the desired network architecture
         if method=='pit-s-cnn':
             self.network = self.cnn_mask
         elif method=='pit-s-cnn-small':
             self.network = self.cnn_mask_smaller
         elif method=='pit-s-dnn':
             self.network = self.dense_mask
-        elif method=='dense':
-            self.network = self.dense
         else:
             raise ValueError("Invalid network: {method}".format(method=method))
 
@@ -59,11 +65,34 @@ class PITModel:
         self.optimize
 
     def load(self, path, sess=None):
+        '''
+        Load weights into the model graph from path.
+
+        Args:
+            path - path to Tensorflow checkpoint
+            sess - Tensorflow session; if None, will be assigned to the default
+                session
+        '''
         if sess is None:
             sess = tf.get_default_session()
         # with sess.as_default():
         saver = tf.train.Saver()
         saver.restore(sess, path)
+
+    def save(self, path, sess=None):
+        '''
+        Save weights from the model graph at path.
+
+        Args:
+            path - path to Tensorflow checkpoint
+            sess - Tensorflow session; if None, will be assigned to the default
+                session
+        '''
+        if sess is None:
+            sess = tf.get_default_session()
+        # with sess.as_default():
+        saver = tf.train.Saver()
+        saver.save(sess, path)
 
     @scope
     def loss(self):
@@ -72,6 +101,8 @@ class PITModel:
         respecting that each example in the minibatch might
         have a different optimal mapping of truth to reconstruction
 
+        Returns:
+            TensorFlow op describe the minibatch loss of the model
         '''
 
         # compute pairwise costs
@@ -119,28 +150,6 @@ class PITModel:
     @scope
     def logits(self):
         return self.network[2]
-
-    @scope
-    def dense(self):
-        '''
-        Home-brewed dense architecture, for testing.
-        '''
-        data_shape = tf.shape(self.X_in)
-        # Reduce dimensionality
-        x = flatten(self.X_in)
-        x = tf.layers.dense(x, 1000, tf.nn.relu)
-
-        # Split into two branches
-        branches = []
-        for src_id in range(self.num_srcs):
-            y = tf.layers.dense(x, 500, tf.nn.relu)
-
-            # Reconstruct
-            y = tf.layers.dense(y, self.num_steps*self.num_freq_bins, None)
-            y = tf.reshape(y, data_shape) * self.X_in
-            branches.append(y)
-
-        return self.mask_ops(tf.stack(branches, axis=1))
 
     @scope
     def dense_mask(self):
@@ -251,12 +260,12 @@ class PITModel:
     @scope
     def blstm_mask(self):
         raise NotImplementedError("Haven't finished BLSTM yet")
-        x = flatten(self.X_in)
-
-        fwd_lstm = tf.contrib.rnn.BasicLSTMCell(896)
-
-        x = tf.nn.bidirectional_dynamic_rnn()
-        return self.mask_ops(x)
+        # x = flatten(self.X_in)
+        #
+        # fwd_lstm = tf.contrib.rnn.BasicLSTMCell(896)
+        #
+        # x = tf.nn.bidirectional_dynamic_rnn()
+        # return self.mask_ops(x)
 
     def separate(self, mixture, sess=None):
         '''
@@ -265,7 +274,7 @@ class PITModel:
 
         Args:
             mixture: *one* input example (no support for batches right now),
-                will be separated. txf
+                will be separated. Time x Frequency
             sess: tensorflow session
         '''
 
