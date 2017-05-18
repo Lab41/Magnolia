@@ -32,13 +32,8 @@ def nmf(X, k, maxiter=1000):
 
     return W, H
 
-<<<<<<< HEAD
-
-def snmf(X, k, sparsity=0.1, num_iters=100, W=None, H=None, W_init=None, H_init=None, W_norm='1', H_norm=None):
-=======
 def snmf(X, k, sparsity=0.1, num_iters=100, W=None, H=None, W_init=None, H_init=None, W_norm='1', H_norm=None,
     return_errors=False, update_weight=1.0):
->>>>>>> cf6addfdef442333927448047ba032ae236a0f98
     '''
     Sparse Non-negative Matrix Factorization
     This function adapted from Graham Grindlay (grindlay@ee.columbia.edu)
