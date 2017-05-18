@@ -1,5 +1,5 @@
 import numpy as np
-from ..features.data_preprocessing import undo_preemphasis
+from ..features.preprocessing import undo_preemphasis
 from ..features.spectral_features import istft
 
 def reconstruct(spec_mag, spec_full, fs, window_size, step_size, square=False,

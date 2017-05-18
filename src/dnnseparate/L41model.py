@@ -61,7 +61,7 @@ class L41Model:
         # Create a session to run this graph
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
-        self.sess = tf.Session(graph = self.graph)
+        self.sess = tf.Session(graph = self.graph, config = config)
 
     def __del__(self):
         """

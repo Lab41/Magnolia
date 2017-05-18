@@ -8,8 +8,8 @@ import numpy as np
 from sklearn.cluster import KMeans
 
 from ..features.spectral_features import istft
-from ..features.data_preprocessing import make_stft_features, \
-                                                 undo_preemphasis
+from ..features.preprocessing import make_stft_features, \
+                                     undo_preemphasis
 
 def preprocess_signal(signal, sample_rate):
     """

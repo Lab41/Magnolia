@@ -11,8 +11,9 @@ import h5py
 import numpy as np
 
 class Hdf5Iterator:
-    def __init__(self, hdf5_path, shape=None, pos=None,
-                 seed=41, speaker_keys=None, return_key=False):
+    def __init__(self, hdf5_path, shape=None, pos=None, 
+                 seed=41, speaker_keys=None, num_tries=10,
+                 return_key=False):
         '''
         Args:
             hdf5_path (str): path to HDF5 file
@@ -43,6 +44,7 @@ class Hdf5Iterator:
 
         self.original_items = self.h5_items
         self.rng = np.random.RandomState(seed)
+        self.num_tries = num_tries
 
         # Handle unspecified dimensionality for shape and pos
         if shape is None and pos is None:
@@ -114,8 +116,7 @@ class Hdf5Iterator:
     def __next__(self):
         '''Randomly pick a dataset from the available options'''
         logger = logging.getLogger(__name__)
-        num_tries = 50
-
+        num_tries = self.num_tries
         for i in range(num_tries):
             next_key = self.rng.choice(self.h5_items)
             next_item = self.h5[next_key]
