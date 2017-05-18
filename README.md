@@ -10,6 +10,12 @@ We will focus on three independent problems. These are:
 
 This project will be primarily an analysis of cost functions (in supervised and unsupervised settings) that can be used in order to denoise and isolate signals. The resulting algorithms of interest will be a mix of cost function resembling ICA and simulated beamforming methods. 
 
+## Installation
+
+```
+pip install --upgrade --no-deps git+https://github.com/lab41/magnolia
+```
+
 ## Data
 
 - Directory: [`data`](https://github.com/Lab41/Magnolia/tree/master/data)
