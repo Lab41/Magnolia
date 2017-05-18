@@ -12,9 +12,21 @@ This project will be primarily an analysis of cost functions (in supervised and 
 
 ## Installation
 
+If you'd like to just call the code in the repository:
 ```
 pip install --upgrade --no-deps git+https://github.com/lab41/magnolia
 ```
+
+To update our files and edit our code as well as look at our notebooks:
+```
+git clone https://github.com/lab41/magnolia
+pip install --upgrade --no-deps magnolia/
+```
+Our notebooks are located at:
+```
+magnolia/src/notebooks
+```
+
 
 ## Data
 
