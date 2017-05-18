@@ -3,7 +3,7 @@ from itertools import islice
 import numpy as np
 import scipy.signal
 import python_speech_features as psf
-from . import spectral_features
+from ..features import spectral_features
 
 class LmfIterator:
     def __init__(self, spectrograms, transform_which=None,
