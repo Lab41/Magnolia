@@ -10,7 +10,7 @@ from .hdf5_iterator import Hdf5Iterator
 class FeatureMixer:
 
     def __init__(self, iterators, mix_method='sum', shape=None, pos=None, seed=0,
-                 diffseed=True, return_key=False ):
+                 diffseed=True, return_key=False, Iterator=Hdf5Iterator ):
         '''
         FeatureMixer: Mixes feature iterators together, yielding an
         iterator over both the original input iterators and the mixed
@@ -42,7 +42,7 @@ class FeatureMixer:
             if isinstance(iterator, str):
                 # Only add to the seed if `diffseed` is true
                 iseed = seed + int(diffseed)*i
-                self.iterators.append(Hdf5Iterator(iterator,shape=shape,pos=pos,seed=iseed, return_key=return_key))
+                self.iterators.append(Iterator(iterator,shape=shape,pos=pos,seed=iseed, return_key=return_key))
             else:
                 self.iterators.append(iterator)
         self.mix_method = mix_method
@@ -83,7 +83,10 @@ class FeatureMixer:
 
         return batches
 
+    def speaker_subset( self, speaker_keys ):
 
+        for iterator in self.iterators:
+            iterator.speaker_subset( speaker_keys )
 
 
 if __name__ == "__main__":

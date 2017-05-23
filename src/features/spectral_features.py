@@ -35,6 +35,7 @@ def stft(x, fs, framesz, hop, two_sided=True, fft_size=None):
         noverlap=overlap_samp, nfft=fft_size, return_onesided=not two_sided)
     return X.T
 
+
 def istft(X, fs, recon_size, hop, two_sided=True, fft_size=None):
     ''' Inverse Short Time Fourier Transform (iSTFT) - Spectral reconstruction
 
@@ -55,8 +56,7 @@ def istft(X, fs, recon_size, hop, two_sided=True, fft_size=None):
     hopsamp = int(hop*fs)
     overlap_samp = framesamp - hopsamp
 
-
-    _, x = scipy.signal.istft(X.T, fs, window='hann', nperseg=framesamp,
+    _, x = scipy.signal.istft(X.T, fs=fs, window='hann', nperseg=framesamp,
         nfft=fft_size, noverlap = overlap_samp,
         input_onesided=not two_sided)
     if recon_size is not None and recon_size != x.shape[0]:
@@ -65,18 +65,20 @@ def istft(X, fs, recon_size, hop, two_sided=True, fft_size=None):
         "deprecated recon_size parameter ({}).".format(x.shape[0], recon_size))
     return x
 
-def reconstruct(spec_mag, spec_phase, fs, window_size, step_size):
-    mag = np.absolute(spec_mag)
-    if spec_phase is None:
-        phase = np.random.randn(*spec_mag.shape)
-    else:
-        phase = np.exp(1.0j*np.unwrap(np.angle(spec_phase)))
-    duration = (spec_mag.shape[0]-1)*step_size+window_size
-    return istft(mag * phase,
-                 fs,
-                 duration,
-                 step_size,
-                 two_sided=False)
+
+
+
+
+def scale_spectrogram(spectrogram):
+    mag_spec = np.abs(spectrogram)
+    phases = np.unwrap(np.angle(spectrogram))
+
+    mag_spec = np.sqrt(mag_spec)
+    M = mag_spec.max()
+    m = mag_spec.min()
+
+    return (mag_spec - m)/(M - m), phases
+
 
 if __name__=="__main__":
     logging.basicConfig(level=logging.DEBUG)

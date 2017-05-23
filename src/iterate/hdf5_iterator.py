@@ -11,7 +11,9 @@ import h5py
 import numpy as np
 
 class Hdf5Iterator:
-    def __init__(self, hdf5_path, shape=None, pos=None, seed=41, return_key=False):
+    def __init__(self, hdf5_path, shape=None, pos=None, 
+                 seed=41, speaker_keys=None, num_tries=10,
+                 return_key=False):
         '''
         Args:
             hdf5_path (str): path to HDF5 file
@@ -31,12 +33,18 @@ class Hdf5Iterator:
         '''
         self.hdf5_path = hdf5_path
         self.h5 = h5py.File(hdf5_path, 'r')
-        self.h5_groups = [key for key in self.h5]
+        if speaker_keys:
+            self.h5_groups = [speaker_keys] if isinstance(speaker_keys, str) else speaker_keys
+        else:
+            self.h5_groups = [key for key in self.h5]
+        self.speaker_keys = self.h5_groups
         self.h5_items = []
         for group in self.h5_groups:
             self.h5_items += [ group + '/' + item for item in self.h5[group] ]
+
+        self.original_items = self.h5_items
         self.rng = np.random.RandomState(seed)
-        self.return_key=return_key
+        self.num_tries = num_tries
 
         # Handle unspecified dimensionality for shape and pos
         if shape is None and pos is None:
@@ -62,10 +70,53 @@ class Hdf5Iterator:
         else:
             self.pos = pos
 
+        self.return_key=return_key
+        if return_key:
+            self.labels = [ flac.split('/')[0] for flac in self.h5_groups ]
+            self.labels.sort()
+            self.labeldict = {}
+            for i,l in enumerate(self.labels):
+                self.labeldict[ l ] = i
+
+    def speaker_subset( self, speaker_keys=None ):
+        '''
+        Specify a speaker subset with the subset of splits. Takes in as an
+        argument:
+
+        speaker_keys = list of keys (Default to None if you want to reset)
+        '''
+        if speaker_keys:
+            self.h5_groups = speaker_keys
+        else:
+            self.h5_groups = self.speaker_keys
+
+        h5_items_original = set( self.original_items )
+        self.h5_items = []
+        for item in h5_items_original:
+            if item.split('/')[0] in self.h5_groups:
+                self.h5_items +=  [ item ]
+
+    def make_random_embedding( self, hidden_units, num_labels=None ):
+        '''
+        Create a matrix that is of size hidden_units (the embedding
+        size) x number_labels
+        '''
+        if num_labels:
+            return np.random.randn( hidden_units, num_labels )
+        else:
+            return np.random.randn( hidden_units, len(self.labels) )
+
+    def label2dict( self, lookup ):
+
+        lookup = lookup.split('/')[0]
+        if type(lookup)==list:
+            return [ self.labeldict[l] for l in lookup ]
+        return self.labeldict[lookup]
+
     def __next__(self):
         '''Randomly pick a dataset from the available options'''
         logger = logging.getLogger(__name__)
-        num_tries = 5
+        num_tries = self.num_tries
         for i in range(num_tries):
             next_key = self.rng.choice(self.h5_items)
             next_item = self.h5[next_key]
@@ -133,6 +184,52 @@ class Hdf5Iterator:
             data = (truth, data)
 
         return data
+
+class SplitsIterator(Hdf5Iterator):
+    def __init__(self, split_ratio, *args, **kwargs):
+        '''
+        Iterates only over records from file at hdf5_path (see Hdf5Iterator)
+        with a first-level key in speaker_keys
+        Args:
+            split_ratio (list): a list with numbers that sum to 1.0
+            hdf5_path
+            split_index (int): which split you want to iterate over. This can be
+                               set anytime
+        '''
+        super(SplitsIterator,self).__init__(*args, **kwargs)
+
+        self.split_ratio = split_ratio
+        self.split_index = 0
+
+        # Build the split lists
+        split_list = [[] for i in split_ratio]
+        for group in self.h5_groups:
+            items = [item for item in self.h5[group] ]
+            items.sort()
+
+            split_lens = [ np.ceil( split_no*len(items)) for split_no in split_ratio ]
+            for i, split_no in enumerate(split_lens[1:]):
+                split_lens[i+1] += split_lens[i]
+
+            split_no = 0
+            for i, item in enumerate(items):
+                if i == split_lens[split_no]:
+                    split_no += 1
+                split_list[split_no] += [ group + '/' + item ]
+
+        self.split_list = split_list
+        self.h5_items = split_list[self.split_index]
+
+    def set_split(self, index):
+        '''
+        Set the split index. (Typically training: 0, dev: 1, test: 2, etc.)
+        Args:
+            index: which split are you going to use?
+        '''
+
+        self.speaker_subset( self.h5_groups )
+        self.split_index = index
+        self.h5_items = self.split_list[index]
 
 
 def mock_hdf5(hdf5_path="._test.h5", scale=1):
