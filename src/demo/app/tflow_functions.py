@@ -8,6 +8,7 @@ from .model_functions import separate_sources
 import soundfile as sf
 from .deep_clustering_models import DeepClusteringModel
 from .clustering_utils import clustering_separate
+from .l41_models import L41Model
 
 '''
 Input: noisy signal path
@@ -56,4 +57,15 @@ Input: noisy signal path
 Output: list of separated speakers (in numpy form)
 '''
 def l41_separate(input_path):
-	print("hello")
+	wav_list = []
+
+	input_signal,sample_rate = sf.read(input_path)
+
+	model  = L41Model(nonlinearity='tanh', normalize=False)
+	model.load(app.root_path + '/static/models/lab41_nonorm-final.ckpt')
+
+	outputs = clustering_separate(input_signal,sample_rate,model,2)
+	for row in outputs:
+		wav_list.append(row)
+
+	return wav_list	

@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-import tf_utils
+from .tf_utils import scope_decorator,BLSTM,conv1d_layer,weight_variable
 
 class L41Model:
     def __init__(self, F=257, num_speakers=251,
@@ -45,7 +45,7 @@ class L41Model:
             self.I = tf.placeholder(tf.int32, [None,None])
 
             # Define the speaker vectors to use during training
-            self.speaker_vectors = tf_utils.weight_variable(
+            self.speaker_vectors = weight_variable(
                                        [self.num_speakers,self.embedding_size],
                                        tf.sqrt(2/self.embedding_size))
 
@@ -61,7 +61,7 @@ class L41Model:
         # Create a session to run this graph
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
-        self.sess = tf.Session(graph = self.graph)
+        self.sess = tf.Session(graph = self.graph, config = config)
 
     def __del__(self):
         """
@@ -78,7 +78,7 @@ class L41Model:
         with self.graph.as_default():
             self.sess.run(tf.global_variables_initializer())
 
-    @tf_utils.scope_decorator
+    @scope_decorator
     def network(self):
         """
         Construct the op for the network used in [1].  This consists of two
@@ -90,15 +90,15 @@ class L41Model:
         shape = tf.shape(self.X)
 
         # BLSTM layer one
-        BLSTM_1 = tf_utils.BLSTM(self.X, self.layer_size, 'one',
+        BLSTM_1 = BLSTM(self.X, self.layer_size, 'one',
                                  nonlinearity=self.nonlinearity)
 
         # BLSTM layer two
-        BLSTM_2 = tf_utils.BLSTM(BLSTM_1, self.layer_size, 'two',
+        BLSTM_2 = BLSTM(BLSTM_1, self.layer_size, 'two',
                                  nonlinearity=self.nonlinearity)
 
         # Feedforward layer
-        feedforward = tf_utils.conv1d_layer(BLSTM_2,
+        feedforward = conv1d_layer(BLSTM_2,
                               [1, self.layer_size, self.embedding_size*self.F])
 
         # Reshape the feedforward output to have shape (T,F,K)
@@ -111,7 +111,7 @@ class L41Model:
 
         return embedding
 
-    @tf_utils.scope_decorator
+    @scope_decorator
     def cost(self):
         """
         Constuct the cost function op for the negative sampling cost
@@ -155,7 +155,7 @@ class L41Model:
 
         return cost
 
-    @tf_utils.scope_decorator
+    @scope_decorator
     def optimizer(self):
         """
         Constructs the optimizer op used to train the network

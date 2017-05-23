@@ -1,19 +1,19 @@
 from flask import render_template, request, flash, send_file, redirect
 from app import app
 import numpy as np
-#from python_speech_features import sigproc
-#from keras.models import load_model
-#from python_speech_features.sigproc import deframesig
-#import scipy.io.wavfile as wav
-#from python_speech_features import mfcc
+from python_speech_features import sigproc
+from keras.models import load_model
+from python_speech_features.sigproc import deframesig
+import scipy.io.wavfile as wav
+from python_speech_features import mfcc
 import logging
 import matplotlib.pylab as plt
 import pylab
 import collections
 import os
-#from .tflow_functions import tflow_separate,deep_cluster_separate
-#import soundfile as sf
-#from .keras_functions import keras_separate
+from .tflow_functions import tflow_separate,deep_cluster_separate,l41_separate
+import soundfile as sf
+from .keras_functions import keras_separate
 from .keras_functions import keras_spec
 
 project_root = app.root_path
@@ -36,45 +36,27 @@ def index():
     if request.method == 'POST' and request.form['btn'] == 'L41Net' and state['input_signal_url'] != None :
         app.logger.info('In the separate')
 
-        #Separate speakers commented out for demo
-        #signals = keras_separate(project_root + state['input_signal_url'],project_root+'/static/models/overfitted_dnn_mask.h5')
         state['wav_list'][:] = [] 
-        #for index,speaker in enumerate(signals): 
-        #    sf.write(project_root + '/resources/' + input_signal_filename + 'kerassplit'+str(index)+'.wav',speaker,16000) 
-        #    state['wav_list'].append(input_signal_filename + 'kerassplit'+str(index)+'.wav')
-        if(input_signal_filename == 'mixed_signal'):
-            state['wav_list'].append('l41_mf_source_0.wav')
-            state['wav_list'].append('l41_mf_source_1.wav')
-        elif(input_signal_filename == 'expt-1-mix'):
-            state['wav_list'].append('expt-1-source-1.wav')   
-            state['wav_list'].append('expt-1-source-2.wav')
-        elif(input_signal_filename == 'expt-2-mix'):
-            state['wav_list'].append('expt-2-source-1.wav')   
-            state['wav_list'].append('expt-2-source-2.wav') 
-        elif(input_signal_filename == 'expt-4-mix'):
-            state['wav_list'].append('expt-4-source-1.wav')   
-            state['wav_list'].append('expt-4-source-2.wav')      
+
+        signals = l41_separate(project_root + state['input_signal_url'])
+        for index,speaker in enumerate(signals): 
+            sf.write(project_root + '/resources/' + input_signal_filename + 'l41split'+str(index)+'.wav',speaker/speaker.max(),10000) 
+            state['wav_list'].append(input_signal_filename + 'l41split'+str(index)+'.wav')     
 
     elif request.method == 'POST' and request.form['btn'] == 'DeepNet' and state['input_signal_url'] != None:  
         
-        #Separate speakers commented out for demo
-        #signals = tflow_separate(project_root + state['input_signal_url'])
         state['wav_list'][:] = [] 
-        #for index,speaker in enumerate(signals): 
-        #    sf.write(project_root + '/resources/' + input_signal_filename + 'tflowsplit'+str(index)+'.wav',speaker/speaker.max(),10000) 
-        #    state['wav_list'].append(input_signal_filename + 'tflowsplit'+str(index)+'.wav')
-        if(input_signal_filename == 'mixed_signal'):
-            state['wav_list'].append('deep_mf_source_0.wav')
-            state['wav_list'].append('deep_mf_source_1.wav')
-  
+
+        signals = deep_cluster_separate(project_root + state['input_signal_url'])
+        for index,speaker in enumerate(signals): 
+            sf.write(project_root + '/resources/' + input_signal_filename + 'dclustersplit'+str(index)+'.wav',speaker/speaker.max(),10000) 
+            state['wav_list'].append(input_signal_filename + 'dclustersplit'+str(index)+'.wav') 
+
+ 
     elif request.method == 'POST' and request.form['btn'] == 'PIT' and state['input_signal_url'] != None:  
         
-        #Separate speakers commented out for demo
-        #signals = deep_cluster_separate(project_root + state['input_signal_url'])
         state['wav_list'][:] = [] 
-        #for index,speaker in enumerate(signals): 
-        #    sf.write(project_root + '/resources/' + input_signal_filename + 'dclustersplit'+str(index)+'.wav',speaker/speaker.max(),10000) 
-        #    state['wav_list'].append(input_signal_filename + 'dclustersplit'+str(index)+'.wav') 
+        
         if(input_signal_filename == 'mixed_signal'):
             state['wav_list'].append('b_pit_mf_source_1.wav')
             state['wav_list'].append('b_pit_mf_source_0.wav')
@@ -122,10 +104,8 @@ def upload():
         #Plot spectogram with uploaded input file
         input_signal_filename = os.path.splitext(os.path.basename(state['input_signal_url']))[0] 
 
-        #features = keras_spec(project_root + state['input_signal_url'])
         f,t,Sxx = keras_spec(project_root + state['input_signal_url'])
 
-        #plot_spectogram(features,project_root + '/resources/spec_'+ input_signal_filename + '.png')
         plot_spectogram(f,t,Sxx,project_root + '/resources/spec_'+ input_signal_filename + '.png')
 
         state['spec_file'] = 'spec_' + input_signal_filename + '.png'
@@ -147,7 +127,6 @@ def resources(file_name):
 
 def plot_spectogram(f,t,Sxx,file_path):
     plt.clf()
-    #plt.imshow(np.sqrt(features.T) , origin='lower' ,cmap='bone_r')
     plt.pcolormesh(t, f, Sxx, cmap='bone_r')
     plt.ylabel('Frequency [Hz]')
     plt.xlabel('Time [sec]')
