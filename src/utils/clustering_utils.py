@@ -91,10 +91,10 @@ def get_cluster_masks(vectors, num_sources, binary_mask=True):
     kmeans = KMeans(n_clusters=num_sources, random_state=0)
     kmeans.fit(vectors[0].reshape((shape[1]*shape[2],shape[3])))
 
-    if binary_mask:
-        # Preallocate mask array
-         masks = np.zeros((shape[1]*shape[2], num_sources))
+    # Preallocate mask array
+    masks = np.zeros((shape[1]*shape[2], num_sources))
 
+    if binary_mask:
         # Use cluster IDs to construct masks
         labels = kmeans.labels_
         for i in range(labels.shape[0]):
