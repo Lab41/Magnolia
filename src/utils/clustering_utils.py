@@ -67,7 +67,7 @@ def process_signal(signal, sample_rate, model):
     return spectrogram, vectors
 
 
-def get_cluster_masks(vectors, num_sources):
+def get_cluster_masks(vectors, num_sources, binary_mask=True):
     """
     Cluster the vectors using k-means with k=num_sources.  Use the cluster IDs
     to create num_sources T-F masks.
@@ -76,6 +76,8 @@ def get_cluster_masks(vectors, num_sources):
         vectors: Numpy array of shape (Batch, Time, Frequency, Embedding).
                  Only the masks for the first batch are computed.
         num_sources: Integer number of sources to compute masks for
+        binary_mask: If true, computes binary masks.  Otherwise computes the
+                     soft masks.
 
     Returns:
          masks: Numpy array of shape (Time, Frequency, num_sources) containing
@@ -89,16 +91,29 @@ def get_cluster_masks(vectors, num_sources):
     kmeans = KMeans(n_clusters=num_sources, random_state=0)
     kmeans.fit(vectors[0].reshape((shape[1]*shape[2],shape[3])))
 
-    # Preallocate mask array
-    masks = np.zeros((shape[1]*shape[2], num_sources))
+    if binary_mask:
+        # Preallocate mask array
+         masks = np.zeros((shape[1]*shape[2], num_sources))
 
-    # Use cluster IDs to construct masks
-    labels = kmeans.labels_
-    for i in range(labels.shape[0]):
-        label = labels[i]
-        masks[i,label] = 1
+        # Use cluster IDs to construct masks
+        labels = kmeans.labels_
+        for i in range(labels.shape[0]):
+            label = labels[i]
+            masks[i,label] = 1
 
-    masks = masks.reshape((shape[1], shape[2], num_sources))
+        masks = masks.reshape((shape[1], shape[2], num_sources))
+
+    else:
+        # Get cluster centers
+        centers - kmeans.cluster_centers_
+        centers = centers.T
+        centers = np.expand_dims(centers, axis=0)
+        centers = np.expand_dims(centers, axis=0)
+
+        # Compute the masks using the cluster centers
+        masks = centers * np.expand_dims(vectors[0], axis=3)
+        masks = np.sum(masks, axis=2)
+        masks = sigmoid(masks)
 
     return masks
 
@@ -123,7 +138,8 @@ def apply_masks(spectrogram, masks):
 
     return masked_specs
 
-def clustering_separate(signal, sample_rate, model, num_sources):
+def clustering_separate(signal, sample_rate, model, num_sources,
+                        binary_mask=True):
     """
     Takes in a signal and a model which has a get_vectors method and returns
     the specified number of output sources.
@@ -133,6 +149,8 @@ def clustering_separate(signal, sample_rate, model, num_sources):
         sample_rate: Sampling rate of the input signal
         model: Instance of model to use to separate the signal
         num_sources: Integer number of sources to separate into
+        binary_mask: If true, computes the binary mask. Otherwise
+                     computes a soft mask
 
     Returns:
         sources: Numpy ndarray of shape (num_sources, signal_length)
@@ -146,7 +164,7 @@ def clustering_separate(signal, sample_rate, model, num_sources):
     masks = get_cluster_masks(vectors, num_sources)
 
     # Apply the masks from the clustering to the input signal
-    masked_specs = apply_masks(spectrogram, masks)
+    masked_specs = apply_masks(spectrogram, masks, binary_mask=binary_mask)
 
     # Invert the STFT to recover the output waveforms, remembering to undo the
     # preemphasis
