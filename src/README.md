@@ -2,7 +2,7 @@
 
 
 ### Simple Components Analysis
-- Directory: [`simplecomponents`](https://github.com/Lab41/Magnolia/tree/master/src/simplecomponents)
+- Directory: [`factorization`](https://github.com/Lab41/Magnolia/tree/master/src/factorization)
 - Description: PCA and ICA code, which show simple examples of how to do linear methods of denoising and signal isolation. These are either monaural or multi-microphone.
 
 ### Deep Neural Network Monaural Source Separation
