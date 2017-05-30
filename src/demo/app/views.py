@@ -1,20 +1,21 @@
 from flask import render_template, request, flash, send_file, redirect
 from app import app
 import numpy as np
-from python_speech_features import sigproc
-from keras.models import load_model
-from python_speech_features.sigproc import deframesig
+#from python_speech_features import sigproc
+#from keras.models import load_model
+#from python_speech_features.sigproc import deframesig
 import scipy.io.wavfile as wav
-from python_speech_features import mfcc
+#from python_speech_features import mfcc
 import logging
 import matplotlib.pylab as plt
 import pylab
 import collections
 import os
-from .tflow_functions import tflow_separate,deep_cluster_separate,l41_separate
+from .tflow_functions import deep_cluster_separate,l41_separate
 import soundfile as sf
-from .keras_functions import keras_separate
-from .keras_functions import keras_spec
+#from .keras_functions import keras_separate
+#from .keras_functions import keras_spec
+from scipy import signal
 
 project_root = app.root_path
 
@@ -104,7 +105,7 @@ def upload():
         #Plot spectogram with uploaded input file
         input_signal_filename = os.path.splitext(os.path.basename(state['input_signal_url']))[0] 
 
-        f,t,Sxx = keras_spec(project_root + state['input_signal_url'])
+        f,t,Sxx = calc_spec(project_root + state['input_signal_url'])
 
         plot_spectogram(f,t,Sxx,project_root + '/resources/spec_'+ input_signal_filename + '.png')
 
@@ -132,4 +133,18 @@ def plot_spectogram(f,t,Sxx,file_path):
     plt.xlabel('Time [sec]')
     plt.savefig(file_path)
 
+def calc_spec(signal_path):
+
+    nfilt=64
+    numcep=64
+    nfft=512
+    winlen=0.01
+    winstep=0.005
+    ceplifter=0
+    fs = 16000
+
+    fs,noisy_signal = wav.read(signal_path)
+
+    f,t,Sxx = signal.spectrogram(noisy_signal,fs)
+    return [f,t,np.log(Sxx)]
 

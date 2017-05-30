@@ -1,21 +1,28 @@
 import sys
 from . import app
 
-sys.path.append(app.root_path + '/../..')
+#sys.path.append(app.root_path + '/../..')
 
-from .cnn_models import Conv1DModel
-from .model_functions import separate_sources
+
+
+#from .cnn_models import Conv1DModel
+#from .model_functions import separate_sources
+
 import soundfile as sf
-from .deep_clustering_models import DeepClusteringModel
-from .clustering_utils import clustering_separate
-from .l41_models import L41Model
+
+from magnolia.dnnseparate.L41model import L41Model
+from magnolia.dnnseparate.deep_clustering_model import DeepClusteringModel
+#from .deep_clustering_models import DeepClusteringModel
+#from .clustering_utils import clustering_separate
+from magnolia.utils.clustering_utils import clustering_separate
+#from .l41_models import L41Model
 
 '''
 Input: noisy signal path
 Output: list of separated speakers (in numpy form)
 '''
 
-def tflow_separate(input_path):
+'''def tflow_separate(input_path):
 	
 	rate = 10000
 
@@ -29,7 +36,7 @@ def tflow_separate(input_path):
 		wav_list.append(row)
 
 	return wav_list	
-
+'''
 '''
 Input: noisy signal path
 Output: list of separated speakers (in numpy form)
