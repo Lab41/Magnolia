@@ -20,3 +20,8 @@ Current Models:
 
     Kolbaek, Morten, et al. "Multi-talker speech separation and tracing with
     permutation invariant training of deep recurrent neural networks." preprint 2017
+
+- _Deep Attractor Networks_ in ['dan.py'](dan.py)
+
+    Zhuo Chen and Yi Luo and Nima Mesgarani, "Deep attractor network for single-microphone 
+    speaker separation", preprint 2016, http://arxiv.org/abs/1611.08930
