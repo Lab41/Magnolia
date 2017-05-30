@@ -13,6 +13,3 @@ $$\mathbf{C} = \mathcal{DCT} \left\{ \Phi \log |\mathcal{DFT}(\hat\mathbf{x})|  
 ![Mel Frequencies](images/melfreq.png)
 
 
-## Including iterators in this directory, of which we have:
-
-[`hdf5_iterator`](hdf5_iterator.py) - Parses through HDF5s
