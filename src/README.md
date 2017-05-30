@@ -27,7 +27,7 @@
 
 ### Util
 - Directory: [`util`](util/)
-- Description: Utility function (like evaluation)
+- Description: Utility functions Contents include evaluation code, reconstruction code, and clustering code
 
 ### Demonstration Code
 - Directory: [`demo `](https://github.com/Lab41/Magnolia/tree/master/src/demo)
