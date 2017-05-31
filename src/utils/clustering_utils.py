@@ -105,7 +105,7 @@ def get_cluster_masks(vectors, num_sources, binary_mask=True):
 
     else:
         # Get cluster centers
-        centers - kmeans.cluster_centers_
+        centers = kmeans.cluster_centers_
         centers = centers.T
         centers = np.expand_dims(centers, axis=0)
         centers = np.expand_dims(centers, axis=0)
@@ -113,7 +113,7 @@ def get_cluster_masks(vectors, num_sources, binary_mask=True):
         # Compute the masks using the cluster centers
         masks = centers * np.expand_dims(vectors[0], axis=3)
         masks = np.sum(masks, axis=2)
-        masks = sigmoid(masks)
+        masks = 1/(1 + np.exp(-masks))
 
     return masks
 
@@ -161,10 +161,10 @@ def clustering_separate(signal, sample_rate, model, num_sources,
 
     # Run k-means clustering on the vectors with k=num_sources to recover the
     # signal masks
-    masks = get_cluster_masks(vectors, num_sources)
+    masks = get_cluster_masks(vectors, num_sources, binary_mask=binary_mask)
 
     # Apply the masks from the clustering to the input signal
-    masked_specs = apply_masks(spectrogram, masks, binary_mask=binary_mask)
+    masked_specs = apply_masks(spectrogram, masks)
 
     # Invert the STFT to recover the output waveforms, remembering to undo the
     # preemphasis
