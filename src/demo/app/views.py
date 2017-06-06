@@ -7,6 +7,8 @@ import numpy as np
 import scipy.io.wavfile as wav
 #from python_speech_features import mfcc
 import logging
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pylab as plt
 import pylab
 import collections
