@@ -50,23 +50,27 @@
         <div class="row">
           <div class="col-lg-3" >  
             <form action="/" method="post">
-            <input class="btn btn-primary btn-lg full-width-elem" type = "submit" name="btn" value = "KNet" style="background-color: #337ab7"/>
+            <input class="btn btn-primary btn-lg full-width-elem" type = "submit" name="btn" value = "L41Net" style="background-color: #337ab7"/>
             </form>
           </div>  
 
           <div class="col-lg-3">  
             <form action="/" method="post">
-            <input class="btn btn-primary btn-lg full-width-elem" type="submit" name="btn" value = "CNet" style="background-color: #d9534f"/>
+            <input class="btn btn-primary btn-lg full-width-elem" type="submit" name="btn" value = "DeepNet" style="background-color: #d9534f"/>
             </form>
           </div>   
 
           <div class="col-lg-3">  
-            <a class="btn btn-primary btn-lg full-width-elem" role="button" style="background-color: #5bc0de">ICA</a>
-          </div>  
+            <form action="/" method="post">
+            <input class="btn btn-primary btn-lg full-width-elem" type="submit" name="btn" value = "PIT" style="background-color: #5bc0de"/>
+            </form>
+          </div> 
 
-          <div class="col-lg-3">
-            <a class="btn btn-primary btn-lg full-width-elem" role="button" style="background-color: #f0ad4e">PCA</a>
-          </div>    
+        <div class="col-lg-3">  
+            <form action="/" method="post">
+            <input class="btn btn-primary btn-lg full-width-elem" type="submit" name="btn" value = "NMF" style="background-color: #f0ad4e"/>
+            </form>
+          </div> 
         </div>
 
         <div class="row">
@@ -84,83 +88,23 @@
       
       <div class="row marketing justify-elem">
         <div class="row">
-          <h4 class="col-lg-6" style="color:#337ab7;">KNet</h4> 
-          <h4 class="col-lg-6" style="color:#d9534f">CNet</h4>   
+          <h4 class="col-lg-6" style="color:#337ab7;">L41Net</h4> 
+          <h4 class="col-lg-6" style="color:#d9534f">DeepNet</h4>   
         </div>
         <div class="row">
-          <p class="col-lg-6">This is an algorithm that Karl made and its pretty good.Independent component analysis attempts to decompose a multivariate signal into independent non-Gaussian signals. As an example, sound is usually a signal that is composed of the numerical addition, at each time t, of signals from several sources.</p>
-          <p class="col-lg-6">This is an algorithm that Cory made and its pretty good.In machine learning, a convolutional neural network (CNN, or ConvNet) is a type of feed-forward artificial neural network in which the connectivity pattern between its neurons is inspired by the organization of the animal visual cortex.</p>
+          <p class="col-lg-6">This is a deep learning based algorithm that was developed by the Magnolia team. This algorithm builds upon the work of "<a href="https://arxiv.org/abs/1508.04306">Deep Clustering</a>" by using a more performant and optimal cost function. Our novel contribution is the use of speaker specific embeddings.</p>
+          <p class="col-lg-6">This is a deep learning based algorithm that we reproduced from a paper titled "<a href="https://arxiv.org/abs/1508.04306">Deep Clustering</a>". The main idea behind this paper was to use frequency similarities as a means of embedding speakers in a higher dimensional space. This projection into an embedding space allows for easier speaker separation.</p>
         </div>
         <div class="row">
-          <h4 class="col-lg-6" style="color:#5bc0de;">ICA</h4> 
-          <h4 class="col-lg-6" style="color:#f0ad4e;">PCA</h4>   
+          <h4 class="col-lg-6" style="color:#5bc0de;">PIT</h4> 
+          <h4 class="col-lg-6" style="color:#f0ad4e;">NMF</h4>   
         </div>
         <div class="row">
-          <p class="col-lg-6">In signal processing, independent component analysis (ICA) is a computational method for separating a multivariate signal into additive subcomponents. This is done by assuming that the subcomponents are non-Gaussian signals and that they are statistically independent from each other.</p>
-          <p class="col-lg-6">Principal component analysis (PCA) is a statistical procedure that uses an orthogonal transformation to convert a set of observations of possibly correlated variables into a set of values of linearly uncorrelated variables called principal components (or sometimes, principal modes of variation).</p>
+          <p class="col-lg-6">This is a deep learning based algorithm that we reproduced from a <a href="https://arxiv.org/abs/1703.06284">paper</a> that performed speaker separation via Permutation Invariant Training (PIT). PIT aims to minimize signal reconstruction error irrespective of how speaker labels are ordered. </p>
+          <p class="col-lg-6">This is a linear based algorithm we reproduced called Non Negative Matrix Factorization (NMF). The objective of this algorithm is to identify key feature vectors that can later be reconstructed to separate speakers</p>
         </div>  
       </div>  
-        <!--<div class="row-lg-6">
-          <h4>
-            <form action="/" method="post">
-            <input class="btn btn-block btn-primary" type = "submit" name="btn" value = "Separate"/>
-            </form>
-          </h4>
-          <p>This is an algorithm that Karl made and its pretty good.Independent component analysis attempts to decompose a multivariate signal into independent non-Gaussian signals. As an example, sound is usually a signal that is composed of the numerical addition, at each time t, of signals from several sources.</p>
-
-          <h4><a class="btn btn-block btn-primary" role="button">ICA</a></h4>
-          <p>In signal processing, independent component analysis (ICA) is a computational method for separating a multivariate signal into additive subcomponents. This is done by assuming that the subcomponents are non-Gaussian signals and that they are statistically independent from each other.</p>
-
-        </div>
-
-        <div class="row-lg-6">
-          <h4>
-            <form action="/" method="post">
-            <input class="btn btn-block btn-primary" type = "submit" name="btn" value = "Tflow_Separate"/>
-            </form>
-          </h4>
-          <p>This is an algorithm that Cory made and its pretty good.In machine learning, a convolutional neural network (CNN, or ConvNet) is a type of feed-forward artificial neural network in which the connectivity pattern between its neurons is inspired by the organization of the animal visual cortex.Principal component analysis</p>
-
-          <h4><a class="btn btn-block btn-primary" role="button">PCA</a></h4>
-          <p>Principal component analysis (PCA) is a statistical procedure that uses an orthogonal transformation to convert a set of observations of possibly correlated variables into a set of values of linearly uncorrelated variables called principal components (or sometimes, principal modes of variation).</p>
-        </div>
-      -->
         
-
-
-      <!--
-
-      <h1>Upload new File</h1>
-        <form action="/upload" method="post" enctype="multipart/form-data">
-          <p><input type="file" name="file">
-            <input type="submit" name="btn" value="Upload">
-        </form>
-
-      {% if input_sound is not none %}
-      <audio controls>
-      	<source src="{{input_sound}}" type="audio/wav">
-      </audio>
-      {% endif %}
-
-      {% if input_spec_url is not none %}
-        <img src="/resources/{{input_spec_url}}" alt="spectogram" style="width:600px;height:600px;">
-      {% endif %}
-
-      <form action="/" method="post">
-      <input type = "submit" name="btn" value = "Separate" />
-      </form>
-
-      <form action="/" method="post">
-      <input type = "submit" name="btn" value = "Tflow_Separate" />
-      </form>
-
-      
-      {% for x in wav_files %}
-      <audio controls>
-      	<source src="/resources/{{x}}" type="audio/wav">
-      </audio>	
-      {% endfor %}   -->
-
     </div> <!-- /container -->
   </body>
 </html>
