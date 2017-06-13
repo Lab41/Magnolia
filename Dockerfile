@@ -13,3 +13,22 @@ ADD . /magnoliaWork
 WORKDIR /magnoliaWork
 RUN pip install .
 WORKDIR /magnoliaWork/src/demo
+
+RUN mkdir /magnoliaWork/src/demo/app/static/models && \
+    echo "Now getting Deep Clustering code" && \
+    wget "https://www.dropbox.com/s/01f1jrss5leqarq/deep_clustering.ckpt.data-00000-of-00001?dl=0" -O \
+         /magnoliaWork/src/demo/app/static/models/deep_clustering.ckpt.data-00000-of-00001 && \
+    wget "https://www.dropbox.com/s/jeyjsgo4eg1e7uz/deep_clustering.ckpt.index?dl=0" -O \
+         /magnoliaWork/src/demo/app/static/models/deep_clustering.ckpt.index && \
+    wget "https://www.dropbox.com/s/w56skx9k5plz316/deep_clustering.ckpt.meta?dl=0" -O \
+         /magnoliaWork/src/demo/app/static/models/deep_clustering.ckpt.meta && \
+    echo "Now getting Lab41 Model" && \
+    wget "https://www.dropbox.com/s/yrct5fmtxh9xisv/lab41_nonorm-final.ckpt.data-00000-of-00001?dl=0" -O \
+         /magnoliaWork/src/demo/app/static/models/lab41_nonorm-final.ckpt.data-00000-of-00001 && \
+    wget "https://www.dropbox.com/s/oa05j8mrfenmohf/lab41_nonorm-final.ckpt.index?dl=0" -O \
+         /magnoliaWork/src/demo/app/static/models/lab41_nonorm-final.ckpt.index && \
+    wget "https://www.dropbox.com/s/xka5emn0fbfzvq7/lab41_nonorm-final.ckpt.meta?dl=0" -O \
+         /magnoliaWork/src/demo/app/static/models/lab41_nonorm-final.ckpt.meta
+
+RUN mkdir /magnoliaWork/src/demo/app/resources
+
