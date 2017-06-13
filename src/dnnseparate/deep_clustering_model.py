@@ -44,8 +44,8 @@ class DeepClusteringModel:
                 self.cost
                 self.optimizer
 
-                # Saver
-                self.saver = tf.train.Saver()
+            # Saver
+            self.saver = tf.train.Saver()
 
 
         # Create a session to run this graph
