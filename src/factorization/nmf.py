@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.cluster import KMeans
 
 
 
@@ -197,3 +198,33 @@ def nmf_separate(mix, spkr_models, mask=False, num_iters=500):
             masks[i] = masks[i] / norm_mask
             reconstructions[i] = masks[i] * mix
     return reconstructions
+
+def easy_nmf_separate(X, num_spkrs = 2, k = 20, freq_comps = (60,100), sparsity=0.001):
+    '''
+    All-in-one separation code based on NMF. Uses K-means clustering on
+    frequency-domain basis vectors 
+
+    Args:
+        X: TF representation of input mixture (time x frequency)
+        num_spkrs: number of components to return
+        k: Number of NMF bases to estimate
+        freq_comps: tuple, low and high bounds of which frequency components to
+            cluster on
+        sparsity: see snmf
+
+    Returns:
+        array-like with separated TF signals on the zeroth axis
+    '''
+
+    W, H = snmf(np.sqrt(np.abs(X)).T, k, sparsity=sparsity)
+
+    # K-means on weights
+    # cluster on certain frequency components
+    a, b = freq_comps
+    km = KMeans(num_spkrs)
+    km.fit(W[a:b,:].T)
+    cluster_memberships = [np.nonzero(km.labels_ == i)[0] for i in range(num_spkrs)]
+
+    recons = [(W[:, cl_idxs] @ H[cl_idxs, :]).T for cl_idxs in cluster_memberships]
+
+    return np.stack(recons)
