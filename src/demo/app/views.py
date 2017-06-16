@@ -13,7 +13,7 @@ import matplotlib.pylab as plt
 import pylab
 import collections
 import os
-from .tflow_functions import deep_cluster_separate,l41_separate
+from .tflow_functions import deep_cluster_separate,l41_separate,nmf_sep
 import soundfile as sf
 #from .keras_functions import keras_separate
 #from .keras_functions import keras_spec
@@ -60,17 +60,22 @@ def index():
         
         state['wav_list'][:] = [] 
         
-        if(input_signal_filename == 'mixed_signal'):
-            state['wav_list'].append('b_pit_mf_source_1.wav')
-            state['wav_list'].append('b_pit_mf_source_0.wav')
+        #if(input_signal_filename == 'mixed_signal'):
+        #    state['wav_list'].append('b_pit_mf_source_1.wav')
+        #    state['wav_list'].append('b_pit_mf_source_0.wav')
             
 
     elif request.method == 'POST' and request.form['btn'] == 'NMF' and state['input_signal_url'] != None:
         state['wav_list'][:] = [] 
 
-        if(input_signal_filename == 'mixed_signal'):
-            state['wav_list'].append('nmf_mf_source_0.wav')
-            state['wav_list'].append('nmf_mf_source_1.wav')
+        signals = nmf_sep(project_root + state['input_signal_url'])
+        for index,speaker in enumerate(signals): 
+            sf.write(project_root + '/resources/' + input_signal_filename + 'nmfsplit'+str(index)+'.wav',speaker/speaker.max(),10000) 
+            state['wav_list'].append(input_signal_filename + 'nmfsplit'+str(index)+'.wav') 
+
+        #if(input_signal_filename == 'mixed_signal'):
+        #    state['wav_list'].append('nmf_mf_source_0.wav')
+        #    state['wav_list'].append('nmf_mf_source_1.wav')
 
 
     return render_template('index.html',
