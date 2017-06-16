@@ -14,6 +14,7 @@ import pylab
 import collections
 import os
 from .tflow_functions import deep_cluster_separate,l41_separate,nmf_sep
+from magnolia.utils.clustering_utils import clustering_separate,preprocess_signal
 import soundfile as sf
 #from .keras_functions import keras_separate
 #from .keras_functions import keras_spec
@@ -112,9 +113,10 @@ def upload():
         #Plot spectogram with uploaded input file
         input_signal_filename = os.path.splitext(os.path.basename(state['input_signal_url']))[0] 
 
-        f,t,Sxx = calc_spec(project_root + state['input_signal_url'])
+        #f,t,Sxx = calc_spec(project_root + state['input_signal_url'])
 
-        plot_spectogram(f,t,Sxx,project_root + '/resources/spec_'+ input_signal_filename + '.png')
+        #plot_spectogram(f,t,Sxx,project_root + '/resources/spec_'+ input_signal_filename + '.png')
+        plot_spectogram(project_root + state['input_signal_url'],project_root + '/resources/spec_'+ input_signal_filename + '.png')
 
         state['spec_file'] = 'spec_' + input_signal_filename + '.png'
 
@@ -132,8 +134,13 @@ def resources(file_name):
     app.logger.info('In the resources')
     return send_file(project_root + '/resources/'+ file_name)
 
+def plot_spectogram(input_path,output_path):
+    sample_rate,signal = wav.read(input_path)
+    spectrogram, _ = preprocess_signal(signal, sample_rate)
+    plt.matshow(np.sqrt(np.abs(spectrogram)).T, origin='lower', cmap='bone')
+    plt.savefig(output_path)
 
-def plot_spectogram(f,t,Sxx,file_path):
+'''def plot_spectogram(f,t,Sxx,file_path):
     plt.clf()
     plt.pcolormesh(t, f, Sxx, cmap='bone_r')
     plt.ylabel('Frequency [Hz]')
@@ -152,6 +159,6 @@ def calc_spec(signal_path):
 
     fs,noisy_signal = wav.read(signal_path)
 
-    f,t,Sxx = signal.spectrogram(noisy_signal,fs)
+    f,t,Sxx = signal.spectrogram(noisy_signal,fs,nperseg=nfft,noverlap=256)
     return [f,t,np.log(Sxx)]
-
+'''

@@ -17,8 +17,9 @@ from magnolia.dnnseparate.deep_clustering_model import DeepClusteringModel
 from magnolia.utils.clustering_utils import clustering_separate,preprocess_signal
 #from .l41_models import L41Model
 from magnolia.factorization.nmf import easy_nmf_separate
-from magnolia.features.preprocessing import undo_preemphasis
+from magnolia.features.preprocessing import undo_preemphasis,make_stft_features
 from magnolia.features.spectral_features import istft
+from magnolia.utils.postprocessing import reconstruct
 '''
 Input: noisy signal path
 Output: list of separated speakers (in numpy form)
@@ -85,16 +86,26 @@ def nmf_sep(input_path):
     input_signal,sample_rate = sf.read(input_path)
 
     # Preprocess the signal into an input feature
-    spectrogram, X_in = preprocess_signal(input_signal, sample_rate)
+    #spectrogram, X_in = preprocess_signal(input_signal, sample_rate)
+    spectrogram = make_stft_features(input_signal,sample_rate)
 
-    separated_speakers = np.square(easy_nmf_separate(spectrogram))
+    print("Shape of spect", spectrogram.shape)
+
+    easy_sep = easy_nmf_separate(spectrogram)
+    print("easy sep", easy_sep[:10])
+
+
+    separated_speakers = np.square(easy_sep)
     phases = np.unwrap(np.angle(spectrogram))
+
+    print("Shape of sep speakers", separated_speakers.shape)
 
     # Invert the STFT to recover the output waveforms, remembering to undo the
     # preemphasis
-    waveforms = []
+    print("Lil phase's", phases[:10])
+    '''waveforms = []
     for i in range(2):
-        waveform = istft(separated_speakers[i]*np.exp(phases[i]*1.0j), 1e4, None, 0.0256, two_sided=False,fft_size=512)
+        waveform = istft(separated_speakers[i]*np.exp(phases*1.0j), 1e4, None, 0.0256, two_sided=False,fft_size=512)
         unemphasized = undo_preemphasis(waveform)
         waveforms.append(unemphasized)
 
@@ -102,6 +113,12 @@ def nmf_sep(input_path):
 
     for row in sources:
         wav_list.append(row)
+    '''
+    for i in range(2):
+        recon = reconstruct(separated_speakers[i],phases,fs=10000, window_size=None, step_size=0.0256, square=True, preemphasis=0)
+        print("Type of stuffs",type(recon))
+        print("Recon shape",recon.shape)    
+        wav_list.append(recon)
 
     return wav_list 
 
