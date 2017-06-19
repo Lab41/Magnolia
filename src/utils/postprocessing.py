@@ -20,7 +20,7 @@ def reconstruct(spec_mag, spec_full, fs, window_size, step_size, square=False,
         preemphasis: if not None, float: undo preemphasis at this level
     '''
     mag = np.absolute(spec_mag)
-    if spec_phase is None:
+    if spec_full is None:
         phase = np.random.randn(*spec_mag.shape)
     else:
         phase = np.exp(1.0j*np.unwrap(np.angle(spec_full)))
