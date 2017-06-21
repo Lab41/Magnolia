@@ -6,7 +6,8 @@ from ..utils import tf_utils
 class L41Model:
     def __init__(self, F=257, num_speakers=251,
                  layer_size=600, embedding_size=40,
-                 nonlinearity='logistic',normalize=False):
+                 nonlinearity='logistic',normalize=False,
+                 device='/cpu:0'):
         """
         Initializes Lab41's clustering model.  Default architecture comes from
         the parameters used by the best performing model in the paper[1].
@@ -21,8 +22,9 @@ class L41Model:
             layer_size: Size of BLSTM layers
             embedding_size: Dimension of embedding vector
             nonlinearity: Nonlinearity to use in BLSTM layers (default logistic)
-            normalize: Do you normalize vectors coming into the final layer? 
+            normalize: Do you normalize vectors coming into the final layer?
                        (default False)
+            device: Which device to run the model on
         """
 
         self.F = F
@@ -33,26 +35,27 @@ class L41Model:
         self.normalize = normalize
 
         self.graph = tf.Graph()
+
         with self.graph.as_default():
+            with tf.device(device):
+                # Placeholder tensor for the input data
+                self.X = tf.placeholder("float", [None, None, self.F])
 
-            # Placeholder tensor for the input data
-            self.X = tf.placeholder("float", [None, None, self.F])
+                # Placeholder tensor for the labels/targets
+                self.y = tf.placeholder("float", [None, None, self.F, None])
 
-            # Placeholder tensor for the labels/targets
-            self.y = tf.placeholder("float", [None, None, self.F, None])
+                # Placeholder for the speaker indicies
+                self.I = tf.placeholder(tf.int32, [None,None])
 
-            # Placeholder for the speaker indicies
-            self.I = tf.placeholder(tf.int32, [None,None])
-
-            # Define the speaker vectors to use during training
-            self.speaker_vectors = tf_utils.weight_variable(
+                # Define the speaker vectors to use during training
+                self.speaker_vectors = tf_utils.weight_variable(
                                        [self.num_speakers,self.embedding_size],
                                        tf.sqrt(2/self.embedding_size))
 
-            # Model methods
-            self.network
-            self.cost
-            self.optimizer
+                # Model methods
+                self.network
+                self.cost
+                self.optimizer
 
             # Saver
             self.saver = tf.train.Saver()
