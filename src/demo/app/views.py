@@ -13,7 +13,8 @@ import matplotlib.pylab as plt
 import pylab
 import collections
 import os
-from .tflow_functions import deep_cluster_separate,l41_separate
+from .tflow_functions import deep_cluster_separate,l41_separate,nmf_sep
+from magnolia.utils.clustering_utils import clustering_separate,preprocess_signal
 import soundfile as sf
 #from .keras_functions import keras_separate
 #from .keras_functions import keras_spec
@@ -60,17 +61,22 @@ def index():
         
         state['wav_list'][:] = [] 
         
-        if(input_signal_filename == 'mixed_signal'):
-            state['wav_list'].append('b_pit_mf_source_1.wav')
-            state['wav_list'].append('b_pit_mf_source_0.wav')
+        #if(input_signal_filename == 'mixed_signal'):
+        #    state['wav_list'].append('b_pit_mf_source_1.wav')
+        #    state['wav_list'].append('b_pit_mf_source_0.wav')
             
 
     elif request.method == 'POST' and request.form['btn'] == 'NMF' and state['input_signal_url'] != None:
         state['wav_list'][:] = [] 
 
-        if(input_signal_filename == 'mixed_signal'):
-            state['wav_list'].append('nmf_mf_source_0.wav')
-            state['wav_list'].append('nmf_mf_source_1.wav')
+        signals = nmf_sep(project_root + state['input_signal_url'])
+        for index,speaker in enumerate(signals): 
+            sf.write(project_root + '/resources/' + input_signal_filename + 'nmfsplit'+str(index)+'.wav',speaker/speaker.max(),10000) 
+            state['wav_list'].append(input_signal_filename + 'nmfsplit'+str(index)+'.wav') 
+
+        #if(input_signal_filename == 'mixed_signal'):
+        #    state['wav_list'].append('nmf_mf_source_0.wav')
+        #    state['wav_list'].append('nmf_mf_source_1.wav')
 
 
     return render_template('index.html',
@@ -107,9 +113,10 @@ def upload():
         #Plot spectogram with uploaded input file
         input_signal_filename = os.path.splitext(os.path.basename(state['input_signal_url']))[0] 
 
-        f,t,Sxx = calc_spec(project_root + state['input_signal_url'])
+        #f,t,Sxx = calc_spec(project_root + state['input_signal_url'])
 
-        plot_spectogram(f,t,Sxx,project_root + '/resources/spec_'+ input_signal_filename + '.png')
+        #plot_spectogram(f,t,Sxx,project_root + '/resources/spec_'+ input_signal_filename + '.png')
+        plot_spectogram(project_root + state['input_signal_url'],project_root + '/resources/spec_'+ input_signal_filename + '.png')
 
         state['spec_file'] = 'spec_' + input_signal_filename + '.png'
 
@@ -127,8 +134,13 @@ def resources(file_name):
     app.logger.info('In the resources')
     return send_file(project_root + '/resources/'+ file_name)
 
+def plot_spectogram(input_path,output_path):
+    sample_rate,signal = wav.read(input_path)
+    spectrogram, _ = preprocess_signal(signal, sample_rate)
+    plt.matshow(np.sqrt(np.abs(spectrogram)).T, origin='lower', cmap='bone')
+    plt.savefig(output_path)
 
-def plot_spectogram(f,t,Sxx,file_path):
+'''def plot_spectogram(f,t,Sxx,file_path):
     plt.clf()
     plt.pcolormesh(t, f, Sxx, cmap='bone_r')
     plt.ylabel('Frequency [Hz]')
@@ -147,6 +159,6 @@ def calc_spec(signal_path):
 
     fs,noisy_signal = wav.read(signal_path)
 
-    f,t,Sxx = signal.spectrogram(noisy_signal,fs)
+    f,t,Sxx = signal.spectrogram(noisy_signal,fs,nperseg=nfft,noverlap=256)
     return [f,t,np.log(Sxx)]
-
+'''
