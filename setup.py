@@ -38,11 +38,13 @@ setup(
     install_requires=[
        'matplotlib',
        'numpy',
+       'pandas',
        'python_speech_features',
        'scipy',
        'scikit-learn',
        'seaborn',
        'soundfile',
+       'tqdm',
     ],
 
     version = '0.1.0'

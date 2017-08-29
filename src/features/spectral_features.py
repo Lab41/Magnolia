@@ -1,8 +1,8 @@
-''' spectral_features.py
+"""Tools for extracting spectral features from audio waveforms
 
 Functions for featurizing audio using spectral analysis, as well as for
 reconstructing time-domain audio signals from spectral features
-'''
+"""
 
 import sys
 import logging
@@ -10,9 +10,9 @@ import numpy as np
 import scipy
 import scipy.signal
 
+
 def stft(x, fs, framesz, hop, two_sided=True, fft_size=None):
-    '''
-    Short Time Fourier Transform (STFT) - Spectral decomposition
+    """Short Time Fourier Transform (STFT) - Spectral decomposition
 
     Input:
         x - signal (1-d array, which is amp/sample)
@@ -25,7 +25,7 @@ def stft(x, fs, framesz, hop, two_sided=True, fft_size=None):
 
     Output:
         X = 2d array time-frequency repr of x, time x frequency
-    '''
+    """
 
     framesamp = int(framesz*fs)
     hopsamp = int(hop*fs)
@@ -37,7 +37,7 @@ def stft(x, fs, framesz, hop, two_sided=True, fft_size=None):
 
 
 def istft(X, fs, recon_size, hop, two_sided=True, fft_size=None):
-    ''' Inverse Short Time Fourier Transform (iSTFT) - Spectral reconstruction
+    """Inverse Short Time Fourier Transform (iSTFT) - Spectral reconstruction
 
     Input:
         X - set of 1D time-windowed spectra, time x frequency
@@ -48,7 +48,8 @@ def istft(X, fs, recon_size, hop, two_sided=True, fft_size=None):
 
     Output:
         x - a 1-D array holding reconstructed time-domain audio signal
-    '''
+    """
+
     if two_sided:
         framesamp = X.shape[1]
     else:
@@ -66,9 +67,6 @@ def istft(X, fs, recon_size, hop, two_sided=True, fft_size=None):
     return x
 
 
-
-
-
 def scale_spectrogram(spectrogram):
     mag_spec = np.abs(spectrogram)
     phases = np.unwrap(np.angle(spectrogram))
@@ -78,49 +76,3 @@ def scale_spectrogram(spectrogram):
     m = mag_spec.min()
 
     return (mag_spec - m)/(M - m), phases
-
-
-if __name__=="__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    # from scipy.signal import spectrogram
-    np.set_printoptions(precision=3,suppress=True)
-
-    # Try wrapper functions
-    try:
-        sig = np.array([0,1,0.5,0.1]*10)
-        sig_stft = stft(sig, 1, 8, 4, two_sided=False)
-        print(sig_stft)
-        print(sig_stft.shape)
-        sig_recon = istft(sig_stft, 1, 47, 4, two_sided=False)
-        print(sig_recon)
-        print(sig_recon.shape)
-    except:
-        print("Trouble 1")
-        print(sys.exc_info())
-        raise
-
-    # Cf. scipy.signal
-    try:
-        sig = np.array([0,1,0.5,0.1]*10)
-        _, _, sig_stft = scipy.signal.stft(sig, 1, 'hann', 8, 4, return_onesided=True)
-        print(sig_stft)
-        _, sig_recon = scipy.signal.istft(sig_stft, 1, 'hann', 8, 4, input_onesided=True)
-        print(sig_recon)
-    except:
-        print("Trouble 2")
-        print(sys.exc_info())
-        raise
-
-    # Try fft_size
-    try:
-        sig = np.array([0,1,0.5,0.1]*10)
-        sig_stft = stft(sig, 1, 8, 4, two_sided=False, fft_size=16)
-        print(sig_stft)
-        print(sig_stft.shape)
-        sig_recon = istft(sig_stft, 1, None, 4, two_sided=False, fft_size=16)
-        print(sig_recon)
-        print(sig_recon.shape)
-    except:
-        print("Trouble 3")
-        print(sys.exc_info())
-        raise
