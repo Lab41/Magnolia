@@ -1,0 +1,15 @@
+{
+  "data_directory": "/data/fs4/home/jhetherly/datasets/LibriSpeech/train-clean-100",
+  "metadata_file": "/data/fs4/home/jhetherly/datasets/LibriSpeech/SPEAKERS.TXT",
+  "dataset_type": "LibriSpeech",
+  "output_file": "/data/fs4/home/jhetherly/datasets/LibriSpeech/processed_train-clean-100.hdf5",
+  "file_type": ".flac",
+  "processing_parameters": {
+    "output_sample_rate": 10000,
+    "window_size": 0.0512,
+    "overlap": 0.0256,
+    "preemphasis_coeff": 0.95,
+    "fft_size": 512,
+    "track": null
+  }
+}
