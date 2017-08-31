@@ -89,14 +89,26 @@ This is what is diagramed in the following partition graph.
 
 Here, the two test groups have different names, but in general they could've
 been named the same for a single test group.
+The first node in the graph represents the filter on the salience category
+(alluded to by the matching green coloring).
+The next node filters the class category and the edge connecting the first and
+second node indicates all the categories from the first filter should propagate
+to the second node (there is only one category that passes the first node's
+filter, thus, one can only ever pass 100% of this category to the next node).
+The next two edges specify that 20% of the non-`children_playing` noise class
+categories be reserved for the out-of-sample test group while the other 80% of
+the categories will be sent through another filter.
+This last filter passes all categories (data file names in this case) through
+to the training, validation, and in-sample test groups via an 80/10/10 split.
 
-#### How to determine the split?
+
+#### How the split is determined
 
 The split at each directory level is calculated by considering the total number
 of data files in all it's sub-directories.
 Thus, the proportion specified along each edge is only approximately followed
 as categories are discrete.
-A print out of the specified and actual tree structures are given after the
+Print outs of the specified and actual tree structures are given after the
 partitioning is finished.
 
 #### Partition graph JSON structure
