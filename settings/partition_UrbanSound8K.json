@@ -1,0 +1,68 @@
+{
+  "preprocessed_file": "/data/fs4/home/jhetherly/datasets/UrbanSound8K/processed_audio.hdf5",
+  "output_directory": "/data/fs4/home/jhetherly/Projects/Magnolia/data/data_partitions",
+  "description": "selects salience of 1, removes children_playing noise class, reserves 20% of the remaining noise classes for out-of-sample testing, makes an 80/10/10 train/val/test split of the remaining 80%",
+  "partition_graphs": [
+    {
+      "filters": [
+        {
+          "id": "salience=1",
+          "only": ["1"]
+        },
+        {
+          "id": "class!=children_playing",
+          "except": ["children_playing"]
+        },
+        {
+          "id": "all files",
+        }
+      ],
+      "groups": [
+        {
+          "name": "out_of_sample_test"
+        },
+        {
+          "name": "in_sample_test"
+        },
+        {
+          "name": "validation"
+        },
+        {
+          "name": "train"
+        }
+      ],
+      "splits": [
+        {
+          "source": "salience=1",
+          "target": "class!=children_playing",
+          "fraction": 1.0
+        },
+        {
+          "source": "class!=children_playing",
+          "target": "all files",
+          "fraction": 0.8
+        },
+        {
+          "source": "class!=children_playing",
+          "target": "out_of_sample_test",
+          "fraction": 0.2
+        },
+        {
+          "source": "all files",
+          "target": "train",
+          "fraction": 0.8
+        },
+        {
+          "source": "all files",
+          "target": "in_sample_test",
+          "fraction": 0.1
+        },
+        {
+          "source": "all files",
+          "target": "validation",
+          "fraction": 0.1
+        }
+      ]
+    }
+  ]
+}
