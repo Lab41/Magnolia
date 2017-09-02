@@ -14,7 +14,7 @@
           "except": ["children_playing"]
         },
         {
-          "id": "all files",
+          "id": "all files"
         }
       ],
       "groups": [

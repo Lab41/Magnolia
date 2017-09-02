@@ -97,62 +97,70 @@ def make_stft_dataset(data_dir, file_type, output_file,
         preemphasis_coeff: preemphasis coefficient (float)
         track: Track number to use for signals with multiple tracks (int)
         fft_size: length (in seconds) of DFT window (float)
-        key_maker: callable that when given a file name will return a key (callable)
+        key_maker: object that when given a file name will return a key (object)
+    Output:
+        HDF5 file
     """
 
     # Open output file for writing
-    with h5py.File(output_file, 'w') as data_file:
+    data_file = h5py.File(output_file, 'w')
 
-        # Walk through data_dir and process all the files
-        total_visits = len(list(os.walk(data_dir, topdown=True)))
-        logger.info('starting loop over data')
-        for (dirpath, _, filenames) in tqdm(os.walk(data_dir, topdown=True),
-                                            total=total_visits,
-                                            desc='directories'):
-            # skip hidden files
-            filenames = [filename for filename in filenames if filename[0] != '.']
+    # # Open output file for writing
+    # with h5py.File(output_file, 'w') as data_file:
 
-            # Process any files in this directory
-            for filename in tqdm(filenames, desc='audio files'):
+    # Walk through data_dir and process all the files
+    total_visits = len(list(os.walk(data_dir, topdown=True)))
+    logger.info('starting loop over data')
+    for (dirpath, _, filenames) in tqdm(os.walk(data_dir, topdown=True),
+                                        total=total_visits,
+                                        desc='directories'):
+        # skip hidden files
+        filenames = [filename for filename in filenames if filename[0] != '.']
 
-                if os.path.splitext(filename)[1] == file_type:
-                    file_path = os.path.join(dirpath, filename)
+        # Process any files in this directory
+        for filename in tqdm(filenames, desc='audio files'):
 
-                    key = None
-                    if key_maker is not None:
-                        key = key_maker(file_path)
-                        if key not in data_file:
-                            logger.debug('creating key {}'.format(key))
-                            data_file.create_group(key)
+            if os.path.splitext(filename)[1] == file_type:
+                file_path = os.path.join(dirpath, filename)
 
-                    # Read in the signal and sample rate
-                    if track is not None:
-                        signal, sample_rate = sf.read(file_path)
-                        signal = signal[:, track]
-                    else:
-                        signal, sample_rate = sf.read(file_path)
+                key = None
+                dataset_name = None
+                if key_maker is not None:
+                    key, dataset_name = key_maker.process_file_metadata(file_path)
+                    if key not in data_file:
+                        logger.debug('creating key {}'.format(key))
+                        data_file.create_group(key)
 
-                    # Compute STFT spectrogram
-                    spectrogram = make_stft_features(signal, sample_rate,
-                                                     output_sample_rate,
-                                                     window_size, overlap,
-                                                     preemphasis_coeff,
-                                                     fft_size)
+                # Read in the signal and sample rate
+                if track is not None:
+                    signal, sample_rate = sf.read(file_path)
+                    signal = signal[:, track]
+                else:
+                    signal, sample_rate = sf.read(file_path)
 
-                    # Convert to 32 bit floats
-                    spectrogram = spectrogram.astype(np.complex64)
+                # Compute STFT spectrogram
+                spectrogram = make_stft_features(signal, sample_rate,
+                                                 output_sample_rate,
+                                                 window_size, overlap,
+                                                 preemphasis_coeff,
+                                                 fft_size)
 
-                    if key is not None:
-                        data_file[key].create_dataset(os.path.splitext(filename)[0],
-                                                      data=spectrogram,
-                                                      compression="gzip",
-                                                      compression_opts=0)
-                    else:
-                        data_file.create_dataset(os.path.splitext(filename)[0],
-                                                 data=spectrogram,
-                                                 compression="gzip",
-                                                 compression_opts=0)
-        logger.info('looping over data finished')
+                # Convert to 32 bit floats
+                spectrogram = spectrogram.astype(np.complex64)
+
+                if key is not None:
+                    data_file[key].create_dataset(dataset_name,
+                                                  data=spectrogram,
+                                                  compression="gzip",
+                                                  compression_opts=0)
+                else:
+                    data_file.create_dataset(os.path.splitext(filename)[0],
+                                             data=spectrogram,
+                                             compression="gzip",
+                                             compression_opts=0)
+    logger.info('looping over data finished')
+
+    return data_file
 
 
 def make_stft_dataset_old(data_dir, key_level, file_type, output_file,

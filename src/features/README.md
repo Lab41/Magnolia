@@ -3,7 +3,7 @@
 This folder houses the code needed to run the data preprocessing pipeline.
 This pipeline is responsible for converting the raw waveforms to short-time
 Fourier transformed (stft) spectrograms and organizing these spectrograms in a
-sensible manner for later iteration.
+sensible manner for later partitioning.
 It's currently capable of running over the LibriSpeech and UrbanSound8K
 datasets.
 However, it's possible to run over other datasets with only a few alterations to
@@ -42,7 +42,8 @@ For a complete description of the `processing_parameters`, see the definition of
 the `make_stft_dataset` function in `preprocessing.py`.
 
 The output HDF5 file should contain the stft spectrograms structured in such a
-way that it's convenient for iteration in later steps (i.e. training, etc.).
+way that it's convenient for partitioning and iteration in later steps (i.e.
+training, etc.).
 
 ### Customization for new datasets
 
@@ -50,35 +51,43 @@ Most of the alterations needed for a new dataset are made to the preprocessing
 settings JSON file.
 However, one important change needs to be made to the `preprocess_data.py`
 script.
-If the output file is to have any hierarchical structure, a new "key maker"
-class must be created.
-The purpose of this class is to create an HDF5 key given the dataset metadata
-and the file name of an input file.
-The class only needs two methods: the `__init__` method which takes as it's only
-argument the metadata file name (`metadata_file` from the setting file) and the
-`__call__` that return a key given an input file name.
+If the output file is to have any hierarchical structure, a new "metadata
+handler" class must be created.
+The primary purpose of this class is to create an HDF5 key and dataset name
+given the dataset metadata and the file name of an input file.
+It can also save custom metadata after the data has been processed.
+The class needs three methods: the `__init__` method which takes as it's only
+argument the metadata file name (`metadata_file` from the setting file), a
+`process_file_metadata` method that return a key and dataset name given an input
+file name, and a `save_metadata` method that may save a file containing the
+metadata given the HDF5 that contains all the preprocessed data.
 The name of the class is also important.
-It's name should be formatted as `dataset_type` followed by `_key_maker`.
+It's name should be formatted as `dataset_type` followed by `_metadata_handler`.
 For instance, if the `dataset_type` is LibriSpeech, then the key maker class
-for this dataset should be `LibriSpeech_key_maker`.
+for this dataset should be `LibriSpeech_metadata_handler`.
 In summary, a class such as this should go at the top of the
 `preprocess_data.py` script:
 
 ```python
 class <dataset_type>_key_maker:
-    """Creates keys for <dataset> given its metadata and a filename"""
+    """Creates keys and a metadata table for the <dataset> given its metadata and a filename"""
     def __init__(self, metadata_path):
         # do something with metadata here (such as storing it as a DataFrame)
         pass
 
-    def __call__(self, filename):
+    def process_file_metadata(self, full_filename):
         key = ''
+        dataset_name = ''
         # do something with filename and metadata
-        return key
+        return key, dataset_name
+
+    def save_metadata(self, hdf5_file):
+        # possibly save the metadata
+        pass
 ```
 
-If the "key maker" class is omitted, then the resulting HDF5 file will lack any
-grouping information.
+If the "metadata handler" class is omitted, then the resulting HDF5 file will
+lack any grouping information.
 
 ## Feature Extraction
 

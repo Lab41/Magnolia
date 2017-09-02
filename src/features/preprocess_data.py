@@ -14,31 +14,57 @@ import pandas as pd
 from magnolia.features.preprocessing import make_stft_dataset
 
 
-# These classes must have names of the form <dataset_type>_key_maker
-class LibriSpeech_key_maker:
-    """Creates keys for the speech dataset given its metadata and a filename"""
+# These classes must have names of the form <dataset_type>_metadata_handler
+class LibriSpeech_metadata_handler:
+    """Creates keys and a metadata table for the speech dataset given its metadata and a filename"""
     def __init__(self, metadata_path):
         self.df = pd.read_csv(metadata_path, sep='|', skiprows=12,
-                              index_col=0, usecols=[0, 1],
-                              names=['ID', 'SEX'])
+                              index_col=0, usecols=[0, 1, 3],
+                              names=['ID', 'SEX', 'TIME'])
         self.df['SEX'] = self.df['SEX'].map(str.strip)
+        self.new_metadata = {"id": [], "sex": [], "key": []}
 
-    def __call__(self, filename):
-        file_name_segments = filename.split(os.path.sep)
+    def process_file_metadata(self, fullfilename):
+        file_name_segments = fullfilename.split(os.path.sep)
         sex = self.df.get_value(int(file_name_segments[-3]), 'SEX')
-        return '{}/{}/{}'.format(sex, file_name_segments[-3], file_name_segments[-2])
+        self.new_metadata['id'].append(int(file_name_segments[-3]))
+        self.new_metadata['sex'].append(sex)
+        key = '{}/{}/{}'.format(sex, file_name_segments[-3], file_name_segments[-2])
+        dataset_name = os.path.splitext(os.path.split(fullfilename)[-1])[0]
+        self.new_metadata['key'].append('{}/{}'.format(key, dataset_name))
+        return key, dataset_name
+
+    def save_metadata(self, hdf5_file):
+        path, filename = os.path.split(hdf5_file.filename)
+        filename = os.path.splitext(filename)[0]
+        metadata_filename = os.path.join(path, '{}_metadata.csv'.format(filename))
+        pd.DataFrame(data=self.new_metadata).to_csv(metadata_filename)
 
 
-class UrbanSound8K_key_maker:
-    """Creates keys for the noise dataset given its metadata and a filename"""
+class UrbanSound8K_metadata_handler:
+    """Creates keys and a metadata table for the noise dataset given its metadata and a filename"""
     def __init__(self, metadata_path):
-        self.df = pd.read_csv(metadata_path, index_col=0, usecols=[0, 1, 4, 7])
+        self.df = pd.read_csv(metadata_path, index_col=0)
+        self.df['duration'] = self.df['end'] - self.df['start']
+        self.new_metadata = {"duration": [], "salience": [], "class": [], "key": []}
 
-    def __call__(self, filename):
-        filename = filename.split(os.path.sep)[-1]
+    def process_file_metadata(self, fullfilename):
+        filename = os.path.split(fullfilename)[-1]
         salience = self.df.get_value(filename, 'salience')
         class_ = self.df.get_value(filename, 'class')
-        return '{}/{}'.format(salience, class_)
+        self.new_metadata['duration'].append(self.df.get_value(filename, 'duration'))
+        self.new_metadata['salience'].append(salience)
+        self.new_metadata['class'].append(class_)
+        key = '{}/{}'.format(salience, class_)
+        dataset_name = os.path.splitext(filename)[0]
+        self.new_metadata['key'].append('{}/{}'.format(key, dataset_name))
+        return key, dataset_name
+
+    def save_metadata(self, hdf5_file):
+        path, filename = os.path.split(hdf5_file.filename)
+        filename = os.path.splitext(filename)[0]
+        metadata_filename = os.path.join(path, '{}_metadata.csv'.format(filename))
+        pd.DataFrame(data=self.new_metadata).to_csv(metadata_filename)
 
 
 def main():
@@ -74,19 +100,23 @@ def main():
 
 
         key_maker = None
-        key_maker_name = '{}_key_maker'.format(settings['dataset_type'])
+        key_maker_name = '{}_metadata_handler'.format(settings['dataset_type'])
         if key_maker_name in globals():
-            logger.debug('using the {} as the output key maker'.format(key_maker_name))
+            logger.debug('using the {} as the metadata handler'.format(key_maker_name))
             key_maker = globals()[key_maker_name](settings['metadata_file'])
 
 
         print('Starting preprocessing...')
-        make_stft_dataset(data_dir=settings['data_directory'],
-                          file_type=settings['file_type'],
-                          output_file=settings['output_file'],
-                          key_maker=key_maker,
-                          **settings['processing_parameters'])
+        data_file = make_stft_dataset(data_dir=settings['data_directory'],
+                                      file_type=settings['file_type'],
+                                      output_file=settings['output_file'],
+                                      key_maker=key_maker,
+                                      **settings['processing_parameters'])
         print('\nFinished!!')
+
+
+        if key_maker is not None:
+            key_maker.save_metadata(data_file)
 
 
 if __name__ == '__main__':
