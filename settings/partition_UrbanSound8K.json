@@ -1,7 +1,9 @@
 {
   "preprocessed_file": "/data/fs4/home/jhetherly/datasets/UrbanSound8K/processed_audio.hdf5",
+  "metadata_file": "/data/fs4/home/jhetherly/datasets/UrbanSound8K/processed_audio_metadata.csv",
   "output_directory": "/data/fs4/home/jhetherly/Projects/Magnolia/data/data_partitions",
   "description": "selects salience of 1, removes children_playing noise class, reserves 20% of the remaining noise classes for out-of-sample testing, makes an 80/10/10 train/val/test split of the remaining 80%",
+  "rng_seed": null,
   "partition_graphs": [
     {
       "filters": [

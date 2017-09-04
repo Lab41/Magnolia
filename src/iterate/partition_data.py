@@ -5,76 +5,23 @@ import os.path
 import argparse
 import logging.config
 import json
+import numpy as np
+import pandas as pd
 import h5py
+from magnolia.utils.partition_optimizer import PartitionOptimizer
 
 
-class PartitionTreeFilter:
-    """Holds a filter (node) structure of the partition tree"""
+def split_categroies(category_labels, category_populations,
+                     desired_fractions,
+                     rng, logger, **opt_args):
+    results = {}
+    category_groups, actual_fractions = PartitionOptimizer(category_populations,
+                                                           desired_fractions,
+                                                           rng, logger).optimize(**opt_args)
+    for i in range(len(desired_fractions)):
+        results[i] = category_labels[category_groups == i]
 
-    def __init__(self, filter_desc):
-        self._id = filter_desc["id"]
-        self._only = [] if "only" not in filter_desc else filter_desc["only"]
-        self._except = [] if "except" not in filter_desc else filter_desc["except"]
-        self._only_is_list = isinstance(self._only, list)
-        self._except_is_list = isinstance(self._except, list)
-        self._pass_all = (self._only is [] and self._except is [])
-        self._splits = []
-
-    def add_split(self, split):
-        self._splits.append(split)
-
-    def get_splits(self):
-        return self._splits
-
-    def apply(self, categories):
-        # returned matched list of categories
-        pass
-
-
-class PartitionTreeGroup:
-    """Holds a group (node) structure of the partition tree"""
-
-    def __init__(self, group_desc):
-        self._name = group_desc["name"]
-        self._only = [] if "only" not in group_desc else group_desc["only"]
-        self._except = [] if "except" not in group_desc else group_desc["except"]
-        self._only_is_list = isinstance(self._only, list)
-        self._except_is_list = isinstance(self._except, list)
-        self._pass_all = (self._only is [] and self._except is [])
-        self._file_names = []
-
-    def add_file_name(self, file_name):
-        self._file_names.append(file_name)
-
-    def get_file_names(self):
-        return self._file_names
-
-class PartitionTreeSplit:
-    """Holds a split (edge) structure of the partition tree"""
-
-    def __init__(self, split_desc):
-        self._source = split_desc["source"]
-        self._target = split_desc["target"]
-        self._file_names = []
-
-    def add_file_name(self, file_name):
-        self._file_names.append(file_name)
-
-    def get_file_names(self):
-        return self._file_names
-
-
-def build_partition_graphs(fsg):
-    """Returns the partition graphs from lists of filters, splits, and groups"""
-
-    graphs = []
-    for graph_elements in fsg:
-        filters = graph_elements["filters"]
-        splits = graph_elements["splits"]
-        groups = graph_elements["groups"]
-
-        graph = {}
-
+    return results, actual_fractions
 
 
 def main():
@@ -101,15 +48,25 @@ def main():
     with open(args.settings) as settings_file:
         settings = json.load(settings_file)
 
+        rng = np.random.RandomState(settings['rng_seed'])
         logger.debug('settings {}'.format(settings))
 
         input_file = h5py.File(settings["preprocessed_file"], "r")
-        # metadata = pd.read_csv(settings['metadata_file'])
-        # metadata['duration'] = metadata['end'] - metadata['start']
-        # metadata = metadata[(metadata['salience'] == 1) & (metadata['duration'] >= 2.)]
-        # print(metadata[metadata['class'] != 'children_playing'].head())
+        metadata = pd.read_csv(settings['metadata_file'], index_col=0)
 
-        graphs = build_partition_graphs(settings["partition_graphs"])
+        metadata = metadata[(metadata['salience'] == 1) &
+                            (metadata['duration'] >= 2.) &
+                            (metadata['class'] != 'children_playing')]
+
+        class_summary = metadata['class'].value_counts()
+        categories, actual_split = split_categroies(class_summary.index.values,
+                                                    class_summary.values,
+                                                    np.array([0.8, 0.2]),
+                                                    rng, logger,
+                                                    niter=100000,
+                                                    niter_success=50000)
+        for category_number in categories:
+            print(metadata.loc[metadata['class'].isin(categories[category_number])]['key'])
 
 
 if __name__ == '__main__':
