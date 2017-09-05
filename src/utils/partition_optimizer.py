@@ -1,9 +1,17 @@
 
+"""Class for optimizing the partition of category labels
+
+TODO: need to add more logging and documentation
+"""
+
+
 import numpy as np
 import pandas as pd
 
 
 class PartitionOptimizer:
+    """Helper class that finds an optimal partition of categories through random search"""
+
     class EnsurePopulation:
         def __init__(self, num_splits=2):
             self._num_splits = num_splits
@@ -16,7 +24,6 @@ class PartitionOptimizer:
             self._num_splits = num_splits
             self._rng = random_state
         def __call__(self, x):
-            # self.stepsize = np.max([1, self.stepsize])
             return np.clip(x + self._rng.randint(-self.stepsize, self.stepsize + 1, size=x.size), 0, self._num_splits - 1)
 
     def __init__(self, category_populations, desired_fractions, random_state, logger):
@@ -45,7 +52,7 @@ class PartitionOptimizer:
         self._calculate_population_fractions(x)
         return (np.abs(self._actual_fractions - self._desired_fractions)/self._desired_fractions).sum()
 
-    def optimize(self, stepsize=1, **kwargs):
+    def optimize(self, stepsize=1, niter=1000, niter_success=None, **kwargs):
         take_step = self.UnitStep(self._rng, stepsize=stepsize, num_splits=self._number_of_splits)
 
         global_minimum_vec = self._initial_vector
@@ -55,7 +62,8 @@ class PartitionOptimizer:
         current_eval = global_minimum_eval
         early_stopped = False
 
-        for i in range(kwargs['niter']):
+
+        for i in range(niter):
             current_vec = take_step(current_vec)
             while not self._accept_test(x_new=current_vec):
                 current_vec = take_step(current_vec)
@@ -67,7 +75,7 @@ class PartitionOptimizer:
                 global_minimum_streak = 0
             global_minimum_streak += 1
 
-            if global_minimum_streak > kwargs['niter_success']:
+            if niter_success is not None and global_minimum_streak > niter_success:
                 early_stopped = True
                 self._logger.debug('Optimizer stopping early at {}'.format(i))
                 break

@@ -46,7 +46,7 @@ class UrbanSound8K_metadata_handler:
     def __init__(self, metadata_path):
         self.df = pd.read_csv(metadata_path, index_col=0)
         self.df['duration'] = self.df['end'] - self.df['start']
-        self.new_metadata = {"duration": [], "salience": [], "class": [], "key": []}
+        self.new_metadata = {"duration": [], "salience": [], "Class": [], "key": []}
 
     def process_file_metadata(self, fullfilename):
         filename = os.path.split(fullfilename)[-1]
@@ -54,7 +54,7 @@ class UrbanSound8K_metadata_handler:
         class_ = self.df.get_value(filename, 'class')
         self.new_metadata['duration'].append(self.df.get_value(filename, 'duration'))
         self.new_metadata['salience'].append(salience)
-        self.new_metadata['class'].append(class_)
+        self.new_metadata['Class'].append(class_)
         key = '{}/{}'.format(salience, class_)
         dataset_name = os.path.splitext(filename)[0]
         self.new_metadata['key'].append('{}/{}'.format(key, dataset_name))

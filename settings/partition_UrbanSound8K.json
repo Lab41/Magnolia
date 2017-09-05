@@ -1,66 +1,47 @@
 {
   "preprocessed_file": "/data/fs4/home/jhetherly/datasets/UrbanSound8K/processed_audio.hdf5",
   "metadata_file": "/data/fs4/home/jhetherly/datasets/UrbanSound8K/processed_audio_metadata.csv",
-  "output_directory": "/data/fs4/home/jhetherly/Projects/Magnolia/data/data_partitions",
-  "description": "selects salience of 1, removes children_playing noise class, reserves 20% of the remaining noise classes for out-of-sample testing, makes an 80/10/10 train/val/test split of the remaining 80%",
+  "output_directory": "/data/fs4/home/jhetherly/Projects/Magnolia/data/data_partitions/UrbanSound8K",
+  "description": "selects salience of 1, removes children_playing noise class, ensures clip is at least 2s long, reserves 20% of the remaining noise classes for out-of-sample testing, makes an 80/10/10 train/val/test split of the remaining 80%",
   "rng_seed": null,
   "partition_graphs": [
     {
+      "data_label": "key",
       "filters": [
         {
-          "id": "salience=1",
-          "only": ["1"]
+          "id": "time_volume_interference",
+          "pandas_query": "salience == 1 & duration >= 2 & Class != \"children_playing\""
         },
         {
-          "id": "class!=children_playing",
-          "except": ["children_playing"]
-        },
-        {
-          "id": "all files"
+          "id": "training_set"
         }
       ],
-      "groups": [
-        {
-          "name": "out_of_sample_test"
-        },
-        {
-          "name": "in_sample_test"
-        },
-        {
-          "name": "validation"
-        },
-        {
-          "name": "train"
-        }
-      ],
+      "groups": ["out_of_sample_test", "in_sample_test", "validation", "train"],
       "splits": [
         {
-          "source": "salience=1",
-          "target": "class!=children_playing",
-          "fraction": 1.0
-        },
-        {
-          "source": "class!=children_playing",
-          "target": "all files",
-          "fraction": 0.8
-        },
-        {
-          "source": "class!=children_playing",
+          "source": "time_volume_interference",
           "target": "out_of_sample_test",
-          "fraction": 0.2
+          "split_on": "Class",
+          "fraction": 0.1
         },
         {
-          "source": "all files",
-          "target": "train",
-          "fraction": 0.8
+          "source": "time_volume_interference",
+          "target": "training_set",
+          "split_on": "Class",
+          "fraction": 0.9
         },
         {
-          "source": "all files",
+          "source": "training_set",
           "target": "in_sample_test",
           "fraction": 0.1
         },
         {
-          "source": "all files",
+          "source": "training_set",
+          "target": "train",
+          "fraction": 0.8
+        },
+        {
+          "source": "training_set",
           "target": "validation",
           "fraction": 0.1
         }
