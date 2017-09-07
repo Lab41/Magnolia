@@ -18,48 +18,59 @@ The structure of the JSON file is as follows:
 ```javascript
 {
   "data_file": "...", // HDF5 file to partition
+  "metadata_file": "...", // location of csv metadata file used to partition data
   "output_directory": "...", // output directory where .txt are to be stored
   "description": "...", // textual description of partitions
+  "rng_seed": null, // random number seed (for reproducibility)
   "partition_graphs": [ // (described later)
   ]
 }
 ```
 
+The `data_file` is the HDF5 file that contains the actual data to be
+partitioned.
+`metadata_file` is the location of the CSV file containing the metadata used for
+partitioning the data.
 The `output_directory` will contain the results of the partitioning in the form
-of text files each of which contain a list of HDF5 `Dataset`s that belong to
-that group.
+of sub-directories and CSV files each of which contain a list of HDF5 `Dataset`s
+that belong to that group.
 The `description` is an optional plain text description of how the data is
 partition.
 This is useful for describing the intent for the `partition_graphs`.
 The `partition_graphs` is a specially-formatted portion of the settings that
 fully specifies how the input file is partitioned.
+Finally, the `rng_seed` is an integer seed used to initialize the random number
+generator.
 
 ### The partition graph
 
 The partition graph is a graphical representation of how to partition a
-hierarchically structured file system (HDF5 in this case).
+data table where each entry in the table conceptually represents a unique data
+sample.
 It is a directed, acyclic graph where each node specifies how to filter the
-directories (referred to as categories onward) at a directory level and the
-edges specify the proportion of the node categories or files to keep.
-For reference, a generic hierarchical file system directory structure is given
-below.
+table (i.e. a Pandas `query`) and the edges specify the proportion of the parent
+node to pass along to the next node.
+The proportion of the parent node to pass along an edge may be grouped along
+categories in column of the table or over all samples.
+The terminating nodes of the graph (or leaves on a tree) are the mutually
+exclusive groups of data samples.
+A generic table is given below that will aid in the following discussion.
 
-![Generic_file_hierarchy](images/file_hierarchy.png)
+![Generic_data table](images/generic_data_table.png)
 
-Here, each directory level (colored green and red and denoted by $A$ and $B$)
-contains an arbitrary number of categories (or HDF5 groups) denoted
-$\{A_1\ldots A_n\}$ and $\{B_1\ldots B_k\}$.
-The data files are located at any directory level and are denoted by the yellow
-icons at the bottom of the diagram.
-To group the data files stored in this hierarchy, one could imagine selecting
-some subset of categories within the first directory level ($A$).
-This subset selection will be called "filtering."
-Once the first level of categories is filtered, one can then ask that the
-remaining categories be proportionally split.
-After this split, one can repeat the filtering process at the next directory
-level and split those categories if desired.
-Finally, at the level(s) of the individual data files, these can again be
-filtered and split and the remaining data file names be stored in a text file.
+Here, the number of samples is $N$ while the number of columns is $M$.
+The column that contains the unique, identifying information regarding each
+individual sample within an HDF5 file is highlight in green and denoted $L_K$.
+
+Generally speaking, to partition a dataset, only a three operations are
+possible:
+* Filtering through queries
+* Random splitting (on either categories or samples)
+* Assign to groups the results of filtering and splitting
+If a column contains categorical values, these columns could be split
+proportionally to the number of samples within those categories.
+Conceptually, the whole dataset is only ever filtered and split until what
+remains is stored in groups.
 This is abstractly shown in the following diagram.
 
 ![Generic_file_hierarchy_partition](images/file_hierarchy_filter_split.png)
@@ -74,7 +85,7 @@ from a node can sum to any number less than or equal to 1.
 To make this more concrete, the following is the HDF5 file hierarchy for the
 UrbanSound8K.
 
-![UrbanSound8K_file_hierarchy](images/UrbanSound8K_file_hierarchy.png)
+![UrbanSound8K_file_hierarchy](images/UrbanSound8K_metadata_table.png)
 
 Here, the first directory level is the salience and the second level is the
 class of noise.
@@ -120,61 +131,42 @@ diagramed is given below.
 {
   "partition_graphs": [
     {
+      "data_label": "key",
       "filters": [
         {
-          "id": "salience=1",
-          "only": ["1"]
+          "id": "time_volume_interference",
+          "pandas_query": "salience == 1 & duration >= 2 & Class != \"children_playing\""
         },
         {
-          "id": "class!=children_playing",
-          "except": ["children_playing"]
-        },
-        {
-          "id": "all files",
+          "id": "training_set"
         }
       ],
-      "groups": [
-        {
-          "name": "out_of_sample_test"
-        },
-        {
-          "name": "in_sample_test"
-        },
-        {
-          "name": "validation"
-        },
-        {
-          "name": "train"
-        }
-      ],
+      "groups": ["out_of_sample_test", "in_sample_test", "validation", "train"],
       "splits": [
         {
-          "source": "salience=1",
-          "target": "class!=children_playing",
-          "fraction": 1.0
-        },
-        {
-          "source": "class!=children_playing",
-          "target": "all files",
-          "fraction": 0.8
-        },
-        {
-          "source": "class!=children_playing",
+          "source": "time_volume_interference",
           "target": "out_of_sample_test",
-          "fraction": 0.2
+          "split_on": "Class",
+          "fraction": 0.1
         },
         {
-          "source": "all files",
-          "target": "train",
-          "fraction": 0.8
+          "source": "time_volume_interference",
+          "target": "training_set",
+          "split_on": "Class",
+          "fraction": 0.9
         },
         {
-          "source": "all files",
+          "source": "training_set",
           "target": "in_sample_test",
           "fraction": 0.1
         },
         {
-          "source": "all files",
+          "source": "training_set",
+          "target": "train",
+          "fraction": 0.8
+        },
+        {
+          "source": "training_set",
           "target": "validation",
           "fraction": 0.1
         }
