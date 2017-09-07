@@ -22,8 +22,7 @@ The structure of the JSON file is as follows:
   "output_directory": "...", // output directory where .txt are to be stored
   "description": "...", // textual description of partitions
   "rng_seed": null, // random number seed (for reproducibility)
-  "partition_graphs": [ // (described later)
-  ]
+  "partition_graphs_file": "..." // file containing the partition graph
 }
 ```
 

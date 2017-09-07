@@ -4,48 +4,5 @@
   "output_directory": "/data/fs4/home/jhetherly/Projects/Magnolia/data/data_partitions/UrbanSound8K",
   "description": "selects salience of 1, removes children_playing noise class, ensures clip is at least 2s long, reserves 20% of the remaining noise classes for out-of-sample testing, makes an 80/10/10 train/val/test split of the remaining 80%",
   "rng_seed": null,
-  "partition_graphs": [
-    {
-      "data_label": "key",
-      "filters": [
-        {
-          "id": "time_volume_interference",
-          "pandas_query": "salience == 1 & duration >= 2 & Class != \"children_playing\""
-        },
-        {
-          "id": "training_set"
-        }
-      ],
-      "groups": ["out_of_sample_test", "in_sample_test", "validation", "train"],
-      "splits": [
-        {
-          "source": "time_volume_interference",
-          "target": "out_of_sample_test",
-          "split_on": "Class",
-          "fraction": 0.1
-        },
-        {
-          "source": "time_volume_interference",
-          "target": "training_set",
-          "split_on": "Class",
-          "fraction": 0.9
-        },
-        {
-          "source": "training_set",
-          "target": "in_sample_test",
-          "fraction": 0.1
-        },
-        {
-          "source": "training_set",
-          "target": "train",
-          "fraction": 0.8
-        },
-        {
-          "source": "training_set",
-          "target": "validation",
-          "fraction": 0.1
-        }
-      ]
-    }
-  ]
+  "partition_graphs_file": "/data/fs4/home/jhetherly/Projects/Magnolia/settings/partition_graph_UrbanSound8K.json"
 }

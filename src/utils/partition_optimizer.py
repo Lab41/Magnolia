@@ -6,7 +6,19 @@ TODO: need to add more logging and documentation
 
 
 import numpy as np
-import pandas as pd
+
+
+def split_categories(category_labels, category_populations,
+                     desired_fractions,
+                     rng, logger, **opt_args):
+    results = {}
+    category_groups, actual_fractions = PartitionOptimizer(category_populations,
+                                                           desired_fractions,
+                                                           rng, logger).optimize(**opt_args)
+    for i in range(len(desired_fractions)):
+        results[i] = category_labels[category_groups == i]
+
+    return results, actual_fractions
 
 
 class PartitionOptimizer:
