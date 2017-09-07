@@ -67,6 +67,7 @@ possible:
 * Filtering through queries
 * Random splitting (on either categories or samples)
 * Assign to groups the results of filtering and splitting
+
 If a column contains categorical values, these columns could be split
 proportionally to the number of samples within those categories.
 Conceptually, the whole dataset is only ever filtered and split until what
@@ -75,50 +76,44 @@ This is abstractly shown in the following diagram.
 
 ![Generic_file_hierarchy_partition](images/file_hierarchy_filter_split.png)
 
-Each node here represents a filter ($F$) at a certain directory level while the
-edges are the fractions of category labels being passed along.
-The final data file names are stored in one or more groups ($G$) and saved to
-text files.
+Each node here represents a filter ($F$) that performs a specified query on the
+(portion of the) dataset while the edges are the fractions of the samples or
+categories labels being passed along to the next node.
+The final dataset portions are stored in one or more groups ($G$) and saved to
+disk in the form of CSV files.
 It's important to note that the fractions associated with the edges emanating
-from a node can sum to any number less than or equal to 1.
+from a node can sum to any number less than or equal to 1.0.
 
-To make this more concrete, the following is the HDF5 file hierarchy for the
-UrbanSound8K.
+To make this more concrete, the following is the metadata for the UrbanSound8K
+dataset.
 
 ![UrbanSound8K_file_hierarchy](images/UrbanSound8K_metadata_table.png)
 
-Here, the first directory level is the salience and the second level is the
-class of noise.
-The data files are then all contained within the class categories.
+Here, the `key` column specifies the exact path within the HDF5 file where to
+find each sample.
 Suppose the following partitioning is desired: Select a salience of 1, remove
-the "children_playing" noise class, reserve 20% of the remaining noise classes
+the "children_playing" noise class, reserve 10% of the remaining noise `Class`es
 for out-of-sample testing, and, finally, make an 80/10/10 train/validation/test
-split of the remaining 80%.
+split of the remaining 90%.
 This is what is diagramed in the following partition graph.
 
 ![UrbanSound8K_file_hierarchy_partition](images/UrbanSound8K_file_hierarchy_filter_split.png)
 
 Here, the two test groups have different names, but in general they could've
 been named the same for a single test group.
-The first node in the graph represents the filter on the salience category
-(alluded to by the matching green coloring).
-The next node filters the class category and the edge connecting the first and
-second node indicates all the categories from the first filter should propagate
-to the second node (there is only one category that passes the first node's
-filter, thus, one can only ever pass 100% of this category to the next node).
-The next two edges specify that 20% of the non-`children_playing` noise class
-categories be reserved for the out-of-sample test group while the other 80% of
-the categories will be sent through another filter.
-This last filter passes all categories (data file names in this case) through
-to the training, validation, and in-sample test groups via an 80/10/10 split.
-
+The first node in the graph represents the filter/query on the `salience` and
+`Class` categories and the `duration` values.
+A split is then applied to the `Class` category such that 10% of this category
+(weighted by sample population) are sent to the `Out-of-sample test` group while
+the other 90% of the categories are sent to a filter that allows all data to
+pass.
+The samples are then sent through a 80/10/10 split into the `Train`,
+`Validation`, and `In-sample test` groups.
 
 #### How the split is determined
 
-The split at each directory level is calculated by considering the total number
-of data files in all it's sub-directories.
-Thus, the proportion specified along each edge is only approximately followed
-as categories are discrete.
+The proportion specified along each edge is only approximately followed if
+it is a split along a category as categories are discrete.
 Print outs of the specified and actual tree structures are given after the
 partitioning is finished.
 
@@ -178,19 +173,17 @@ diagramed is given below.
 
 Each `filter` can have the following attributes (default is to include all
 categories):
-* `id`: name of the filter that is referenced by the splits (required)
-* `only`: only include the following matched categories or data files (list or regex,
-  optional)
-* `except`: exclude the following match categories (list or regex, optional)
+* `id`: name of the filter that is referenced by the splits and serves as the
+  directory name during storage (required)
+* `pandas_query`: valid Pandas query string (optional)
 
-Each `group` has the same attributes as the `filter`s except that `id` is
-replaced by `name`.
+Each `group` only has a name.
 
 Each `split` has the following attributes:
 * `source`: `id` of a `filter`
-* `target`: `id` of a `filter` or `group` (at a directory level deeper than
-  `source`)
-* `fraction`: split fraction of categories or data files
+* `target`: `id` of a `filter` or name of a `group`
+* `split_on`: category to split along (optional)
+* `fraction`: split fraction of categories or samples
 
 ## Iteration
 
