@@ -1,20 +1,23 @@
-
 """Class for optimizing the partition of category labels
 
 TODO: need to add more logging and documentation
 """
 
 
+import logging.config
 import numpy as np
+
+
+logger = logging.getLogger('partitioning')
 
 
 def split_categories(category_labels, category_populations,
                      desired_fractions,
-                     rng, logger, **opt_args):
+                     rng, **opt_args):
     results = {}
     category_groups, actual_fractions = PartitionOptimizer(category_populations,
                                                            desired_fractions,
-                                                           rng, logger).optimize(**opt_args)
+                                                           rng).optimize(**opt_args)
     for i in range(len(desired_fractions)):
         results[i] = category_labels[category_groups == i]
 
@@ -38,9 +41,8 @@ class PartitionOptimizer:
         def __call__(self, x):
             return np.clip(x + self._rng.randint(-self.stepsize, self.stepsize + 1, size=x.size), 0, self._num_splits - 1)
 
-    def __init__(self, category_populations, desired_fractions, random_state, logger):
+    def __init__(self, category_populations, desired_fractions, random_state):
         self._rng = random_state
-        self._logger = logger
         self._category_populations = category_populations
         self._total_population = category_populations.sum()
         self._desired_fractions = desired_fractions
@@ -89,11 +91,11 @@ class PartitionOptimizer:
 
             if niter_success is not None and global_minimum_streak > niter_success:
                 early_stopped = True
-                self._logger.debug('Optimizer stopping early at {}'.format(i))
+                logger.debug('Optimizer stopping early at {}'.format(i))
                 break
 
         if not early_stopped:
-            self._logger.debug('Optimizer finished all iterations ({})'.format(kwargs['niter']))
+            logger.debug('Optimizer finished all iterations ({})'.format(kwargs['niter']))
 
         self._calculate_population_fractions(global_minimum_vec)
         return global_minimum_vec, self._actual_fractions

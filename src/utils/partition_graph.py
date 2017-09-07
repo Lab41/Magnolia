@@ -5,9 +5,13 @@ TODO: need to add logging, documentation, and error handling
 
 
 import os.path
+import logging
 import numpy as np
 import logging.config
 from magnolia.utils.partition_optimizer import split_categories
+
+
+logger = logging.getLogger('partitioning')
 
 
 def _recursively_build_tree_split(split, filters, groups, splits, path):

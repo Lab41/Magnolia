@@ -49,7 +49,7 @@ def main():
             root_node = build_partition_graph(settings['output_directory'],
                                               graph)
             root_node.apply(df=metadata, key=graph['data_label'], rng=rng,
-                            logger=logger, niter=10000, niter_success=5000)
+                            niter=10000, niter_success=5000)
 
 
 if __name__ == '__main__':
