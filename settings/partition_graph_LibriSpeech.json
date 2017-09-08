@@ -1,0 +1,30 @@
+{
+  "partition_graphs": [
+    {
+      "data_label": "key",
+      "filters": [
+        {
+          "id": "main_split"
+        }
+      ],
+      "groups": ["in_sample_test", "validation", "train"],
+      "splits": [
+        {
+          "source": "main_split",
+          "target": "in_sample_test",
+          "fraction": 0.1
+        },
+        {
+          "source": "main_split",
+          "target": "validation",
+          "fraction": 0.1
+        },
+        {
+          "source": "main_split",
+          "target": "train",
+          "fraction": 0.8
+        }
+      ]
+    }
+  ]
+}

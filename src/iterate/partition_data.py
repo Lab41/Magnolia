@@ -10,7 +10,6 @@ import logging.config
 import json
 import numpy as np
 import pandas as pd
-import h5py
 from magnolia.utils.partition_graph import build_partition_graph
 
 
@@ -42,7 +41,6 @@ def main():
         rng = np.random.RandomState(settings['rng_seed'])
         logger.debug('settings {}'.format(settings))
 
-        input_file = h5py.File(settings["preprocessed_file"], "r")
         metadata = pd.read_csv(settings['metadata_file'], index_col=0)
 
         for graph in partition_graph_desc['partition_graphs']:

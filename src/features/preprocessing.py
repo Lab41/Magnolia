@@ -79,6 +79,32 @@ def make_stft_features(signal, sample_rate,
     return spectrogram
 
 
+def undo_stft_features(spectrogram, sample_rate=10000,
+                       window_size=0.0512,
+                       preemphasis_coeff=0.95, fft_size=512):
+    """Undo the preprocessing operations
+    Inputs:
+        signal: 2D preprocessed spectrogram (np.ndarray)
+        sample_rate: sampling rate of signal (int)
+        window_size: length of stft window in seconds (float)
+        preemphasis: preemphasis coefficient (float)
+        fft_size: length (in seconds) of DFT window (float)
+
+    Returns:
+        waveform: (np.ndarray)
+    """
+
+    # Invert the stft operation
+    x = istft(spectrogram, sample_rate, None, window_size,
+              two_sided=False, fft_size=fft_size)
+
+    # Undo preemphasis
+    x = undo_preemphasis(x, preemphasis_coeff)
+
+    return x
+
+
+
 def make_stft_dataset(data_dir, file_type, output_file,
                       output_sample_rate=10000,
                       window_size=0.0512, overlap=0.0256,

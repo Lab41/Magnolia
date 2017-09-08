@@ -17,7 +17,6 @@ The structure of the JSON file is as follows:
 
 ```javascript
 {
-  "data_file": "...", // HDF5 file to partition
   "metadata_file": "...", // location of csv metadata file used to partition data
   "output_directory": "...", // output directory where .txt are to be stored
   "description": "...", // textual description of partitions
@@ -26,10 +25,8 @@ The structure of the JSON file is as follows:
 }
 ```
 
-The `data_file` is the HDF5 file that contains the actual data to be
-partitioned.
-`metadata_file` is the location of the CSV file containing the metadata used for
-partitioning the data.
+The `metadata_file` is the location of the CSV file containing the metadata used
+for partitioning the data.
 The `output_directory` will contain the results of the partitioning in the form
 of sub-directories and CSV files each of which contain a list of HDF5 `Dataset`s
 that belong to that group.
@@ -184,6 +181,16 @@ Each `split` has the following attributes:
 * `split_on`: category to split along (optional)
 * `fraction`: split fraction of categories or samples
 
-## Iteration
 
 ## Mixing
+
+Different mixing schemes are used for speaker-speaker versus speaker-noise.
+
+For speaker-speaker mixing ...
+
+For speaker-noise mixing tables identifying the speaker clip, noise clip,
+start time, stop time, and various multiplicative factors indicating how to
+scale the speech to a certain dB level are given.
+
+
+## Iteration
