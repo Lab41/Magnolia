@@ -1,7 +1,7 @@
 {
-  "metadata_file": "/data/fs4/home/jhetherly/datasets/UrbanSound8K/processed_audio_metadata.csv",
-  "output_directory": "/data/fs4/home/jhetherly/Projects/Magnolia/data/data_partitions/UrbanSound8K",
+  "preprocessing_settings": "/Users/jhetherly/Projects/Magnolia/settings/preprocess_UrbanSound8K.json",
+  "output_directory": "/Users/jhetherly/Projects/Magnolia/data/data_partitions/UrbanSound8K",
   "description": "selects salience of 1, removes children_playing noise class, ensures clip is at least 2s long, reserves 20% of the remaining noise classes for out-of-sample testing, makes an 80/10/10 train/val/test split of the remaining 80%",
   "rng_seed": null,
-  "partition_graphs_file": "/data/fs4/home/jhetherly/Projects/Magnolia/settings/partition_graph_UrbanSound8K.json"
+  "partition_graphs_file": "/Users/jhetherly/Projects/Magnolia/settings/partition_graph_UrbanSound8K.json"
 }

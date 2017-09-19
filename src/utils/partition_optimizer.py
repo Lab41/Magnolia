@@ -1,4 +1,4 @@
-"""Class for optimizing the partition of category labels
+"""Class and helper function for optimizing the partition of category labels
 
 TODO: need to add more logging and documentation
 """

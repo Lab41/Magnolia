@@ -25,25 +25,28 @@ The structure of the JSON file is as follows:
   "data_directory": "...", // path to "top-level" directory where data resides
   "metadata_file": "...", // file containing the metadata regarding the dataset (discussed later)
   "dataset_type": "...", // unique identifying string for this dataset (discussed later)
-  "output_file": "...", // output HDF5 file name (with file extension)
-  "file_type": "...", // input file extension (i.e. .wav)
-  "processing_parameters": { // parameters mostly focused on the stft transform
-    "output_sample_rate": 10000,
-    "window_size": 0.0512,
-    "overlap": 0.0256,
+  "spectrogram_output_file": "...", // spectrogram output HDF5 file name (with file extension)
+  "waveform_output_file": "...", // waveform output HDF5 file name (with file extension)
+  "metadata_output_file": "...", // metadata output file name (with file extension)
+  "compression": "...", // compression algorithm to use (HDF5 dataset parameter)
+  "compression_opts": 0, // compression option (HDF5 dataset parameter)
+  "processing_parameters": {
     "preemphasis_coeff": 0.95,
-    "fft_size": 512,
-    "track": null
+    "target_sample_rate": 10000,
+    "stft_args": {
+      "n_fft": 512
+    }
   }
 }
 ```
 
 For a complete description of the `processing_parameters`, see the definition of
 the `make_stft_dataset` function in `preprocessing.py`.
+The `stft_args` are passed directly to the `librosa` library's `stft` function.
 
-The output HDF5 file should contain the stft spectrograms structured in such a
-way that it's convenient for partitioning and iteration in later steps (i.e.
-training, etc.).
+The output spectrogram HDF5 file should contain the stft spectrograms structured
+in such a way that it's convenient for partitioning and iteration in later steps
+(i.e. training, etc.).
 
 ### Customization for new datasets
 
@@ -60,7 +63,7 @@ The class needs three methods: the `__init__` method which takes as it's only
 argument the metadata file name (`metadata_file` from the setting file), a
 `process_file_metadata` method that return a key and dataset name given an input
 file name, and a `save_metadata` method that may save a file containing the
-metadata given the HDF5 that contains all the preprocessed data.
+metadata given the meatadata file name.
 The name of the class is also important.
 It's name should be formatted as `dataset_type` followed by `_metadata_handler`.
 For instance, if the `dataset_type` is LibriSpeech, then the key maker class
@@ -81,8 +84,8 @@ class <dataset_type>_key_maker:
         # do something with filename and metadata
         return key, dataset_name
 
-    def save_metadata(self, hdf5_file):
-        # possibly save the metadata
+    def save_metadata(self, metadata_file_name):
+        # save the metadata
         pass
 ```
 

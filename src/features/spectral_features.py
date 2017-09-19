@@ -7,7 +7,6 @@ reconstructing time-domain audio signals from spectral features
 import sys
 import logging
 import numpy as np
-import scipy
 import scipy.signal
 
 

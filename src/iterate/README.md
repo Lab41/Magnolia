@@ -17,7 +17,7 @@ The structure of the JSON file is as follows:
 
 ```javascript
 {
-  "metadata_file": "...", // location of csv metadata file used to partition data
+  "preprocessing_settings": "...", // location of preprocessing settings
   "output_directory": "...", // output directory where .txt are to be stored
   "description": "...", // textual description of partitions
   "rng_seed": null, // random number seed (for reproducibility)
@@ -25,8 +25,8 @@ The structure of the JSON file is as follows:
 }
 ```
 
-The `metadata_file` is the location of the CSV file containing the metadata used
-for partitioning the data.
+The `preprocessing_settings` is the location of the JSON file containing the
+preprocessing setting used for the `preprocess_data.py` script.
 The `output_directory` will contain the results of the partitioning in the form
 of sub-directories and CSV files each of which contain a list of HDF5 `Dataset`s
 that belong to that group.

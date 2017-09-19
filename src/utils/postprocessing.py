@@ -2,6 +2,16 @@ import numpy as np
 from ..features.preprocessing import undo_preemphasis
 from ..features.spectral_features import istft
 
+
+def convert_preprocessing_parameters(params):
+    p = params.copy()
+    if 'n_fft' in p:
+        del p['n_fft']
+    if 'pad_mode' in p:
+        del p['pad_mode']
+    return p
+
+
 def reconstruct(spec_mag, spec_full, fs, window_size, step_size, square=False,
     preemphasis=None):
     '''

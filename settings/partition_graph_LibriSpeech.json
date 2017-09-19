@@ -4,25 +4,41 @@
       "data_label": "key",
       "filters": [
         {
-          "id": "main_split"
+          "id": "time",
+          "pandas_query": "duration >= 2"
+        },
+        {
+          "id": "training_set"
         }
       ],
-      "groups": ["in_sample_test", "validation", "train"],
+      "groups": ["out_of_sample_test", "in_sample_test", "validation", "train"],
       "splits": [
         {
-          "source": "main_split",
+          "source": "time",
+          "target": "out_of_sample_test",
+          "split_on": "id",
+          "fraction": 0.1
+        },
+        {
+          "source": "time",
+          "target": "training_set",
+          "split_on": "id",
+          "fraction": 0.9
+        },
+        {
+          "source": "training_set",
           "target": "in_sample_test",
           "fraction": 0.1
         },
         {
-          "source": "main_split",
-          "target": "validation",
-          "fraction": 0.1
-        },
-        {
-          "source": "main_split",
+          "source": "training_set",
           "target": "train",
           "fraction": 0.8
+        },
+        {
+          "source": "training_set",
+          "target": "validation",
+          "fraction": 0.1
         }
       ]
     }

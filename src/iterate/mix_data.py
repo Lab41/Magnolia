@@ -1,50 +1,56 @@
+import argparse
+import logging.config
 import json
 import numpy as np
-import pandas as pd
-import h5py
-from magnolia.features.preprocessing import undo_stft_features
+import msgpack
+import tqdm
+from magnolia.utils.sample import Sample
+from magnolia.utils.mixing import construct_mixed_sample
 
 
 def main():
-    number_of_mixed_sample = 1
-    rng_seed = 0
-    output_file = "/data/fs4/home/jhetherly/Projects/Magnolia/data/data_partitions/test.csv"
-    noise_metadata = pd.read_csv('/data/fs4/home/jhetherly/Projects/Magnolia/data/data_partitions/UrbanSound8K/time_volume_interference/training_set/in_sample_test.csv')
-    speech_metadata = pd.read_csv('/data/fs4/home/jhetherly/Projects/Magnolia/data/data_partitions/LibriSpeech/main_split/in_sample_test.csv')
-    noise_key_label = 'key'
-    speech_key_label = 'key'
-    noise_data = h5py.File('/data/fs4/home/jhetherly/datasets/UrbanSound8K/processed_audio.hdf5','r')
-    speech_data = h5py.File('/data/fs4/home/jhetherly/datasets/LibriSpeech/processed_train-clean-100.hdf5','r')
-    noise_preprocessing_parameters = json.load(open('/data/fs4/home/jhetherly/Projects/Magnolia/settings/preprocess_UrbanSound8K.json'))
-    speech_preprocessing_parameters = json.load(open('/data/fs4/home/jhetherly/Projects/Magnolia/settings/preprocess_LibriSpeech.json'))
+    # parse command line arguments
+    parser = argparse.ArgumentParser(description='Run preprocessing pipeline.')
+    parser.add_argument('--settings', '-s',
+                        default='../../settings/mixing_template.json',
+                        help='sample mixing settings JSON file')
+    parser.add_argument('--logger_settings', '-l',
+                        default='../../settings/logging.conf',
+                        help='logging configuration file')
+    args = parser.parse_args()
 
-    rng = np.random.RandomState(rng_seed)
-    number_of_noise_samples = len(noise_metadata.index)
-    number_of_speech_samples = len(speech_metadata.index)
-    noise_preprocessing_parameters = noise_preprocessing_parameters['processing_parameters']
-    del noise_preprocessing_parameters['track']
-    del noise_preprocessing_parameters['overlap']
-    noise_preprocessing_parameters['sample_rate'] = noise_preprocessing_parameters['output_sample_rate']
-    del noise_preprocessing_parameters['output_sample_rate']
-    speech_preprocessing_parameters = speech_preprocessing_parameters['processing_parameters']
-    del speech_preprocessing_parameters['track']
-    del speech_preprocessing_parameters['overlap']
-    speech_preprocessing_parameters['sample_rate'] = speech_preprocessing_parameters['output_sample_rate']
-    del speech_preprocessing_parameters['output_sample_rate']
+    # Load logging configuration
+    logging.config.fileConfig(args.logger_settings)
+    logger = logging.getLogger('partitioning')
 
-    for _ in range(number_of_mixed_sample):
-        noise_index = rng.randint(number_of_noise_samples)
-        speech_index = rng.randint(number_of_speech_samples)
-        noise_key = noise_metadata.get_value(noise_index, noise_key_label)
-        speech_key = speech_metadata.get_value(speech_index, speech_key_label)
+    with open(args.settings) as settings_file:
+        settings = json.load(settings_file)
 
-        noise_spectrogram = noise_data[noise_key]
-        speech_spectrogram = speech_data[speech_key]
+        logger.debug('settings {}'.format(settings))
 
-        print(noise_spectrogram[:].shape)
-        print(undo_stft_features(noise_spectrogram[:], **noise_preprocessing_parameters))
-        print(undo_stft_features(speech_spectrogram[:], **speech_preprocessing_parameters))
-        print(np.abs(noise_spectrogram))
+        rng = np.random.RandomState(settings['rng_seed'])
+        number_of_mixed_samples = settings['number_of_mixed_samples']
+        byte_buffer = settings['byte_buffer']
+        snr_range = settings['snr_range']
+        output_file_name = settings['output_file']
+        target_sample_length = settings['target_sample_length']
+        signals = []
+        noises = []
+
+        for signal_setting in settings['signals']:
+            signals.append(Sample(rng, signal_setting))
+        for noise_setting in settings['noises']:
+            noises.append(Sample(rng, noise_setting))
+
+        ofile = open(output_file_name, 'bw+')
+        for _ in tqdm.trange(number_of_mixed_sample):
+            snr = rng.uniform(*snr_range)
+
+            result = construct_mixed_sample(signals, noises, snr, target_sample_length)
+
+            bresult = msgpack.packb(result)
+            ofile.write(bytes(format(len(bresult), str(byte_buffer)), 'utf-8'))
+            ofile.write(bresult)
 
 
 if __name__ == '__main__':

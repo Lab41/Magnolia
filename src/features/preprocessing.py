@@ -4,14 +4,38 @@ import os
 import logging
 import h5py
 import numpy as np
-import soundfile as sf
+# import soundfile as sf
 from tqdm import tqdm
 from scipy.signal import resample_poly
-from python_speech_features.sigproc import preemphasis
+# from python_speech_features.sigproc import preemphasis
+import librosa as lr
 from .spectral_features import stft, istft
 
 
 logger = logging.getLogger('preprocessing')
+
+
+def normalize_waveform(y):
+    y = y - np.mean(y)
+    return y/np.std(y)
+
+
+def preemphasis(signal, coeff=0.95):
+    """Perform preemphasis on the input signal.
+    Inputs:
+        signal: The signal to filter.
+        coeff: The preemphasis coefficient. 0 is no filter, default is 0.95.
+    Returns:
+        the filtered signal.
+
+    This is taken directly from:
+    https://github.com/jameslyons/python_speech_features/blob/e51df9e484da6c52d30b043f735f92580b9134b4/python_speech_features/sigproc.py#L133
+    """
+
+    if coeff == 0.0:
+        return signal
+
+    return np.append(signal[0], signal[1:] - coeff * signal[:-1])
 
 
 def undo_preemphasis(preemphasized_signal, coeff=0.95):
@@ -28,6 +52,9 @@ def undo_preemphasis(preemphasized_signal, coeff=0.95):
         signal: numpy array containing the signal without preemphasis
     """
 
+    if coeff == 0.0:
+        return preemphasized_signal
+
     # Get the length of the input and preallocate the output array
     length = preemphasized_signal.shape[0]
     signal = np.zeros(length)
@@ -40,6 +67,65 @@ def undo_preemphasis(preemphasized_signal, coeff=0.95):
         signal[i] = preemphasized_signal[i] + coeff*signal[i-1]
 
     return signal
+
+
+def preprocess_waveform(y, sample_rate,
+                        target_sample_rate,
+                        preemphasis_coeff=0.95,
+                        stft_args={}):
+    """Resample, preemphasize, and compute the magnitude spectrogram.
+    Inputs:
+        y: 1D numpy array containing signal to featurize (np.ndarray)
+        sample_rate: sampling rate of signal (int)
+        target_sample_rate: sample rate of signal after resampling (int)
+        preemphasis_coeff: preemphasis coefficient (float)
+        stft_args: keywords args for librosa's stft function
+
+    Returns:
+        D: 2D numpy array with (stft_args['n_fft']/2 + 1, Time) components of
+           input signals (np.ndarray)
+        n: length of waveform for inverse transform
+    """
+
+    # Resample the signal to target_sample_rate
+    if sample_rate != target_sample_rate:
+        y = lr.core.resample(y, sample_rate, target_sample_rate)
+
+    # Do preemphasis on the resampled signal
+    y = preemphasis(y, preemphasis_coeff)
+
+    # Perform stft with librosa
+    n = len(y)
+    n_fft = 2048
+    if 'n_fft' in stft_args:
+        n_fft = stft_args['n_fft']
+    y_pad = lr.util.fix_length(y, n + n_fft // 2)
+    D = lr.core.stft(y_pad, **stft_args)
+
+    return D, y
+
+
+def undo_preprocessing(D, n,
+                       preemphasis_coeff=0.95,
+                       istft_args={}):
+    """Undo the operations of the preprocessing (aside from resampling).
+    Inputs:
+        D: 2D numpy array of spectrogram (np.ndarray)
+        n: length of original waveform (int)
+        preemphasis_coeff: preemphasis coefficient (float)
+        istft_args: keywords args for librosa's istft function
+
+    Returns:
+        y: 1D numpy waveform array (np.ndarray)
+    """
+
+    # Undo stft with librosa
+    y = lr.core.istft(D, length=n, **istft_args)
+
+    # Undo preemphasis on the signal
+    y = undo_preemphasis(y, preemphasis_coeff)
+
+    return y
 
 
 def make_stft_features(signal, sample_rate,
@@ -79,7 +165,7 @@ def make_stft_features(signal, sample_rate,
     return spectrogram
 
 
-def undo_stft_features(spectrogram, sample_rate=10000,
+def undo_stft_features_old(spectrogram, sample_rate=10000,
                        window_size=0.0512,
                        preemphasis_coeff=0.95, fft_size=512):
     """Undo the preprocessing operations
@@ -105,88 +191,85 @@ def undo_stft_features(spectrogram, sample_rate=10000,
 
 
 
-def make_stft_dataset(data_dir, file_type, output_file,
-                      output_sample_rate=10000,
-                      window_size=0.0512, overlap=0.0256,
-                      preemphasis_coeff=0.95, fft_size=512,
-                      track=None,
-                      key_maker=None):
+def make_stft_dataset(data_dir, spectrogram_output_file,
+                      waveform_output_file,
+                      compression="gzip",
+                      compression_opts=0,
+                      key_maker=None,
+                      **kwargs):
     """Walk through a data directory data_dir and compute the stft
     features for each file of type file_type. The computed features are
     then stored in an hdf5 file with name output_file
     Inputs:
         data_dir: directory containing data (possibly in subdirs) (str)
-        file_type: Extension of data files (Ex: '.wav') (str)
-        output_sample_rate: Sample rate to resample audio to (int)
-        window_size: Length of fft window in seconds (float)
-        overlap: Amount of window overlap in seconds (float)
-        preemphasis_coeff: preemphasis coefficient (float)
-        track: Track number to use for signals with multiple tracks (int)
-        fft_size: length (in seconds) of DFT window (float)
+        spectrogram_output_file: HDF5 output file name that stores the preprocessed spectrograms
+        waveform_output_file: HDF5 output file name that stores the preprocessed waveforms
+        compression: compression algorithm for h5py to use when storing data
+        compression_opts: compression level (0 = no compression)
         key_maker: object that when given a file name will return a key (object)
     Output:
         HDF5 file
     """
 
     # Open output file for writing
-    data_file = h5py.File(output_file, 'w')
-
-    # # Open output file for writing
-    # with h5py.File(output_file, 'w') as data_file:
+    spectrogram_data_file = h5py.File(spectrogram_output_file, 'w')
+    waveform_data_file = h5py.File(waveform_output_file, 'w')
 
     # Walk through data_dir and process all the files
-    total_visits = len(list(os.walk(data_dir, topdown=True)))
+    filenames = lr.util.files.find_files(data_dir)
     logger.info('starting loop over data')
-    for (dirpath, _, filenames) in tqdm(os.walk(data_dir, topdown=True),
-                                        total=total_visits,
-                                        desc='directories'):
-        # skip hidden files
-        filenames = [filename for filename in filenames if filename[0] != '.']
+    for filename in tqdm(filenames):
 
-        # Process any files in this directory
-        for filename in tqdm(filenames, desc='audio files'):
+        # Read in the signal and sample rate
+        if 'track' in kwargs:
+            signal, sample_rate = lr.core.load(filename, sr=None, mono=False)
+            signal = signal[kwargs['track']]
+            del kwargs['track']
+        else:
+            signal, sample_rate = lr.core.load(filename, sr=None, mono=True)
 
-            if os.path.splitext(filename)[1] == file_type:
-                file_path = os.path.join(dirpath, filename)
+        # Compute STFT spectrogram
+        signal = normalize_waveform(signal)
+        D, y = preprocess_waveform(signal, sample_rate, **kwargs)
 
-                key = None
-                dataset_name = None
-                if key_maker is not None:
-                    key, dataset_name = key_maker.process_file_metadata(file_path)
-                    if key not in data_file:
-                        logger.debug('creating key {}'.format(key))
-                        data_file.create_group(key)
+        # Check that spectrogram has sufficient signal
+        if np.allclose(np.abs(D), np.zeros_like(D)):
+            continue
 
-                # Read in the signal and sample rate
-                if track is not None:
-                    signal, sample_rate = sf.read(file_path)
-                    signal = signal[:, track]
-                else:
-                    signal, sample_rate = sf.read(file_path)
+        # Determine key
+        key = None
+        dataset_name = None
+        if key_maker is not None:
+            key, dataset_name = key_maker.process_file_metadata(filename,
+                                                                y, D, **kwargs)
+            if key not in spectrogram_data_file:
+                logger.debug('creating key {}'.format(key))
+                spectrogram_data_file.create_group(key)
+                waveform_data_file.create_group(key)
 
-                # Compute STFT spectrogram
-                spectrogram = make_stft_features(signal, sample_rate,
-                                                 output_sample_rate,
-                                                 window_size, overlap,
-                                                 preemphasis_coeff,
-                                                 fft_size)
+        spec_ds = None
+        wf_ds = None
+        if key is not None:
+            spec_ds = spectrogram_data_file[key].create_dataset(dataset_name,
+                                               data=D,
+                                               compression=compression,
+                                               compression_opts=compression_opts)
+            wf_ds = waveform_data_file[key].create_dataset(dataset_name,
+                                               data=y,
+                                               compression=compression,
+                                               compression_opts=compression_opts)
+        else:
+            spec_ds = spectrogram_data_file.create_dataset(os.path.splitext(filename)[0],
+                                          data=D,
+                                          compression=compression,
+                                          compression_opts=compression_opts)
+            wf_ds = waveform_data_file.create_dataset(os.path.splitext(filename)[0],
+                                          data=y,
+                                          compression=compression,
+                                          compression_opts=compression_opts)
+        wf_ds.attrs['spectral_length'] = D.shape[1]
 
-                # Convert to 32 bit floats
-                spectrogram = spectrogram.astype(np.complex64)
-
-                if key is not None:
-                    data_file[key].create_dataset(dataset_name,
-                                                  data=spectrogram,
-                                                  compression="gzip",
-                                                  compression_opts=0)
-                else:
-                    data_file.create_dataset(os.path.splitext(filename)[0],
-                                             data=spectrogram,
-                                             compression="gzip",
-                                             compression_opts=0)
     logger.info('looping over data finished')
-
-    return data_file
 
 
 def make_stft_dataset_old(data_dir, key_level, file_type, output_file,

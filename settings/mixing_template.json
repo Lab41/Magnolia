@@ -1,0 +1,24 @@
+{
+  "number_of_mixed_samples": 10000,
+  "byte_buffer": 6,
+  "rng_seed": 0,
+  "output_file": "/Users/jhetherly/Projects/Magnolia/data/data_partitions/test_mixes.bin",
+  "target_sample_length": 2.0,
+  "signals": [
+    {
+      "partition_settings": "/Users/jhetherly/Projects/Magnolia/settings/partition_LibriSpeech.json",
+      "partition_graph_number": 1,
+      "group_name": "train",
+      "preprocessing_settings": "/Users/jhetherly/Projects/Magnolia/settings/preprocess_LibriSpeech.json"
+    }
+  ],
+  "noises": [
+    {
+      "partition_settings": "/Users/jhetherly/Projects/Magnolia/settings/partition_UrbanSound8K.json",
+      "partition_graph_number": 1,
+      "group_name": "train",
+      "preprocessing_settings": "/Users/jhetherly/Projects/Magnolia/settings/preprocess_UrbanSound8K.json"
+    }
+  ],
+  "snr_range": [-10, 10]
+}

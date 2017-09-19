@@ -22,9 +22,12 @@ class LibriSpeech_metadata_handler:
                               index_col=0, usecols=[0, 1, 3],
                               names=['ID', 'SEX', 'TIME'])
         self.df['SEX'] = self.df['SEX'].map(str.strip)
-        self.new_metadata = {"id": [], "sex": [], "key": []}
+        self.new_metadata = {"id": [], "sex": [], "key": [], "duration": []}
 
-    def process_file_metadata(self, fullfilename):
+    def process_file_metadata(self, fullfilename, y, D, **preprocess_params):
+        target_sample_rate = preprocess_params['target_sample_rate']
+        signal_length = float(y.size)/target_sample_rate
+        self.new_metadata['duration'].append(signal_length)
         file_name_segments = fullfilename.split(os.path.sep)
         sex = self.df.get_value(int(file_name_segments[-3]), 'SEX')
         self.new_metadata['id'].append(int(file_name_segments[-3]))
@@ -34,11 +37,8 @@ class LibriSpeech_metadata_handler:
         self.new_metadata['key'].append('{}/{}'.format(key, dataset_name))
         return key, dataset_name
 
-    def save_metadata(self, hdf5_file):
-        path, filename = os.path.split(hdf5_file.filename)
-        filename = os.path.splitext(filename)[0]
-        metadata_filename = os.path.join(path, '{}_metadata.csv'.format(filename))
-        pd.DataFrame(data=self.new_metadata).to_csv(metadata_filename)
+    def save_metadata(self, metadata_file_name):
+        pd.DataFrame(data=self.new_metadata).to_csv(metadata_file_name)
 
 
 class UrbanSound8K_metadata_handler:
@@ -48,7 +48,7 @@ class UrbanSound8K_metadata_handler:
         self.df['duration'] = self.df['end'] - self.df['start']
         self.new_metadata = {"duration": [], "salience": [], "Class": [], "key": []}
 
-    def process_file_metadata(self, fullfilename):
+    def process_file_metadata(self, fullfilename, y, D, **preprocess_params):
         filename = os.path.split(fullfilename)[-1]
         salience = self.df.get_value(filename, 'salience')
         class_ = self.df.get_value(filename, 'class')
@@ -60,11 +60,8 @@ class UrbanSound8K_metadata_handler:
         self.new_metadata['key'].append('{}/{}'.format(key, dataset_name))
         return key, dataset_name
 
-    def save_metadata(self, hdf5_file):
-        path, filename = os.path.split(hdf5_file.filename)
-        filename = os.path.splitext(filename)[0]
-        metadata_filename = os.path.join(path, '{}_metadata.csv'.format(filename))
-        pd.DataFrame(data=self.new_metadata).to_csv(metadata_filename)
+    def save_metadata(self, metadata_file_name):
+        pd.DataFrame(data=self.new_metadata).to_csv(metadata_file_name)
 
 
 def main():
@@ -78,14 +75,11 @@ def main():
     parser.add_argument('--logger_settings', '-l',
                         default='../../settings/logging.conf',
                         help='logging configuration file')
-    parser.add_argument('--logger_name', '-n',
-                        default='preprocessing',
-                        help='name of logger')
     args = parser.parse_args()
 
     # Load logging configuration
     logging.config.fileConfig(args.logger_settings)
-    logger = logging.getLogger(args.logger_name)
+    logger = logging.getLogger('preprocessing')
 
     # Make the data set
     with open(args.settings) as settings_file:
@@ -93,10 +87,9 @@ def main():
 
 
         logger.debug('settings {}'.format(settings))
-        logger.info(('looking in {} for raw audio data with file '
-                     'extension {}').format(settings['data_directory'],
-                                            settings['file_type']))
-        logger.info('will store output HDF5 file in {}'.format(settings['output_file']))
+        logger.info('looking in {} for raw audio data with file'.format(settings['data_directory']))
+        logger.info('will store spectrogram-HDF5 file in {}'.format(settings['spectrogram_output_file']))
+        logger.info('will store waveform-HDF5 file in {}'.format(settings['waveform_output_file']))
 
 
         key_maker = None
@@ -107,16 +100,19 @@ def main():
 
 
         print('Starting preprocessing...')
-        data_file = make_stft_dataset(data_dir=settings['data_directory'],
-                                      file_type=settings['file_type'],
-                                      output_file=settings['output_file'],
-                                      key_maker=key_maker,
-                                      **settings['processing_parameters'])
+        make_stft_dataset(data_dir=settings['data_directory'],
+                          spectrogram_output_file=settings['spectrogram_output_file'],
+                          waveform_output_file=settings['waveform_output_file'],
+                          compression=settings['compression'],
+                          compression_opts=settings['compression_opts'],
+                          key_maker=key_maker,
+                          **settings['processing_parameters'])
         print('\nFinished!!')
 
 
         if key_maker is not None:
-            key_maker.save_metadata(data_file)
+            logger.info('will store metadata file in {}'.format(settings['metadata_output_file']))
+            key_maker.save_metadata(settings['metadata_output_file'])
 
 
 if __name__ == '__main__':

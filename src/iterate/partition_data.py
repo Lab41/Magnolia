@@ -24,24 +24,25 @@ def main():
     parser.add_argument('--logger_settings', '-l',
                         default='../../settings/logging.conf',
                         help='logging configuration file')
-    parser.add_argument('--logger_name', '-n',
-                        default='partitioning',
-                        help='name of logger')
     args = parser.parse_args()
 
     # Load logging configuration
     logging.config.fileConfig(args.logger_settings)
-    logger = logging.getLogger(args.logger_name)
+    logger = logging.getLogger('partitioning')
 
     # Make the partitions
     with open(args.settings) as settings_file:
         settings = json.load(settings_file)
+        preprocessing_settings = json.load(open(settings['preprocessing_settings']))
         partition_graph_desc = json.load(open(settings['partition_graphs_file']))
 
         rng = np.random.RandomState(settings['rng_seed'])
         logger.debug('settings {}'.format(settings))
 
-        metadata = pd.read_csv(settings['metadata_file'], index_col=0)
+        if 'description' in settings:
+            logger.info('description = {}'.format(settings['description']))
+
+        metadata = pd.read_csv(preprocessing_settings['metadata_output_file'], index_col=0)
 
         for graph in partition_graph_desc['partition_graphs']:
             root_node = build_partition_graph(settings['output_directory'],

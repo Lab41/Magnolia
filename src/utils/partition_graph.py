@@ -14,6 +14,25 @@ from magnolia.utils.partition_optimizer import split_categories
 logger = logging.getLogger('partitioning')
 
 
+def get_all_groups(graph_element, group_list, is_node=True):
+    if is_node:
+        if graph_element.terminal():
+            group_list.append(graph_element)
+        else:
+            for split in graph_element.splits():
+                get_all_groups(split, group_list, False)
+    else:
+        get_all_groups(graph_element.destination(), group_list, True)
+
+
+def get_group_path(group_name, graph_element, is_node=True):
+    groups = []
+    get_all_groups(graph_element, groups, is_node)
+    for group in groups:
+        if group.id() == group_name:
+            return group.compute_filename()
+
+
 def _recursively_build_tree_split(split, filters, groups, splits, path):
     for filter_desc in filters:
         if split._target == filter_desc['id']:
@@ -45,11 +64,13 @@ def build_partition_graph(output_directory, partition_graph):
     sources = set()
     targets = set()
 
+    # determine root node
     for split in splits:
         sources.add(split['source'])
         targets.add(split['target'])
 
     root_id = sources - sources.intersection(targets)
+    # ensure only one root node
     # TODO: throw a proper exception
     assert(len(root_id) == 1)
     root_id = root_id.pop()
@@ -122,6 +143,12 @@ class PartitionGraphFilter:
     def splits(self):
         return self._splits
 
+    def id(self):
+        return self._id
+
+    def terminal(self):
+        return False
+
 
 class PartitionGraphGroup:
     def __init__(self, id, filename_base):
@@ -129,10 +156,18 @@ class PartitionGraphGroup:
         self._filename_base = filename_base
 
     def apply(self, df, **kwargs):
-        filename = '{}.csv'.format(self._id)
         os.makedirs(self._filename_base, exist_ok=True)
-        full_file_path = os.path.join(self._filename_base, filename)
+        full_file_path = self.compute_filename()
         df.to_csv(full_file_path)
+
+    def compute_filename(self):
+        return os.path.join(self._filename_base, '{}.csv'.format(self._id))
+
+    def id(self):
+        return self._id
+
+    def terminal(self):
+        return True
 
 
 class PartitionGraphSplit:
@@ -158,3 +193,6 @@ class PartitionGraphSplit:
 
     def split_category(self):
         return self._split_on
+
+    def terminal(self):
+        return False
