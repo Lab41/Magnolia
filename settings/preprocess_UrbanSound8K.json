@@ -1,15 +1,17 @@
 {
-  "data_directory": "/data/fs4/home/jhetherly/datasets/UrbanSound8K/audio",
-  "metadata_file": "/data/fs4/home/jhetherly/datasets/UrbanSound8K/metadata/UrbanSound8K.csv",
-  "output_file": "/data/fs4/home/jhetherly/datasets/UrbanSound8K/processed_audio.hdf5",
-  "file_type": ".wav",
+  "data_directory": "/Users/jhetherly/Documents/Datasets/UrbanSound8K/audio",
+  "metadata_file": "/Users/jhetherly/Documents/Datasets/UrbanSound8K/metadata/UrbanSound8K.csv",
   "dataset_type": "UrbanSound8K",
+  "spectrogram_output_file": "/Users/jhetherly/Documents/Datasets/UrbanSound8K/processed_spectrogram_no_preemphasis_audio.hdf5",
+  "waveform_output_file": "/Users/jhetherly/Documents/Datasets/UrbanSound8K/processed_waveform_audio.hdf5",
+  "metadata_output_file": "/Users/jhetherly/Documents/Datasets/UrbanSound8K/processed_audio.csv",
+  "compression": "gzip",
+  "compression_opts": 0,
   "processing_parameters": {
-    "output_sample_rate": 10000,
-    "window_size": 0.0512,
-    "overlap": 0.0256,
-    "preemphasis_coeff": 0.95,
-    "fft_size": 512,
-    "track": null
+    "preemphasis_coeff": 0.0,
+    "target_sample_rate": 10000,
+    "stft_args": {
+      "n_fft": 512
+    }
   }
 }

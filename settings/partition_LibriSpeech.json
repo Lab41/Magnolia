@@ -1,0 +1,7 @@
+{
+  "preprocessing_settings": "/Users/jhetherly/Projects/Magnolia/settings/preprocess_LibriSpeech.json",
+  "output_directory": "/Users/jhetherly/Projects/Magnolia/data/data_partitions/LibriSpeech",
+  "description": "makes an 80/10/10 train/val/test split",
+  "rng_seed": null,
+  "partition_graphs_file": "/Users/jhetherly/Projects/Magnolia/settings/partition_graph_LibriSpeech.json"
+}

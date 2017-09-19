@@ -1,0 +1,15 @@
+{
+  "preprocessing_settings": [
+    {
+      "settings": "/Users/jhetherly/Projects/Magnolia/settings/preprocess_LibriSpeech.json",
+      "metadata_id": "id",
+      "data_label": "key"
+    },
+    {
+      "settings": "/Users/jhetherly/Projects/Magnolia/settings/preprocess_UrbanSound8K.json",
+      "metadata_id": "Class",
+      "data_label": "key"
+    }
+  ],
+  "output_file": "/Users/jhetherly/Projects/Magnolia/data/global_uids.csv"
+}
