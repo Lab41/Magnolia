@@ -43,7 +43,7 @@ def main():
             noises.append(Sample(rng, noise_setting))
 
         ofile = open(output_file_name, 'bw+')
-        for _ in tqdm.trange(number_of_mixed_sample):
+        for _ in tqdm.trange(number_of_mixed_samples):
             snr = rng.uniform(*snr_range)
 
             result = construct_mixed_sample(signals, noises, snr, target_sample_length)
