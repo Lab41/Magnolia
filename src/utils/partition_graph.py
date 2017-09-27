@@ -100,24 +100,72 @@ class PartitionGraphFilter:
 
         fractions = np.zeros(len(self._splits))
         split_category = None
+        stratify_categories = []
         for i, split in enumerate(self._splits):
             fractions[i] = split.fraction
             if split.has_split_category():
-                split_category = split.split_category()
+                if split_category is None:
+                    split_category = split.split_category()
+                else:
+                    # TODO: throw exception
+                    # ensure all splits refer to the same category
+                    assert(split_category == split.split_category())
+            if stratify_categories == []:
+                stratify_categories = split.stratify_catagories()
+            elif split.stratify_catagories() != []:
+                # TODO: throw exception
+                # ensure all stratify categories are the same
+                assert(frozenset(stratify_categories) == frozenset(stratify_categories))
 
         if split_category is not None:
-            class_summary = df[split_category].value_counts()
             # TODO: throw a proper exception
-            assert(len(class_summary.index.values) >= len(fractions))
-            categories, actual_splits = split_categories(class_summary.index.values,
-                                                         class_summary.values,
+            # NOTE: cannot split along category and preserve stratification w.r.t. that category
+            assert(split_category not in stratify_categories)
+            split_category_summary = df[split_category].value_counts()
+            # TODO: throw a proper exception
+            # must have more categories than number of splits
+            assert(len(split_category_summary.index) >= len(fractions))
+            grouped_df = None
+            if stratify_categories != []:
+                grouped_df = df.groupby(stratify_categories)
+            # stratify_classes_summaries = []
+            # for stratify_category in stratify_categories:
+            #     stratify_classes_summaries.append(df[stratify_category].value_counts(normalize=True))
+            categories, actual_splits = split_categories(split_category_summary.index.values,
+                                                         split_category_summary.values,
                                                          fractions,
+                                                         split_category,
+                                                         df,
+                                                         grouped_df,
+                                                         stratify_categories,
+                                                        #  stratify_classes_summaries,
                                                          **kwargs)
             for category_number in categories:
                 split_df = df.loc[df[split_category].isin(categories[category_number])]
                 self._splits[category_number].apply(df=split_df, key=key,
                                                     actual_split=actual_splits[category_number],
                                                     **kwargs)
+        elif stratify_categories != []:
+            rng = kwargs['rng']
+            total_indices = {}
+            for keys, group in df.groupby(stratify_categories):
+                count = len(group.index)
+                indices = rng.permutation(group.index.values)
+                lower_index = 0
+                for i, fraction in enumerate(fractions):
+                    upper_index = lower_index + int(count*fraction)
+                    selected_indices = indices[lower_index:upper_index]
+                    if i in total_indices:
+                        total_indices[i] = np.concatenate((total_indices[i], selected_indices))
+                    else:
+                        total_indices[i] = selected_indices
+                    lower_index = upper_index
+            count = len(df.index)
+            for i, split in enumerate(self._splits):
+                indices = total_indices[i]
+                split.apply(df=df.loc[indices], key=key,
+                            actual_split=float(len(indices))/count,
+                            **kwargs)
         else:
             count = len(df.index)
             indices = kwargs['rng'].permutation(count)
@@ -176,6 +224,9 @@ class PartitionGraphSplit:
         self._target = split_desc['target']
         if "split_on" in split_desc:
             self._split_on = split_desc['split_on']
+        self._stratify_wrt = []
+        if "stratify_wrt" in split_desc:
+            self._stratify_wrt = split_desc['stratify_wrt']
         self.fraction = split_desc['fraction']
         self._destination = None
 
@@ -193,6 +244,9 @@ class PartitionGraphSplit:
 
     def split_category(self):
         return self._split_on
+
+    def stratify_catagories(self):
+        return self._stratify_wrt
 
     def terminal(self):
         return False
