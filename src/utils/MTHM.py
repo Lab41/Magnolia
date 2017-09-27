@@ -13,7 +13,7 @@ def fuzzy_mthm(p, w, c, std_tol=1e-3, max_balance_iter=100, min_mthm_iter=10):
 
     p: profits (array)
     w: weights (array)
-    c: capacities of knapsacks (array)
+    c: knapsack capacities (array)
     """
     # globals
     NO_GROUP = -1
