@@ -21,14 +21,21 @@ logger = logging.getLogger('partitioning')
 
 class Sample:
     def __init__(self, rng, settings):
-        partition_settings = json.load(open(settings['partition_settings']))
-        partition_graph_setting = json.load(open(partition_settings['partition_graphs_file']))['partition_graphs'][settings['partition_graph_number'] - 1]
-        partition_graph_root = build_partition_graph(partition_settings['output_directory'], partition_graph_setting)
         preprocessing_settings = json.load(open(settings['preprocessing_settings']))
         self.preprocessing_parameters = preprocessing_settings['processing_parameters']
-        self.partition_metadata = pd.read_csv(get_group_path(settings['group_name'], partition_graph_root))
+        if 'partition_settings' in settings:
+            partition_settings = json.load(open(settings['partition_settings']))
+            partition_graph_setting = json.load(open(partition_settings['partition_graphs_file']))['partition_graphs'][settings['partition_graph_number'] - 1]
+            partition_graph_root = build_partition_graph(partition_settings['output_directory'], partition_graph_setting)
+            self.partition_metadata = pd.read_csv(get_group_path(settings['group_name'], partition_graph_root))
+            self.key = partition_graph_setting['data_label']
+        elif 'metadata_file' in settings:
+            self.partition_metadata = pd.read_csv(settings['metadata_file'])
+            self.key = settings['data_label']
+        else:
+            self.partition_metadata = pd.read_csv(preprocessing_settings['metadata_output_file'])
+            self.key = settings['data_label']
         self.number_of_samples = len(self.partition_metadata.index)
-        self.key = partition_graph_setting['data_label']
         self.wf_data = h5py.File(preprocessing_settings['waveform_output_file'], 'r')
         self.preemphasis_coeff = preprocessing_settings['processing_parameters']['preemphasis_coeff']
         self.sample_rate = preprocessing_settings['processing_parameters']['target_sample_rate']
