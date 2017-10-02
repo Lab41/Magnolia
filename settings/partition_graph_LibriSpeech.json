@@ -17,27 +17,32 @@
           "source": "time",
           "target": "out_of_sample_test",
           "split_on": "id",
+          "stratify_wrt": ["sex"],
           "fraction": 0.1
         },
         {
           "source": "time",
           "target": "training_set",
           "split_on": "id",
+          "stratify_wrt": ["sex"],
           "fraction": 0.9
         },
         {
           "source": "training_set",
           "target": "in_sample_test",
+          "stratify_wrt": ["id"],
           "fraction": 0.1
         },
         {
           "source": "training_set",
           "target": "train",
+          "stratify_wrt": ["id"],
           "fraction": 0.8
         },
         {
           "source": "training_set",
           "target": "validation",
+          "stratify_wrt": ["id"],
           "fraction": 0.1
         }
       ]

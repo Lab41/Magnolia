@@ -21,7 +21,9 @@ class MixIterator:
         self._mask_batch = None
         self._uid_batch = None
         self._snr_batch = None
-        self._numbers_of_samples_in_mix = 0
+        self._sample_rate = 0
+        self._sample_length = 0
+        self._number_of_samples_in_mixes = 0
         self._total_numbers_of_mixed_samples = []
         self._byte_buffers = []
         self._signal_spec_data = []
@@ -62,7 +64,8 @@ class MixIterator:
                     if 'n_fft' in stft_args:
                         n_fft = stft_args['n_fft']
                     target_sample_rate = preprocessing_settings['processing_parameters']['target_sample_rate']
-                    n_frames = convert_sample_length_to_nframes(int(target_sample_rate*settings['target_sample_length']), **stft_args)
+                    self._sample_length_in_bits = int(target_sample_rate*settings['target_sample_length'])
+                    n_frames = convert_sample_length_to_nframes(self._sample_length_in_bits, **stft_args)
                     self._sample_dimensions = (1 + n_fft//2, n_frames)
 
                 if preemphasis_coeff is None:
@@ -114,13 +117,16 @@ class MixIterator:
         for tsl in target_sample_lengths:
             # TODO: throw proper exception
             assert(np.allclose([target_sample_length], [tsl]))
-        self._numbers_of_samples_in_mix = numbers_of_samples_in_mixes[0]
+        self._sample_rate = sample_rate
+        self._sample_length = sample_length
+        self._number_of_samples_in_mixes = numbers_of_samples_in_mixes[0]
         for nsm in numbers_of_samples_in_mixes:
             # TODO: throw proper exception
-            assert(np.allclose([self._numbers_of_samples_in_mix], [nsm]))
+            assert(np.allclose([self._number_of_samples_in_mixes], [nsm]))
         self._batch = np.zeros((self._batch_size, self._sample_dimensions[0], self._sample_dimensions[1]), dtype=np.complex128)
-        self._mask_batch = np.zeros((self._batch_size, self._numbers_of_samples_in_mix, self._sample_dimensions[0], self._sample_dimensions[1]), dtype=bool)
-        self._uid_batch = np.zeros((self._batch_size, self._numbers_of_samples_in_mix), dtype=int)
+        self._mask_batch = np.zeros((self._batch_size, self._number_of_samples_in_mixes, self._sample_dimensions[0], self._sample_dimensions[1]), dtype=bool)
+        self._source_batch = np.zeros((self._batch_size, self._number_of_samples_in_mixes, self._sample_dimensions[0], self._sample_dimensions[1]), dtype=np.complex128)
+        self._uid_batch = np.zeros((self._batch_size, self._number_of_samples_in_mixes), dtype=int)
         self._snr_batch = np.zeros((self._batch_size), dtype=float)
 
     def __next__(self):
@@ -133,7 +139,7 @@ class MixIterator:
                 break
             try:
                 mix_info = msgpack.unpackb(f.read(int(bytes.decode(f.read(byte_buffer)))), encoding='utf-8')
-                self.construct_sample_from_mix_info(mix_info, sample_count - 1)
+                self._construct_sample_from_mix_info(mix_info, sample_count - 1)
                 if sample_count >= self._batch_size:
                     break
             except ValueError:
@@ -146,7 +152,7 @@ class MixIterator:
                 byte_buffer = self._byte_buffers[self._current_mix_set]
                 continue
             sample_count += 1
-        return self._batch, self._mask_batch, self._uid_batch, self._snr_batch
+        return self._batch, self._mask_batch, self._source_batch, self._uid_batch, self._snr_batch
 
     def __iter__(self):
         return self
@@ -154,7 +160,25 @@ class MixIterator:
     def sample_dimensions(self):
         return self._sample_dimensions
 
-    def construct_sample_from_mix_info(self, mix_info, batch_number):
+    def epoch_size(self):
+        epoch_size = 0
+        for number_of_mixed_samples in self._total_numbers_of_mixed_samples:
+            epoch_size += number_of_mixed_samples
+        return epoch_size
+
+    def sample_rate(self):
+        return self._sample_rate
+
+    def sample_length(self):
+        return self._sample_length
+
+    def sample_length_in_bits(self):
+        return self._sample_length_in_bits
+
+    def number_of_samples_in_mixes(self):
+        return self._number_of_samples_in_mixes
+
+    def _construct_sample_from_mix_info(self, mix_info, batch_number):
         # total_spec = None
         assigned_spec = False
         specs = []
@@ -206,6 +230,7 @@ class MixIterator:
             #     total_spec += spectrogram
 
         for i, spec in enumerate(specs):
+            self._source_batch[batch_number, i, :, :] = spec
             self._mask_batch[batch_number, i, :, :] = np.abs(spec) >= np.abs(self._batch[batch_number] - spec)
             # self._mask_batch[batch_number, i, :, :] = np.abs(spec) >= np.abs(total_spec - spec)
 

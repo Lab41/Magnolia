@@ -179,6 +179,8 @@ Each `split` has the following attributes:
 * `source`: `id` of a `filter`
 * `target`: `id` of a `filter` or name of a `group`
 * `split_on`: category to split along (optional)
+* `stratify_wrt`: stratify the split with respect to the given categories
+  (optional)
 * `fraction`: split fraction of categories or samples
 
 

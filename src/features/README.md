@@ -63,7 +63,7 @@ The class needs three methods: the `__init__` method which takes as it's only
 argument the metadata file name (`metadata_file` from the setting file), a
 `process_file_metadata` method that return a key and dataset name given an input
 file name, and a `save_metadata` method that may save a file containing the
-metadata given the meatadata file name.
+metadata given the metadata file name.
 The name of the class is also important.
 It's name should be formatted as `dataset_type` followed by `_metadata_handler`.
 For instance, if the `dataset_type` is LibriSpeech, then the key maker class
@@ -91,6 +91,16 @@ class <dataset_type>_key_maker:
 
 If the "metadata handler" class is omitted, then the resulting HDF5 file will
 lack any grouping information.
+
+## Globally Unique Identifiers
+
+After preprocessing several different datasets, one can assign unique
+identifiers to the spectral output of the preprocessing step.
+These identifiers are "global" in the sense that all of the datasets are taken
+into account when assigning these identifiers.
+`assign_uids.py` is a script that will (given a settings JSON file) yield a
+CSV file containing the uids as well as modify the HDF5 file containing the
+spectrograms to include the newly computed uids.
 
 ## Feature Extraction
 

@@ -44,8 +44,6 @@ def main():
     with open(args.settings) as settings_file:
         settings = json.load(settings_file)
         total_number_of_mixed_samples = settings['number_of_mixed_samples']
-        byte_buffer = settings['byte_buffer']
-        samples_file = settings['output_file']
 
         assert(args.sample <= total_number_of_mixed_samples and args.sample > 0)
 
@@ -58,7 +56,7 @@ def main():
         total_length = int(sample_length*sample_rate)
 
         for i in range(args.sample):
-            spec, bin_masks, uids, snrs = next(mixer_iter)
+            spec, bin_masks, source_specs, uids, snrs = next(mixer_iter)
 
         spec = spec[0]
         bin_masks = bin_masks[0]

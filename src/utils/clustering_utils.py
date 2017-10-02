@@ -10,6 +10,7 @@ from sklearn.cluster import KMeans
 from ..features.spectral_features import istft
 from ..features.preprocessing import make_stft_features, \
                                      undo_preemphasis
+from magnolia.utils.training import preprocess_l41_batch
 
 def preprocess_signal(signal, sample_rate):
     """
@@ -178,3 +179,37 @@ def clustering_separate(signal, sample_rate, model, num_sources,
     sources = np.stack(waveforms)
 
     return sources
+
+
+def l41_clustering_separate(spec, model, num_sources,
+                            binary_mask=True):
+    """
+    Takes in a spectrogram and a model which has a get_vectors method and returns
+    the specified number of output sources.
+
+    Inputs:
+        spec: Spectrogram (in the format from a MixIterator) to separate.
+        model: Instance of model to use to separate the signal
+        num_sources: Integer number of sources to separate into
+        binary_mask: If true, computes the binary mask. Otherwise
+                     computes a soft mask
+
+    Returns:
+        sources: Numpy ndarray of shape (num_sources, Spectrogram.shape)
+    """
+
+
+    model_spec = preprocess_l41_batch(spec)
+    # # Get the T-F embedding vectors for this signal from the model
+    vectors = model.get_vectors(model_spec)
+
+    # Run k-means clustering on the vectors with k=num_sources to recover the
+    # signal masks
+    masks = get_cluster_masks(vectors, num_sources, binary_mask=binary_mask)
+
+    # Apply the masks from the clustering to the input signal
+    masked_specs = apply_masks(spec[0].T, masks)
+
+    sources = np.stack(masked_specs)
+
+    return sources.transpose(0, 2, 1)
