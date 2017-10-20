@@ -27,6 +27,15 @@ Our notebooks are located at:
 magnolia/src/notebooks
 ```
 
+## Demonstration
+
+### Source Separation
+
+Source separation is currently on a branch that will not run in the current code base. We have released a previous version (release 1) that does accomodate for it. This can be run out of the box with two shell scripts:
+
+1. `source-separation-build.sh` : Per the above comment, this will checkout the release that is able to run source separtion, provided you have cloned the original repository. Then it will compile a Dockerfile (that resembles the one currently in the repository.) This will download models from Dropbox, which take the most amount of time. Then, it will revert back to the master. There might be some tricks you need to do to get yourself back to the right git state. The docker container is called magnolia-demo-r1, for the first release.
+
+2. `source-separation-run.sh` : This will actually run magnolia-demo-r1.sh. After you type in this command, go to your localhost at port 5000. (Type in `localhost:5000` into your browser.)
 
 ## Subdirectory contents:
 
