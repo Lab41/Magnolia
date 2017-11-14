@@ -13,7 +13,7 @@ from magnolia.utils.postprocessing import convert_preprocessing_parameters
 
 
 def apply_binary_mask(mask, stft):
-    return np.abs(stft)*mask*np.exp(1j* np.angle(stft))
+    return np.abs(stft)*mask*np.exp(1j*np.angle(stft))
 
 
 def main():

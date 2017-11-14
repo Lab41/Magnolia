@@ -6,11 +6,11 @@ import pandas as pd
 import tensorflow as tf
 
 # Import Lab41's separation model
-from magnolia.dnnseparate.L41model import L41Model
+from magnolia.dnnseparate.L41_regression_model import L41RegressionModel
 
 # Import utilities for using the model
 from magnolia.iterate.mix_iterator import MixIterator
-from magnolia.utils.training import preprocess_l41_batch
+from magnolia.utils.training import preprocess_l41_regression_batch
 
 
 def main():
@@ -22,19 +22,21 @@ def main():
     validate_every = 100
     train_batchsize = 256
     train_mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_train.json']
-    train_from_disk = False
+    train_from_disk = True#False
     validate_batchsize = 200
     validate_mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_validate.json']
-    validate_from_disk = False
+    validate_from_disk = True#False
     model_params = {
+        'alpha': 0.5,
         'nonlinearity': 'tanh',
         'layer_size': 600,
         'embedding_size': 40,
         'normalize': 'False'
     }
+    signal_indices = [True, False]
     model_location = '/gpu:0'
     uid_settings = '/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/assign_uids_LibriSpeech_UrbanSound8K.json'
-    model_save_base = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/model_saves/large_l41'
+    model_save_base = '/local_data/magnolia/experiment_data/date_2017_11_02_time_21_52/aux/model_saves/l41_regression'
 
 
     training_mixer = MixIterator(mixes_settings_filenames=train_mixes,
@@ -56,10 +58,10 @@ def main():
     uid_csv = pd.read_csv(uid_file)
     number_of_sources = uid_csv['uid'].max() + 1
 
-    model = L41Model(**model_params,
-                     num_speakers=number_of_sources,
-                     F=frequency_dim,
-                     device=model_location)
+    model = L41RegressionModel(**model_params,
+                               num_speakers=number_of_sources,
+                               F=frequency_dim,
+                               device=model_location)
     model.initialize()
 
     nbatches = []
@@ -81,12 +83,13 @@ def main():
 
         # Training epoch loop
         for batch in iter(training_mixer):
-            spectral_sum_batch, spectral_masks_batch = preprocess_l41_batch(batch[0], batch[1])
+            sumed_specs = np.expand_dims(batch[2][:, signal_indices].sum(1), axis=1)
+            scaled_spec_batch, masks_batch, specs_batch = preprocess_l41_regression_batch(batch[0], batch[1], sumed_specs)
             # should be dimensions of (batch size, source)
             uids_batch = batch[3]
 
             # Train the model on one batch and get the cost
-            c = model.train_on_batch(spectral_sum_batch, spectral_masks_batch, uids_batch)
+            c = model.train_on_batch(scaled_spec_batch, masks_batch, specs_batch, uids_batch)
 
             # Store the training cost
             costs.append(c)
@@ -103,12 +106,13 @@ def main():
                 # Compute average validation score
                 all_c_v = []
                 for vbatch in iter(validation_mixer):
-                    spectral_sum_batch, spectral_masks_batch = preprocess_l41_batch(vbatch[0], vbatch[1])
+                    sumed_specs = np.expand_dims(vbatch[2][:, signal_indices].sum(1), axis=1)
+                    scaled_spec_batch, masks_batch, specs_batch = preprocess_l41_regression_batch(vbatch[0], vbatch[1], sumed_specs)
                     # dimensions of (batch size, source)
                     uids_batch = vbatch[3]
 
                     # Get the cost on the validation batch
-                    c_v = model.get_cost(spectral_sum_batch, spectral_masks_batch, uids_batch)
+                    c_v = model.get_cost(scaled_spec_batch, masks_batch, specs_batch, uids_batch)
                     all_c_v.append(c_v)
 
                 ave_c_v = np.mean(all_c_v)

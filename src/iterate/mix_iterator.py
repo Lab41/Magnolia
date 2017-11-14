@@ -186,7 +186,7 @@ class MixIterator:
 
         for i, data in enumerate(self._signal_spec_data[self._current_mix_set]):
             key = mix_info['signal_keys'][i]
-            uid = data[key].get('uid', default=-1)
+            uid = data[key].attrs.get('uid', default=-1)
             scale_factor = mix_info['signal_scale_factors'][i]
             spectrogram_start = mix_info['signal_spectrogram_starts'][i]
             spectrogram_end = mix_info['signal_spectrogram_ends'][i]
@@ -209,7 +209,7 @@ class MixIterator:
         signal_count_offset = len(self._signal_spec_data[self._current_mix_set])
         for i, data in enumerate(self._noise_spec_data[self._current_mix_set]):
             key = mix_info['noise_keys'][i]
-            uid = data[key].get('uid', default=-1)
+            uid = data[key].attrs.get('uid', default=-1)
             scale_factor = mix_info['noise_scale_factors'][i]
             spectrogram_start = mix_info['noise_spectrogram_starts'][i]
             spectrogram_end = mix_info['noise_spectrogram_ends'][i]
