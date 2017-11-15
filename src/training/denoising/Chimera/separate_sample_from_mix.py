@@ -1,37 +1,40 @@
 # Generic imports
+import os
 import json
 import numpy as np
 import pandas as pd
 import librosa as lr
 
-# Import Lab41's separation model
-from magnolia.dnnseparate.L41model import L41Model
+# Import the Chimera separation model
+from magnolia.dnnseparate.chimera import Chimera
 
 # Import utilities for using the model
 from magnolia.utils.postprocessing import convert_preprocessing_parameters
 from magnolia.features.preprocessing import undo_preprocessing
 from magnolia.iterate.mix_iterator import MixIterator
-from magnolia.utils.clustering_utils import l41_clustering_separate
+from magnolia.utils.clustering_utils import chimera_clustering_separate, chimera_mask
+
+
+def standardize_waveform(y):
+    return (y - y.mean())/y.std()
 
 
 def main():
     # from model settings
     model_params = {
-        'nonlinearity': 'tanh',
-        'layer_size': 600,
-        'embedding_size': 40,
-        'normalize': 'False'
     }
     uid_settings = '/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/assign_uids_LibriSpeech_UrbanSound8K.json'
-    model_save_base = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/model_saves/l41'
+    model_save_base = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/model_saves/chimera'
 
     model_location = '/cpu:0'
     model_settings = ''
     mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_test_in_sample.json']
     from_disk = True
     mix_number = 1
-    output_path = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux'
+    output_path = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/sample_wav_files/chimera'
 
+
+    os.makedirs(output_path, exist_ok=True)
 
     mixer = MixIterator(mixes_settings_filenames=mixes,
                         batch_size=1,
@@ -46,10 +49,9 @@ def main():
     uid_csv = pd.read_csv(uid_file)
     number_of_sources = uid_csv['uid'].max() + 1
 
-    model = L41Model(**model_params,
-                     num_speakers=number_of_sources,
-                     F=frequency_dim,
-                     device=model_location)
+    model = Chimera(**model_params,
+                    F=frequency_dim,
+                    device=model_location)
 
     model.load(model_save_base)
 
@@ -59,8 +61,12 @@ def main():
 
     signal = mix_settings['signals'][0]
     preprocessing_settings = json.load(open(signal['preprocessing_settings']))
-    istft_args = convert_preprocessing_parameters(preprocessing_settings['processing_parameters']['stft_args'])
+    stft_args = preprocessing_settings['processing_parameters']['stft_args']
+    istft_args = convert_preprocessing_parameters(stft_args)
     preemphasis_coeff = preprocessing_settings['processing_parameters']['preemphasis_coeff']
+    n_fft = 2048
+    if 'n_fft' in stft_args:
+        n_fft = stft_args['n_fft']
 
 
     for i in range(mix_number):
@@ -79,26 +85,55 @@ def main():
                                preemphasis_coeff=preemphasis_coeff,
                                istft_args=istft_args)
 
+    # NOTE: this is only to make comparisons to the reconstructed waveforms later
+    y_mix[-n_fft:] = 0.0
+    y_mix = standardize_waveform(y_mix)
+
     # print('Mixed sample')
-    lr.output.write_wav('{}_mix.wav'.format(output_path), y_mix, mixer.sample_rate(), norm=True)
+    lr.output.write_wav(os.path.join(output_path, 'mix_{}.wav'.format(mix_number)), y_mix, mixer.sample_rate(), norm=True)
 
     for i, source_spec in enumerate(source_specs):
         y = undo_preprocessing(source_spec, mixer.sample_length_in_bits(),
                                preemphasis_coeff=preemphasis_coeff,
                                istft_args=istft_args)
+
+        # NOTE: this is only to make comparisons to the reconstructed waveforms later
+        y[-n_fft:] = 0.0
+        y = standardize_waveform(y)
 
         # print('Sample for source {}'.format(i + 1))
-        lr.output.write_wav('{}_original_source_{}.wav'.format(output_path, i), y, mixer.sample_rate(), norm=True)
+        lr.output.write_wav(os.path.join(output_path, 'mix_{}_original_source_{}.wav'.format(mix_number, i + 1)), y, mixer.sample_rate(), norm=True)
 
-    source_specs = l41_clustering_separate(model_spec, model, mixer.number_of_samples_in_mixes())
+    source_specs = chimera_clustering_separate(model_spec, model, mixer.number_of_samples_in_mixes())
 
     for i, source_spec in enumerate(source_specs):
         y = undo_preprocessing(source_spec, mixer.sample_length_in_bits(),
                                preemphasis_coeff=preemphasis_coeff,
                                istft_args=istft_args)
 
+        # NOTE: this is only because the masking creates a chirp in the last
+        #       fft frame (likely due to the mask)
+        y[-n_fft:] = 0.0
+        y = standardize_waveform(y)
+
         # print('Separated sample for source {}'.format(i + 1))
-        lr.output.write_wav('{}_separated_source_{}.wav'.format(output_path, i), y, mixer.sample_rate(), norm=True)
+        lr.output.write_wav(os.path.join(output_path, 'mix_{}_dc_separated_{}.wav'.format(mix_number, i + 1)), y, mixer.sample_rate(), norm=True)
+
+    source_specs = chimera_mask(model_spec, model)[0]
+
+    for i in range(source_specs.shape[2]):
+        source_spec = source_specs[:, :, i]
+        y = undo_preprocessing(source_spec, mixer.sample_length_in_bits(),
+                               preemphasis_coeff=preemphasis_coeff,
+                               istft_args=istft_args)
+
+        # NOTE: this is only because the masking creates a chirp in the last
+        #       fft frame (likely due to the mask)
+        y[-n_fft:] = 0.0
+        y = standardize_waveform(y)
+
+        # print('Separated sample for source {}'.format(i + 1))
+        lr.output.write_wav(os.path.join(output_path, 'mix_{}_mi_separated_{}.wav'.format(mix_number, i + 1)), y, mixer.sample_rate(), norm=True)
 
 
 if __name__ == '__main__':

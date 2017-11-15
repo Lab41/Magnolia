@@ -1,12 +1,14 @@
 import numpy as np
+import librosa
 import tensorflow as tf
 
 from ..utils import tf_utils
 
-class L41Model:
+class L41RegressionModel:
     def __init__(self, F=257, num_speakers=251,
                  layer_size=600, embedding_size=40,
-                 nonlinearity='logistic',normalize=False,
+                 nonlinearity='logistic',
+                 alpha=0.5, normalize=False,
                  device='/cpu:0'):
         """
         Initializes Lab41's clustering model.  Default architecture comes from
@@ -32,6 +34,7 @@ class L41Model:
         self.layer_size = layer_size
         self.embedding_size = embedding_size
         self.nonlinearity = nonlinearity
+        self.alpha = alpha
         self.normalize = normalize
 
         self.graph = tf.Graph()
@@ -43,9 +46,12 @@ class L41Model:
 
                 # Placeholder tensor for the labels/targets
                 self.y = tf.placeholder("float", [None, None, self.F, None])
+                
+                # Placeholder tensor for the signal spectrograms
+                self.sig = tf.placeholder("float", [None, None, self.F, 1])
 
                 # Placeholder for the speaker indicies
-                self.I = tf.placeholder(tf.int32, [None,None])
+                self.I = tf.placeholder(tf.int32, [None, None])
 
                 # Define the speaker vectors to use during training
                 self.speaker_vectors = tf_utils.weight_variable(
@@ -119,8 +125,12 @@ class L41Model:
         # Normalize the T-F vectors to get the network output
         if self.normalize:
             embedding = tf.nn.l2_normalize(embedding, 3)
+        
+        # Feedforward layer (regression)
+        feedforward_fc = tf_utils.conv2d_layer(embedding,
+                              [1, 1, self.embedding_size, 1])
 
-        return embedding
+        return embedding, feedforward_fc
 
     @tf_utils.scope_decorator
     def cost(self):
@@ -129,7 +139,7 @@ class L41Model:
         """
 
         # Get the embedded T-F vectors from the network
-        embedding = self.network
+        embedding, ff = self.network
 
         # Reshape I so that it is of the correct dimension
         I = tf.expand_dims( self.I, axis=2 )
@@ -163,8 +173,18 @@ class L41Model:
         # Average the cost over all T-F elements.  Here is where weighting to
         # account for gradient confidence can occur
         cost = tf.reduce_mean(cost)
+        
+        # Regression loss
+        #reg = tf.reduce_mean(tf.squared_difference(self.sig, ff))
+        reg = tf.squared_difference(self.scale_signal(self.sig), self.scale_signal(ff))
+        spec_diff_range = tf.reduce_max(reg) - tf.reduce_min(reg)
+        if spec_diff_range == 0.0:
+            reg = tf.zeros_like(reg)
+        else:
+            reg /= spec_diff_range
+        reg = tf.reduce_mean(reg)
 
-        return cost
+        return (1. - self.alpha)*cost + self.alpha*reg
 
     @tf_utils.scope_decorator
     def optimizer(self):
@@ -186,30 +206,45 @@ class L41Model:
         """
         self.saver.restore(self.sess, path)
 
-    def train_on_batch(self, X_train, y_train, I_train):
+    def train_on_batch(self, X_train, y_train, sig_train, I_train):
         """
         Train the model on a batch with input X and target y. Returns the cost
         computed on this batch.
         """
 
         cost, _ = self.sess.run([self.cost, self.optimizer],
-                            {self.X: X_train, self.y: y_train, self.I:I_train})
+                            {self.X: X_train, self.y: y_train, self.sig: sig_train, self.I:I_train})
 
         return cost
 
+    def get_signal(self, X_in):
+        """
+        Compute the signals for the input spectrograms
+        """
+
+        signal = self.sess.run(self.network, {self.X: X_in})[1]
+        return signal
+    
     def get_vectors(self, X_in):
         """
         Compute the embedding vectors for the input spectrograms
         """
 
-        vectors = self.sess.run(self.network, {self.X: X_in})
+        vectors = self.sess.run(self.network, {self.X: X_in})[0]
         return vectors
 
-    def get_cost(self, X_in, y_in, I_in):
+    def get_cost(self, X_in, y_in, sig_in, I_in):
         """
         Computes the cost of a batch, but does not update any model parameters.
         """
         cost = self.sess.run(self.cost,
-                            {self.X: X_in, self.y: y_in, self.I: I_in})
+                            {self.X: X_in, self.y: y_in, self.sig: sig_in, self.I: I_in})
 
         return cost
+    
+    @staticmethod
+    def scale_signal(S, amin=1e-5, log_base=10, ref_value=1.0):
+        log_base = np.log(log_base)
+        log_spec = 20.0 * tf.log(tf.maximum(amin, S)) / log_base
+        log_spec -= 20.0 * tf.log(tf.maximum(amin, ref_value)) / log_base
+        return log_spec

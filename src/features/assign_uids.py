@@ -36,7 +36,7 @@ def main():
             'dataset_type': [],
         }
         for preprocessing_setting in tqdm.tqdm(settings['preprocessing_settings']):
-            metadata_key = preprocessing_setting['metadata_id']
+            metadata_key = None if 'metadata_id' not in preprocessing_setting else preprocessing_setting['metadata_id']
             data_label = preprocessing_setting['data_label']
             preprocessing_settings = json.load(open(preprocessing_setting['settings']))
             spectrogram_file = preprocessing_settings['spectrogram_output_file']
@@ -45,19 +45,31 @@ def main():
 
             logger.info('starting assigning global uids to the {} dataset'.format(dataset_type))
 
-            for key in metadata_file[metadata_key].unique():
-                uid_dict[key] = count
-                to_store_uid_dict['uid'].append(uid_dict[key])
-                to_store_uid_dict['local_id'].append(key)
+            if metadata_key is None:
+                uid_dict[dataset_type] = count
+                to_store_uid_dict['uid'].append(uid_dict[dataset_type])
+                to_store_uid_dict['local_id'].append(dataset_type)
                 to_store_uid_dict['dataset_type'].append(dataset_type)
                 count += 1
+            else:
+                for key in metadata_file[metadata_key].unique():
+                    uid_dict[key] = count
+                    to_store_uid_dict['uid'].append(uid_dict[key])
+                    to_store_uid_dict['local_id'].append(key)
+                    to_store_uid_dict['dataset_type'].append(dataset_type)
+                    count += 1
 
             f = h5py.File(spectrogram_file, 'a')
             total_number_of_rows = len(metadata_file.index)
             pbar = tqdm.tqdm(total=total_number_of_rows, leave=False)
-            for index, row in metadata_file.iterrows():
-                f[row[data_label]].attrs['uid'] = uid_dict[row[metadata_key]]
-                pbar.update(1)
+            if metadata_key is None:
+                for index, row in metadata_file.iterrows():
+                    f[row[data_label]].attrs['uid'] = uid_dict[dataset_type]
+                    pbar.update(1)
+            else:
+                for index, row in metadata_file.iterrows():
+                    f[row[data_label]].attrs['uid'] = uid_dict[row[metadata_key]]
+                    pbar.update(1)
             pbar.close()
 
             output_filename = '{}_{}.csv'.format(os.path.splitext(output_filename)[0], dataset_type)

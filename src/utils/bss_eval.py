@@ -1,4 +1,4 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 '''
@@ -184,7 +184,7 @@ def _any_source_silent(sources):
 
 
 def bss_eval_sources(reference_sources, estimated_sources,
-                     compute_permutation=True):
+                     compute_permutation=True, fft_window=512):
     """
     Ordering and measurement of the separation quality for estimated source
     signals in terms of filtered true source, interference and artifacts.
@@ -265,7 +265,7 @@ def bss_eval_sources(reference_sources, estimated_sources,
                 s_true, e_spat, e_interf, e_artif = \
                     _bss_decomp_mtifilt(reference_sources,
                                         estimated_sources[jest],
-                                        jtrue, 512)
+                                        jtrue, fft_window)
                 sdr[jest, jtrue], sir[jest, jtrue], sar[jest, jtrue] = \
                     _bss_source_crit(s_true, e_spat, e_interf, e_artif)
 
@@ -288,7 +288,7 @@ def bss_eval_sources(reference_sources, estimated_sources,
             s_true, e_spat, e_interf, e_artif = \
                 _bss_decomp_mtifilt(reference_sources,
                                     estimated_sources[j],
-                                    j, 512)
+                                    j, fft_window)
             sdr[j], sir[j], sar[j] = \
                 _bss_source_crit(s_true, e_spat, e_interf, e_artif)
 
