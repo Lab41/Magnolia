@@ -1,53 +1,76 @@
-"""A setuptools based setup module.
+#! /usr/bin/env python
 
-See:
-https://packaging.python.org/en/latest/distributing.html
-https://github.com/pypa/sampleproject
-"""
+import os
+import io
+from distutils.core import setup
+# from setuptools import setup
 
-# Always prefer setuptools over distutils
-from setuptools import setup, find_packages
-# To use a consistent encoding
-from codecs import open
-from os import path
+# NOTE: to compile, run in the current directory
+# python setup.py build_ext --inplace
+# python setup.py develop
 
-here = path.abspath(path.dirname(__file__))
 
-# Get the long description from the README file
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
+def find_all_package_directories(packages, package_name, current_dir):
+    for dirname in os.listdir(current_dir):
+        if os.path.isfile(os.path.join(current_dir, dirname, '__init__.py')):
+            package_n = '{}.{}'.format(package_name, dirname)
+            packages += [package_n]
+            find_all_package_directories(packages, package_n, os.path.join(current_dir, dirname))
+
+
+def read(*filenames, **kwargs):
+    encoding = kwargs.get('encoding', 'utf-8')
+    sep = kwargs.get('sep', '\n')
+    buf = []
+    for filename in filenames:
+        with io.open(filename, encoding=encoding) as f:
+            buf.append(f.read())
+    return sep.join(buf)
+
+
+here = os.path.abspath(os.path.dirname(__file__))
+
+long_description = read('README.md', 'CHANGELOG.md')
+
+python_dir = os.path.join(here, 'magnolia', 'python')
+
+packages = []
+find_all_package_directories(packages, 'magnolia', python_dir)
+# packages = ['magnolia']
+# packages = ['magnolia.{}'.format(name) for name in os.listdir(python_dir) if os.path.isdir(os.path.join(python_dir, name))]
+# packages += ['magnolia.python.models']
+# package_dirs={}
+# for package in packages:
+#     package_dirs[package] = os.path.join('magnolia', 'python')
 
 
 setup(
     name='magnolia',
-
     description='Audio source separation and denoising',
     long_description=long_description,
-
     maintainer='Lab41',
-
-    # The project's main homepage.
     url='https://github.com/lab41/magnolia',
+    # author_email='jhetherly@iqt.org',
+    license='MIT',
+    platforms='any',
 
-    # You can just specify the packages manually here if your project is
-    # simple. Or you can use find_packages().
-    package_dir={'magnolia': 'src'},
-    packages=[x.replace("src", "magnolia") for x in find_packages()],
+    # packages=packages,
+    # package_dir=package_dirs,
+    # packages=['magnolia'],
+    # package_dir={'': 'python'},
+    package_dir={'magnolia': os.path.join('magnolia', 'python')},
+    packages=packages,
 
     # Required packages
     install_requires=[
        'matplotlib',
        'numpy',
        'pandas',
-       'python_speech_features',
        'scipy',
        'scikit-learn',
        'seaborn',
-       'soundfile',
        'tqdm',
-       'librosa'
+       'msgpack-python',
     ],
-
-    version = '0.1.0'
-
+    version = '0.2.0'
 )
