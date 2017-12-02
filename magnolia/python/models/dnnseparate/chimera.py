@@ -1,43 +1,52 @@
+import logging.config
 import numpy as np
 import tensorflow as tf
 
 from magnolia.models.model_base import ModelBase
 from magnolia.utils import tf_utils
 
+
+logger = logging.getLogger('model')
+
+
 class Chimera(ModelBase):
-    def __init__(self, F=257,
-                 num_sources=2,
-                 layer_size=500, embedding_size=10,
-                 alpha=0.1,
-                 nonlinearity=tf.tanh,
-                 device='/cpu:0'):
-        """
-        Initializes the Chimera network from [1].  Defaults correspond to
-        the parameters used by the best performing model in the paper.
+    """
+    Chimera network from [1].  Defaults correspond to
+    the parameters used by the best performing model in the paper.
 
-        [1] Hershey, John., et al. "Deep Clustering: Discriminative embeddings
-            for segmentation and separation." Acoustics, Speech, and Signal
-            Processing (ICASSP), 2016 IEEE International Conference on. IEEE,
-            2016.
+    [1] Luo, Yi., et al. "Deep Clustering and Conventional Networks for Music
+        Separation: Stronger Together" Published in Acoustics, Speech, and
+        Signal Processing (ICASSP) 2017; doi:10.1109/ICASSP.2017.7952118
 
-        Inputs:
-            F: Number of frequency bins in the input data
-            layer_size: Size of BLSTM layers
-            embedding_size: Dimension of embedding vector
-            nonlinearity: Nonlinearity to use in BLSTM layers
-            device: Which device to run the model on
-        """
+    Hyperparameters:
+        F: Number of frequency bins in the input data
+        layer_size: Size of BLSTM layers
+        embedding_size: Dimension of embedding vector
+        alpha: Relative mixture of cost terms
+        nonlinearity: Nonlinearity to use in BLSTM layers
+        device: Which device to run the model on
+    """
 
-        self.F = F
-        self.num_sources = num_sources
-        self.layer_size = layer_size
-        self.embedding_size = embedding_size
-        self.alpha = alpha
-        self.nonlinearity = nonlinearity
+    def initialize(self):
+        self.F = self.config['model_params']['F']
+        self.num_sources = 2
+        self.layer_size = self.config['model_params']['layer_size']
+        self.embedding_size = self.config['model_params']['embedding_size']
+        self.alpha = self.config['model_params']['alpha']
+        nl = self.config['model_params']['nonlinearity']
+        self.nonlinearity = eval('{}'.format(nl))
 
-        self.graph = tf.Graph()
-        with self.graph.as_default():
-            with tf.device(device):
+        self.batch_count = 0
+        self.nbatches = []
+        self.costs = []
+        self.t_costs = []
+        self.v_costs = []
+        self.last_saved = 0
+
+
+    def build_graph(self, graph):
+        with graph.as_default():
+            with tf.device(self.config['device']):
                 # Placeholder tensor for the input data
                 self.X = tf.placeholder("float", [None, None, self.F])
                 # Placeholder tensor for the unscaled input data
@@ -53,27 +62,97 @@ class Chimera(ModelBase):
                 self.cost
                 self.optimizer
 
-            # Saver
-            self.saver = tf.train.Saver()
+        return graph
 
 
-        # Create a session to run this graph
-        self.sess = tf.Session(graph = self.graph)
+    def learn_from_epoch(self, epoch_id,
+                         validate_every,
+                         stop_threshold,
+                         training_mixer,
+                         validation_mixer,
+                         batch_formatter,
+                         model_save_base):
+        # FIXME:
+        # Find the number of batches already elapsed (Useful for resuming training)
+        start = 0
+        if len(self.nbatches) != 0:
+            start = self.nbatches[-1]
 
-    def __del__(self):
-        """
-        Close the session when the model is deleted
-        """
+        batch_count = self.batch_count
+        # Training epoch loop
+        for batch in iter(training_mixer):
+            unscaled_spectral_sum_batch, scaled_spectral_sum_batch, spectral_masks_batch, spectral_sources_batch = batch_formatter(batch[0], batch[1], batch[2])
+            # should be dimensions of (batch size, source)
+            uids_batch = batch[3]
 
-        self.sess.close()
+            # Train the model on one batch and get the cost
+            c = self.train_on_batch(scaled_spectral_sum_batch, unscaled_spectral_sum_batch,
+                                    spectral_masks_batch, spectral_sources_batch)
 
-    def initialize(self):
-        """
-        Initialize variables in the graph
-        """
+            # Store the training cost
+            self.costs.append(c)
 
-        with self.graph.as_default():
-            self.sess.run(tf.global_variables_initializer())
+            # Store the current batch_count number
+
+            # Evaluate the model on the validation data
+            if (batch_count + 1) % validate_every == 0:
+                # Store the training cost
+                self.t_costs.append(np.mean(self.costs))
+                # Reset the cost over the last 10 batches
+                self.costs = []
+
+                # Compute average validation score
+                all_c_v = []
+                for vbatch in iter(validation_mixer):
+                    unscaled_spectral_sum_batch, scaled_spectral_sum_batch, spectral_masks_batch, spectral_sources_batch = batch_formatter(vbatch[0], vbatch[1], vbatch[2])
+                    # dimensions of (batch size, source)
+                    uids_batch = vbatch[3]
+
+                    # Get the cost on the validation batch
+                    c_v = self.get_cost(scaled_spectral_sum_batch, unscaled_spectral_sum_batch,
+                                        spectral_masks_batch, spectral_sources_batch)
+                    all_c_v.append(c_v)
+
+                ave_c_v = np.mean(all_c_v)
+
+                # Check if the validation cost is below the minimum validation cost, and if so, save it.
+                if len(self.v_costs) > 0 and ave_c_v < min(self.v_costs) and len(self.nbatches) > 0:
+                    logger.info("Saving the model because validation score is {} below the old minimum.".format(min(self.v_costs) - ave_c_v))
+
+                    # Save the model to the specified path
+                    self.save(model_save_base)
+
+                    # Record the batch that the model was last saved on
+                    self.last_saved = self.nbatches[-1]
+
+                # Store the validation cost
+                self.v_costs.append(ave_c_v)
+
+                # Store the current batch number
+                self.nbatches.append(batch_count + 1 + start)
+
+                # Compute scale quantities for plotting
+                length = len(self.nbatches)
+                cutoff = int(0.5*length)
+                lowline = [min(self.v_costs)]*length
+
+                logger.info("Training cost on batch {} is {}.".format(self.nbatches[-1], self.t_costs[-1]))
+                logger.info("Validation cost on batch {} is {}.".format(self.nbatches[-1], self.v_costs[-1]))
+                logger.info("Last saved {} batches ago.".format(self.nbatches[-1] - self.last_saved))
+
+                # Stop training if the number of iterations since the last save point exceeds the threshold
+                if self.nbatches[-1] - self.last_saved > stop_threshold:
+                    logger.info("Early stopping criteria met!")
+                    break
+
+            batch_count += 1
+
+        self.batch_count = batch_count
+
+
+    def infer(self, **kw_args):
+        pass
+
 
     @tf_utils.scope_decorator
     def network(self):
@@ -181,17 +260,17 @@ class Chimera(ModelBase):
         opt = tf.train.AdamOptimizer()
         return opt.minimize(self.cost)
 
-    def save(self, path):
-        """
-        Saves the model to the specified path.
-        """
-        self.saver.save(self.sess, path)
+    # def save(self, path):
+    #     """
+    #     Saves the model to the specified path.
+    #     """
+    #     self.saver.save(self.sess, path)
 
-    def load(self, path):
-        """
-        Load the model from the specified path.
-        """
-        self.saver.restore(self.sess, path)
+    # def load(self, path):
+    #     """
+    #     Load the model from the specified path.
+    #     """
+    #     self.saver.restore(self.sess, path)
 
     def train_on_batch(self, X_train, X_train_clean, y_train, y_train_clean):
         """
