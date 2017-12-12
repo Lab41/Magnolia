@@ -1,5 +1,5 @@
-from .dnnseparate.chimera import Chimera
-from .dnnseparate.L41_regression_model import L41RegressionModel
+from .dnndenoise.chimera import Chimera
+from .dnndenoise.L41_regression_model import L41RegressionModel
 
 __all__ = [
     "Chimera",
