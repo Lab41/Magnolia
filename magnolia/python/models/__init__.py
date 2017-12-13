@@ -1,19 +1,19 @@
-from .dnnseparate.chimera import Chimera
-from .dnnseparate.L41_regression_model import L41RegressionModel
+from .dnndenoise.chimera import Chimera
+from .dnndenoise.L41_regression_model import L41RegressionModel
 
 __all__ = [
     "Chimera",
     "L41RegressionModel",
 ]
 
-def make_model(config, env):
-    if config['model_name'] in __all__:
-        return globals()[config['model_name']](config, env)
+def make_model(model_name, config):
+    if model_name in __all__:
+        return globals()[model_name](config)
     else:
-        raise Exception('The model name %s does not exist' % config['model_name'])
+        raise Exception('The model name %s does not exist' % model_name)
 
-def get_model_class(config):
-    if config['model_name'] in __all__:
-        return globals()[config['model_name']]
+def get_model_class(model_name):
+    if model_name in __all__:
+        return globals()[model_name]
     else:
-        raise Exception('The model name %s does not exist' % config['model_name'])
+        raise Exception('The model name %s does not exist' % model_name)
