@@ -5,7 +5,7 @@ import h5py
 import msgpack
 import librosa as lr
 
-from magnolia.utils.mixing import convert_sample_length_to_nframes
+from magnolia.utils.mixing import convert_sample_length_to_nframes, compute_waveform_snr_factor
 
 
 logger = logging.getLogger('iteration')
@@ -245,6 +245,7 @@ class MixIterator:
         assigned_spec = False
         assigned_wf = False
         snr_factor = mix_info['snr_factor']
+        snr = mix_info['snr']
 
         if self._read_spectrogram:
             specs = []
@@ -310,11 +311,14 @@ class MixIterator:
                 spectrogram_end = mix_info['signal_spectrogram_ends'][i]
                 waveform_start = self._convert_frame_to_sample(spectrogram_start)
                 waveform_end = waveform_start + self._sample_length_in_bits
-                waveform = scale_factor*data[key]
+                # FIXME: scale_factor will need a different value to work properly for waveforms
+                # waveform = scale_factor*data[key][:]
+                waveform = data[key][:]
                 if waveform_end >= len(waveform):
-                    waveform = waveform[:-self._sample_length_in_bits]
+                    waveform = waveform[-self._sample_length_in_bits:]
                 else:
                     waveform = waveform[waveform_start:waveform_end]
+                waveform = (waveform - waveform.mean())/waveform.std()
 
                 wfs.append(waveform)
                 self._uid_batch[batch_number, i] = uid
@@ -339,16 +343,20 @@ class MixIterator:
                 spectrogram_end = mix_info['noise_spectrogram_ends'][i]
                 waveform_start = self._convert_frame_to_sample(spectrogram_start)
                 waveform_end = waveform_start + self._sample_length_in_bits
-                waveform = scale_factor*data[key]
+                # FIXME: scale_factor will need a different value to work properly for waveforms
+                # waveform = (snr_factor*scale_factor)*data[key][:]
+                waveform = data[key][:]
                 if waveform_end >= len(waveform):
-                    waveform = waveform[:-self._sample_length_in_bits]
+                    waveform = waveform[-self._sample_length_in_bits:]
                 else:
                     waveform = waveform[waveform_start:waveform_end]
+                waveform = (waveform - waveform.mean())/waveform.std()
+                waveform *= compute_waveform_snr_factor(snr)
 
                 wfs.append(waveform)
                 self._uid_batch[batch_number, i + signal_count_offset] = uid
 
-                if not assigned_spec:
+                if not assigned_wf:
                     self._wf_batch[batch_number, :] = waveform
                     self._snr_batch[batch_number] = mix_info['snr']
                     assigned_spec = True
@@ -413,26 +421,29 @@ class MixIterator:
 #    187     10000      1615506    161.6      1.6          self._batch[batch_number, :, :] = np.abs(total_spec)
 
 
-if __name__ == '__main__':
-    import time
-    import argparse
-    # parse command line arguments
-    parser = argparse.ArgumentParser(description='Reconstruct waveforms from mixes.')
-    parser.add_argument('--settings', '-s',
-                        default='../../settings/mixing_template.json',
-                        help='sample mixing settings JSON file')
-    args = parser.parse_args()
-
-
-    mixer = MixIterator([args.settings], batch_size=256)
-    nbatches = 5
-    batch_count = 0
-    start = time.perf_counter()
-    for batch in iter(mixer):
-        batch_count += 1
-        if batch_count == nbatches:
-            break
-    end = time.perf_counter()
-    print('number of batches {}'.format(batch_count))
-    print('total time {}'.format(end - start))
-    print('average time per batch {}'.format((end - start)/batch_count))
+# if __name__ == '__main__':
+#     import time
+#     import argparse
+#     # parse command line arguments
+#     parser = argparse.ArgumentParser(description='Reconstruct waveforms from mixes.')
+#     parser.add_argument('--settings', '-s',
+#                         default='../../settings/mixing_template.json',
+#                         help='sample mixing settings JSON file')
+#     args = parser.parse_args()
+#
+#
+#     mixer = MixIterator([args.settings], batch_size=256)#, read_spectrogram=False)
+#     print(mixer.epoch_size())
+#     nbatches = 2
+#     batch_count = 0
+#     start = time.perf_counter()
+#     for batch in iter(mixer):
+#         # print(batch[-1])
+#         # print(batch[4].std(-1))
+#         batch_count += 1
+#         if batch_count == nbatches:
+#             break
+#     end = time.perf_counter()
+#     print('number of batches {}'.format(batch_count))
+#     print('total time {}'.format(end - start))
+#     print('average time per batch {}'.format((end - start)/batch_count))

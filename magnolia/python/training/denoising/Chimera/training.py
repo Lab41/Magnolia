@@ -58,10 +58,12 @@ def main():
 
     training_mixer = MixIterator(mixes_settings_filenames=train_mixes,
                                  batch_size=train_batchsize,
+                                 read_waveform=False,
                                  from_disk=train_from_disk)
 
     validation_mixer = MixIterator(mixes_settings_filenames=validate_mixes,
                                    batch_size=validate_batchsize,
+                                   read_waveform=False,
                                    from_disk=validate_from_disk)
 
     # get frequency dimension
