@@ -42,7 +42,6 @@ class RatioMaskSCE(ModelBase):
         self.collapse_sources = self.config['model_params']['collapse_sources']
 
         self.batch_count = 0
-        self.nbatches = []
         self.costs = []
         self.t_costs = []
         self.v_costs = []
@@ -85,11 +84,6 @@ class RatioMaskSCE(ModelBase):
                          validation_mixer,
                          batch_formatter,
                          model_save_base):
-        # FIXME:
-        # Find the number of batches already elapsed (Useful for resuming training)
-        start = 0
-        if len(self.nbatches) != 0:
-            start = self.nbatches[-1]
 
         batch_count = self.batch_count
         # Training epoch loop
@@ -110,8 +104,6 @@ class RatioMaskSCE(ModelBase):
 
             # Store the training cost
             self.costs.append(c)
-
-            # Store the current batch_count number
 
             # Evaluate the model on the validation data
             if (batch_count + 1) % validate_every == 0:
@@ -141,32 +133,27 @@ class RatioMaskSCE(ModelBase):
                 ave_c_v = np.mean(all_c_v)
 
                 # Check if the validation cost is below the minimum validation cost, and if so, save it.
-                if len(self.v_costs) > 0 and ave_c_v < min(self.v_costs) and len(self.nbatches) > 0:
+                if len(self.v_costs) > 0 and ave_c_v < min(self.v_costs):# and len(self.nbatches) > 0:
                     logger.info("Saving the model because validation score is {} below the old minimum.".format(min(self.v_costs) - ave_c_v))
 
                     # Save the model to the specified path
                     self.save(model_save_base)
 
                     # Record the batch that the model was last saved on
-                    self.last_saved = self.nbatches[-1]
+                    self.last_saved = batch_count#self.nbatches[-1]
 
                 # Store the validation cost
                 self.v_costs.append(ave_c_v)
 
                 # Store the current batch number
-                self.nbatches.append(batch_count + 1 + start)
+                #self.nbatches.append(batch_count)
 
-                # Compute scale quantities for plotting
-                length = len(self.nbatches)
-                cutoff = int(0.5*length)
-                lowline = [min(self.v_costs)]*length
-
-                logger.info("Training cost on batch {} is {}.".format(self.nbatches[-1], self.t_costs[-1]))
-                logger.info("Validation cost on batch {} is {}.".format(self.nbatches[-1], self.v_costs[-1]))
-                logger.info("Last saved {} batches ago.".format(self.nbatches[-1] - self.last_saved))
+                logger.info("Training cost on batch {} is {}.".format(batch_count, self.t_costs[-1]))
+                logger.info("Validation cost on batch {} is {}.".format(batch_count, self.v_costs[-1]))
+                logger.info("Last saved {} batches ago.".format(batch_count - self.last_saved))
 
                 # Stop training if the number of iterations since the last save point exceeds the threshold
-                if self.nbatches[-1] - self.last_saved > stop_threshold:
+                if batch_count - self.last_saved > stop_threshold:
                     logger.info("Early stopping criteria met!")
                     break
 
@@ -276,7 +263,7 @@ class RatioMaskSCE(ModelBase):
         # broadcast product along source dimension
         mi_cost = tf.square(self.y_clean - mi_output*tf.expand_dims(self.X_clean, -1))
 
-        return self.alpha*tf.reduce_mean(sce_cost) + (1.0 - self.alpha)*tf.reduce_mean(mi_cost)
+        return self.alpha*sce_cost + (1.0 - self.alpha)*tf.reduce_mean(mi_cost)
 
     @tf_utils.scope_decorator
     def optimizer(self):

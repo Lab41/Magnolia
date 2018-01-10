@@ -34,7 +34,7 @@ def main():
     logger = logging.getLogger('model')
 
     # Number of epochs
-    num_epochs = 2
+    num_epochs = 20 # try 20
     # Threshold for stopping if the model hasn't improved for this many consecutive batches
     stop_threshold = 10000
     # validate every number of these batches
@@ -48,7 +48,7 @@ def main():
     model_params = {
         'layer_size': 500,
         'embedding_size': 10,
-        'alpha': 0.1,
+        'alpha': 0.9, # try 0.9
         'nonlinearity': 'tf.tanh',
         'num_reco_sources': 2,
         'normalize': False,
