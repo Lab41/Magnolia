@@ -58,11 +58,11 @@ def main():
 
     model_location = '/cpu:0'
     model_settings = ''
-    # mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_test_in_sample.json']
-    mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_test_out_of_sample.json']
+    mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_test_in_sample.json']
+    # mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_test_out_of_sample.json']
     from_disk = True
-    # output_path = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/mask_sce/in_sample_test'
-    output_path = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/mask_sce/out_of_sample_test'
+    output_path = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/mask_sce/in_sample_test'
+    # output_path = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/mask_sce/out_of_sample_test'
     eval_sr = 8000
 
     mixer = MixIterator(mixes_settings_filenames=mixes,
