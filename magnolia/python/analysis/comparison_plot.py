@@ -115,11 +115,13 @@ def make_sdr_delta_versus_noise_source_plot(models, df_base_name):
     ax.xaxis.label.set_size(15)
     ax.yaxis.label.set_size(15)
     
-    ylim = [-0.5, ax.get_ylim()[1]]
+    ylim = [-0.5, 1.2*ax.get_ylim()[1]]
     #ylim[0] = -0.5
     ax.set_ylim(ylim)
     #plt.axis([0, 11, -.5, 16])
-    plt.legend(fontsize=12, edgecolor='black')
+    plt.legend(fontsize=12, edgecolor='black',
+               loc='upper center', ncol=3, mode='expand')
+    #ax.legend(bbox_to_anchor=(1.5, 1.5))
     plt.tight_layout()
     
     plt.savefig('{}_sdr_delta_versus_noise_type.pdf'.format(df_base_name), format='pdf')
@@ -195,11 +197,12 @@ def make_sdr_delta_versus_input_snr_plot(models, df_base_name, bins):
     ax.xaxis.label.set_size(15)
     ax.yaxis.label.set_size(15)
     
-    ylim = [-0.5, ax.get_ylim()[1]]
+    ylim = [-0.5, 1.2*ax.get_ylim()[1]]
     #ylim[0] = -0.5
     ax.set_ylim(ylim)
     #plt.axis([0, 11, -.5, 16])
-    plt.legend(fontsize=12, edgecolor='black')
+    plt.legend(fontsize=12, edgecolor='black',
+               loc='upper center', ncol=3, mode='expand')
     plt.tight_layout()
     
     plt.savefig('{}_sdr_delta_versus_input_snr.pdf'.format(df_base_name), format='pdf')
@@ -234,13 +237,13 @@ def main():
             'name': 'SCE + Mask MI',
             'in_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/mi_in_sample_test_sdr_summary.csv',
             'out_of_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/mi_out_of_sample_test_sdr_summary.csv',
-            'color': '#3D5A80'
+            'color': '#CA054D'
         },
         {
             'name': 'SCE + Mask Clustering',
             'in_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/dc_in_sample_test_sdr_summary.csv',
             'out_of_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/dc_out_of_sample_test_sdr_summary.csv',
-            'color': '#0C0A3E'
+            'color': '#393E41'
         },
         {
             'name': 'SCE',
@@ -258,6 +261,8 @@ def main():
     make_sdr_delta_versus_input_snr_plot(models, 'out_of_set', bins)
     make_sdr_delta_versus_noise_source_plot(models, 'out_of_set')
     #make_sdr_delta_versus_sex_plot(models, 'out_of_set')
+    make_sdr_delta_versus_input_snr_plot(models, 'in_set', bins)
+    make_sdr_delta_versus_noise_source_plot(models, 'in_set')
     
 
 if __name__ == '__main__':
