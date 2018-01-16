@@ -44,6 +44,18 @@ def bias_variable(shape, value=0.1):
     initial = tf.constant(value, shape=shape)
     return tf.Variable(initial)
 
+def double_learnable_relu(preactivations, initial_alphas=[1.0, 0.1], name=None):
+    """Relu activation with two learnable slopes"""
+    if name is not None:
+        name1 = '{}/alpha1'.format(name)
+        name2 = '{}/alpha2'.format(name)
+    else:
+        name1 = 'alpha1'
+        name2 = 'alpha2'
+    alpha1 = tf.get_variable(name1, initializer=tf.constant(initial_alphas[0]))
+    alpha2 = tf.get_variable(name2, initializer=tf.constant(initial_alphas[1]))
+    return tf.where(preactivations >= 0.0, x=alpha1*preactivations, y=alpha2*preactivations)
+
 def leaky_relu(x, alpha=0.1):
     """
     Leaky rectified linear unit.  Returns max(x, alpha*x)

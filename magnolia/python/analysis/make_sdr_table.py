@@ -53,6 +53,19 @@ def main():
         ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/large_lab41/out_of_sample_test.csv',
          '/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/aux/out_of_sample_test_mixes.csv',
          '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/large_lab41/out_of_sample_test_sdr_summary.csv'],
+        
+        ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/mi_in_sample_test.csv',
+         '/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/aux/in_sample_test_mixes.csv',
+         '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/mi_in_sample_test_sdr_summary.csv'],
+        ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/mi_out_of_sample_test.csv',
+         '/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/aux/out_of_sample_test_mixes.csv',
+         '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/mi_out_of_sample_test_sdr_summary.csv'],
+        ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/dc_in_sample_test.csv',
+         '/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/aux/in_sample_test_mixes.csv',
+         '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/dc_in_sample_test_sdr_summary.csv'],
+        ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/dc_out_of_sample_test.csv',
+         '/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/aux/out_of_sample_test_mixes.csv',
+         '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/dc_out_of_sample_test_sdr_summary.csv'],
         ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/mi_in_sample_test.csv',
          '/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/aux/in_sample_test_mixes.csv',
          '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/mi_in_sample_test_sdr_summary.csv'],
@@ -77,7 +90,7 @@ def main():
     # args = args[2:4]
     #args = args[4:6]
     #args = args[6:8]
-    args = args[8:]
+    #args = args[8:]
     for arg in args:
         make_nice_table(*arg)
 

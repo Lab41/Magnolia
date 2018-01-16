@@ -13,6 +13,7 @@ from magnolia.models import make_model
 # Import utilities for using the model
 from magnolia.training.data_iteration.mix_iterator import MixIterator
 from magnolia.utils.training import preprocess_chimera_batch
+#from magnolia.utils.tf_utils import double_learnable_relu
 
 
 def main():
@@ -39,17 +40,19 @@ def main():
     stop_threshold = 10000
     # validate every number of these batches
     validate_every = 100
-    train_batchsize = 256
+    train_batchsize = 8
     train_mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_train.json']
     train_from_disk = False
-    validate_batchsize = 200
+    validate_batchsize = 5
     validate_mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_validate.json']
     validate_from_disk = False
     model_params = {
         'layer_size': 500,
         'embedding_size': 10,
-        'alpha': 0.9, # try 0.9
+        'auxiliary_size': 0,
+        'alpha': 0.1, # try 0.9
         'nonlinearity': 'tf.tanh',
+        'fuzzifier': 2,
         'num_reco_sources': 2,
         'normalize': False,
         'collapse_sources': False,

@@ -92,7 +92,7 @@ class ModelBase(abc.ABC):
 
         # Add all the other common code for the initialization here
         gpu_options = tf.GPUOptions(allow_growth=True)
-        sessConfig = tf.ConfigProto(gpu_options=gpu_options)
+        sessConfig = tf.ConfigProto(allow_soft_placement=True, gpu_options=gpu_options)
         self.sess = tf.Session(config=sessConfig, graph=self.graph)
         self.make_summaries = 'summary_config' in self.config
         if self.make_summaries:

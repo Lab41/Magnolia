@@ -76,7 +76,9 @@ def make_sdr_delta_versus_noise_source_plot(models, df_base_name):
     # create plot
     fig, ax = plt.subplots(figsize=(8, 6))
     index = np.arange(n_groups)
-    bar_width = 0.25
+    plt.xlim(-0.5, n_groups + 0.5)
+    bar_width = (n_groups + 1)/(1.15*n_groups*len(models))
+    #bar_width = 0.15
     opacity = 0.8
     
     offset = 0
@@ -153,7 +155,7 @@ def make_sdr_delta_versus_input_snr_plot(models, df_base_name, bins):
     # create plot
     fig, ax = plt.subplots(figsize=(8, 6))
     index = np.arange(n_groups)
-    bar_width = 0.25
+    bar_width = (bins[-1] - bins[0])/(1.15*n_groups*len(models))
     opacity = 0.8
     
     offset = 0
@@ -216,16 +218,28 @@ def main():
         #    'out_of_set': '/data/fs4/home/pgamble/Magnolia/Denoising/Autoencoder/Final Results/eval_test_A.csv',
         #    'color': '#E0FBFC'
         #},
-        #{
-        #    'name': 'Chimera MI',
-        #    'in_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/mi_in_sample_test_sdr_summary.csv',
-        #    'out_of_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/mi_out_of_sample_test_sdr_summary.csv',
-        #    'color': '#3D5A80'
-        #},
         {
-            'name': 'DC',#'Chimera DC',
+            'name': 'Chimera MI',
+            'in_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/mi_in_sample_test_sdr_summary.csv',
+            'out_of_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/mi_out_of_sample_test_sdr_summary.csv',
+            'color': '#3D5A80'
+        },
+        {
+            'name': 'Chimera DC',
             'in_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/dc_in_sample_test_sdr_summary.csv',
             'out_of_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/dc_out_of_sample_test_sdr_summary.csv',
+            'color': '#0C0A3E'
+        },
+        {
+            'name': 'SCE + Mask MI',
+            'in_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/mi_in_sample_test_sdr_summary.csv',
+            'out_of_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/mi_out_of_sample_test_sdr_summary.csv',
+            'color': '#3D5A80'
+        },
+        {
+            'name': 'SCE + Mask Clustering',
+            'in_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/dc_in_sample_test_sdr_summary.csv',
+            'out_of_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/dc_out_of_sample_test_sdr_summary.csv',
             'color': '#0C0A3E'
         },
         {
@@ -235,6 +249,7 @@ def main():
             'color': '#A4303F'
         },
     ]
+    # TODO: the input SNR range should be determined automatically
     bins = np.linspace(-5, 5, 11)
     bins[-1] = 1.02*bins[-1]
     

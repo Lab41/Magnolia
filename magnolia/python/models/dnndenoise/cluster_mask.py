@@ -35,7 +35,9 @@ class RatioMaskCluster(ModelBase):
         self.num_reco_sources = self.config['model_params']['num_reco_sources']  # should always be 2
         self.num_training_sources = self.config['model_params']['num_training_sources']
         self.layer_size = self.config['model_params']['layer_size']
+        self.fuzzifier = self.config['model_params']['fuzzifier']
         self.embedding_size = self.config['model_params']['embedding_size']
+        self.auxiliary_size = self.config['model_params']['auxiliary_size']
         self.normalize = self.config['model_params']['normalize']
         self.alpha = self.config['model_params']['alpha']
         self.nonlinearity = eval(self.config['model_params']['nonlinearity'])
@@ -60,14 +62,21 @@ class RatioMaskCluster(ModelBase):
                 self.y = tf.placeholder("float", [None, None, self.F, None])
                 # Placeholder tensor for the unscaled labels/targets
                 self.y_clean = tf.placeholder("float", [None, None, self.F, None])
-                
+
                 # Placeholder for the speaker indicies
                 self.I = tf.placeholder(tf.int32, [None, None])
-                
+
                 # Define the speaker vectors to use during training
                 self.speaker_vectors = tf_utils.weight_variable(
                                        [self.num_training_sources, self.embedding_size],
                                        tf.sqrt(2/self.embedding_size))
+                if self.auxiliary_size > 0:
+                    # Define the auxiliary vectors to use during training
+                    self.auxiliary_vectors = tf_utils.weight_variable(
+                                             [self.auxiliary_size, self.auxiliary_size],
+                                             tf.sqrt(2/self.auxiliary_size))
+                else:
+                    self.auxiliary_vectors = None
 
                 # Model methods
                 self.network
@@ -91,7 +100,7 @@ class RatioMaskCluster(ModelBase):
             unscaled_spectral_sum_batch, scaled_spectral_sum_batch, spectral_masks_batch, spectral_sources_batch = batch_formatter(batch[0], batch[1], batch[2])
             # should be dimensions of (batch size, source)
             uids_batch = batch[3]
-            
+
             # override ids for simply signal/noise
             if self.collapse_sources:
                 uids_batch[:, 0] = 0
@@ -118,7 +127,7 @@ class RatioMaskCluster(ModelBase):
                     unscaled_spectral_sum_batch, scaled_spectral_sum_batch, spectral_masks_batch, spectral_sources_batch = batch_formatter(vbatch[0], vbatch[1], vbatch[2])
                     # dimensions of (batch size, source)
                     uids_batch = vbatch[3]
-                    
+
                     # override ids for simply signal/noise
                     if self.collapse_sources:
                         uids_batch[:, 0] = 0
@@ -173,9 +182,12 @@ class RatioMaskCluster(ModelBase):
         BLSTM layers followed by a dense layer giving a set of T-F vectors of
         dimension embedding_size
         """
+        
+        m = self.fuzzifier
 
         # Get the shape of the input
         shape = tf.shape(self.X)
+        shapeI = tf.shape(self.I)
 
         # BLSTM layer one
         BLSTM_1 = tf_utils.BLSTM_(self.X, self.layer_size, 'one',
@@ -201,10 +213,74 @@ class RatioMaskCluster(ModelBase):
         z = tf.reshape(feedforward,
                         [shape[0], shape[1], self.F, self.embedding_size])
 
-        # SCE head
+        # indices helpers for fuzzy c-means
+        #with tf.device('/cpu:0'):
+        #    known_sources_init = np.zeros(self.num_training_sources)
+        #    known_sources = tf.get_variable('known_sources',
+        #                                    dtype=tf.bool, trainable=False,
+        #                                    initializer=tf.constant(known_sources_init, dtype=tf.bool))
+        known_sources_init = np.zeros(self.num_training_sources)
+        known_sources = tf.get_variable('known_sources',
+                                        dtype=tf.bool, trainable=False,
+                                        initializer=tf.constant(known_sources_init, dtype=tf.bool))
+        current_sources_indices, _ = tf.unique(tf.reshape(self.I, shape=[shapeI[0]*shapeI[1]]))
+        #with tf.device('/cpu:0'):
+        #    known_sources = tf.scatter_update(known_sources, current_sources_indices,
+        #                                      tf.fill(tf.shape(current_sources_indices), True))
+        #    
+        #    current_sources = tf.cast(tf.scatter_nd(tf.expand_dims(current_sources_indices, -1),
+        #                                            tf.ones_like(current_sources_indices, dtype=tf.int32),
+        #                                            [self.num_training_sources]),
+        #                              dtype=tf.bool)
+        known_sources = tf.scatter_update(known_sources, current_sources_indices,
+                                          tf.fill(tf.shape(current_sources_indices), True))
+            
+        current_sources = tf.cast(tf.scatter_nd(tf.expand_dims(current_sources_indices, -1),
+                                                tf.ones_like(current_sources_indices, dtype=tf.int32),
+                                                    [self.num_training_sources]),
+                                  dtype=tf.bool)
+            
+        batch_sources = tf.reshape(tf.gather(self.speaker_vectors, tf.reshape(self.I, shape=[shapeI[0]*shapeI[1]])), shape=[shapeI[0], shapeI[1]])
+        
+        
+        # clustering head
         embedding = self.nonlinearity(z)
         # Normalize the T-F vectors to get the network output
         embedding = tf.nn.l2_normalize(embedding, 3)
+        
+        # batch, features, embedding
+        embeddings = tf.reshape(embedding,
+                                [shape[0], shape[1]*self.F, self.embedding_size])
+
+        # compute fuzzy assignments
+        # batch, nfeatures, nsources
+        if self.auxiliary_vectors is None:
+            squared_diffs_batch = tf.reduce_sum(tf.square(tf.expand_dims(embeddings, 2) - tf.expand_dims(batch_sources, 1)), -1)
+            squared_diffs_known = tf.reduce_sum(tf.square(tf.expand_dims(embeddings, 2) - tf.expand_dims(tf.expand_dims(tf.boolean_mask(self.speaker_vectors, known_sources), 0), 0)), -1)
+            squared_diffs_current = tf.reduce_sum(tf.square(tf.expand_dims(embeddings, 2) - tf.expand_dims(tf.expand_dims(tf.boolean_mask(self.speaker_vectors, current_sources), 0), 0)), -1)
+            diffs_pow_matrix_batch = tf.pow(squared_diffs_batch, 1./(m - 1.))
+            diffs_pow_matrix_known = tf.pow(squared_diffs_known, 1./(m - 1.))
+            diffs_pow_matrix_current = tf.pow(squared_diffs_current, 1./(m - 1.))
+        else:
+            # NOTE: true/aux refers to both the coordinates and cluster centers
+            true_embeddings = embeddings[:, :, :-self.auxiliary_size]
+            aux_embeddings = embeddings[:, :, -self.auxiliary_size:]
+            true_embeddings_l2 = tf.reduce_sum(tf.square(true_embeddings), axis=-1)
+            aux_embeddings_l2 = tf.reduce_sum(tf.square(aux_embeddings), axis=-1)
+            true_squared_diffs_batch = tf.reduce_sum(tf.square(tf.expand_dims(true_embeddings, 2) - tf.expand_dims(batch_sources, 1)), -1)
+            true_squared_diffs_known = tf.reduce_sum(tf.square(tf.expand_dims(true_embeddings, 2) - tf.expand_dims(tf.expand_dims(tf.boolean_mask(self.speaker_vectors, known_sources), 0), 0)), -1)
+            true_squared_diffs_current = tf.reduce_sum(tf.square(tf.expand_dims(true_embeddings, 2) - tf.expand_dims(tf.expand_dims(tf.boolean_mask(self.speaker_vectors, current_sources), 0), 0)), -1)
+            aux_squared_diffs = tf.reduce_sum(tf.square(tf.expand_dims(aux_embeddings, 2) - tf.expand_dims(tf.expand_dims(self.auxiliary_vectors, 0), 0)), -1)
+            diffs_pow_matrix_batch = tf.pow(true_squared_diffs_batch + tf.expand_dims(aux_embeddings_l2, -1), 1./(m - 1.))
+            diffs_pow_matrix_known = tf.concat([tf.pow(true_squared_diffs_known + tf.expand_dims(aux_embeddings_l2, -1), 1./(m - 1.)),
+                                                    tf.pow(aux_squared_diffs + tf.expand_dims(true_embeddings_l2, -1), 1./(m - 1.))], axis=2)
+            diffs_pow_matrix_current = tf.concat([tf.pow(true_squared_diffs_current + tf.expand_dims(aux_embeddings_l2, -1), 1./(m - 1.)),
+                                                      tf.pow(aux_squared_diffs + tf.expand_dims(true_embeddings_l2, -1), 1./(m - 1.))], axis=2)
+               
+            
+        W = tf.reciprocal(diffs_pow_matrix_current*tf.expand_dims(tf.reduce_sum(tf.reciprocal(diffs_pow_matrix_known), -1), -1), name='W')
+        clustering_factors = tf.squeeze(tf.reciprocal(diffs_pow_matrix_batch*tf.expand_dims(tf.reduce_sum(tf.reciprocal(diffs_pow_matrix_known), -1), -1)), name='clustering_factors', axis=-1)
+
 
         # MI head
         # Feedforward layer
@@ -212,8 +288,12 @@ class RatioMaskCluster(ModelBase):
                               [1, 1, self.embedding_size, self.num_reco_sources])
         # perform a softmax along the source dimension
         mi_head = tf.nn.softmax(feedforward_fc, dim=3)
-
-        return embedding, mi_head
+        
+        if self.auxiliary_vectors is None:
+            return embedding, mi_head, W, squared_diffs_current
+        else:
+            return embedding, mi_head, W[:, :, :-self.auxiliary_size], true_squared_diffs_current + tf.expand_dims(aux_embeddings_l2, -1)
+        
 
     @tf_utils.scope_decorator
     def cost(self):
@@ -225,45 +305,14 @@ class RatioMaskCluster(ModelBase):
         # Get the shape of the input
         shape = tf.shape(self.y)
 
-        sce_output, mi_output = self.network
+        cluster_output, mi_output, W, squared_diffs = self.network
 
-        # Reshape I so that it is of the correct dimension
-        I = tf.expand_dims( self.I, axis=2 )
-
-        # Normalize the speaker vectors and collect the speaker vectors
-        # correspinding to the speakers in batch
-        if self.normalize:
-            speaker_vectors = tf.nn.l2_normalize(self.speaker_vectors, 1)
-        else:
-            speaker_vectors = self.speaker_vectors
-        Vspeakers = tf.gather_nd(speaker_vectors, I)
-
-        # Expand the dimensions in preparation for broadcasting
-        Vspeakers_broad = tf.expand_dims(Vspeakers, 1)
-        Vspeakers_broad = tf.expand_dims(Vspeakers_broad, 1)
-        embedding_broad = tf.expand_dims(sce_output, 3)
-
-        # Compute the dot product between the emebedding vectors and speaker
-        # vectors
-        dot = tf.reduce_sum(Vspeakers_broad * embedding_broad, 4)
-
-        # Compute the cost for every element
-        sce_cost = -tf.log(tf.nn.sigmoid(self.y * dot))
-
-        # Average the cost over all speakers in the input
-        sce_cost = tf.reduce_mean(sce_cost, 3)
-
-        # Average the cost over all batches
-        sce_cost = tf.reduce_mean(sce_cost, 0)
-
-        # Average the cost over all T-F elements.  Here is where weighting to
-        # account for gradient confidence can occur
-        sce_cost = tf.reduce_mean(sce_cost)
+        clustering_loss = tf.reduce_mean(tf.pow(W, self.fuzzifier)*squared_diffs)
 
         # broadcast product along source dimension
         mi_cost = tf.square(self.y_clean - mi_output*tf.expand_dims(self.X_clean, -1))
 
-        return self.alpha*sce_cost + (1.0 - self.alpha)*tf.reduce_mean(mi_cost)
+        return self.alpha*clustering_loss + (1.0 - self.alpha)*tf.reduce_mean(mi_cost)
 
     @tf_utils.scope_decorator
     def optimizer(self):

@@ -103,26 +103,28 @@ def evaluate(input_path, output_csv_file, target_stype=None, eval_sr=8000, num_s
 
 if __name__ == '__main__':
     args = [
-        #['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/lab41/in_sample_test',
-        # '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/lab41/in_sample_test.csv'],
-        #['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/lab41/out_of_sample_test',
-        # '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/lab41/out_of_sample_test.csv'],
-        #['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/large_lab41/in_sample_test',
-        # '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/large_lab41/in_sample_test.csv'],
-        #['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/large_lab41/out_of_sample_test',
-        # '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/large_lab41/out_of_sample_test.csv'],
-        #['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/chimera/in_sample_test',
-        # '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/mi_in_sample_test.csv',
-        # 'mi'],
-        #['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/chimera/out_of_sample_test',
-        # '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/mi_out_of_sample_test.csv',
-        # 'mi'],
-        #['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/chimera/in_sample_test',
-        # '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/dc_in_sample_test.csv',
-        # 'dc'],
-        #['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/chimera/out_of_sample_test',
-        # '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/dc_out_of_sample_test.csv',
-        # 'dc'],
+        ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/lab41/in_sample_test',
+         '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/lab41/in_sample_test.csv'],
+        ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/lab41/out_of_sample_test',
+         '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/lab41/out_of_sample_test.csv'],
+        
+        ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/large_lab41/in_sample_test',
+         '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/large_lab41/in_sample_test.csv'],
+        ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/large_lab41/out_of_sample_test',
+         '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/large_lab41/out_of_sample_test.csv'],
+        
+        ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/chimera/in_sample_test',
+         '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/mi_in_sample_test.csv',
+         'mi'],
+        ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/chimera/out_of_sample_test',
+         '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/mi_out_of_sample_test.csv',
+         'mi'],
+        ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/chimera/in_sample_test',
+         '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/dc_in_sample_test.csv',
+         'dc'],
+        ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/chimera/out_of_sample_test',
+         '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/dc_out_of_sample_test.csv',
+         'dc'],
         
         ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/mask_sce/in_sample_test',
          '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/mi_in_sample_test.csv',
@@ -137,13 +139,13 @@ if __name__ == '__main__':
          '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/mask_sce/dc_out_of_sample_test.csv',
          'dc'],
         
-        #['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/snmf/in_sample_test',
-        # '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/snmf/in_sample_test.csv'],
-        #['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/snmf/out_of_sample_test',
-        # '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/snmf/out_of_sample_test.csv']
+        ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/snmf/in_sample_test',
+         '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/snmf/in_sample_test.csv'],
+        ['/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/snmf/out_of_sample_test',
+         '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/snmf/out_of_sample_test.csv']
     ]
     
-    args = args[8:]
+    args = args[8:12]
     
     # Parallel
     #processes = []
@@ -156,9 +158,9 @@ if __name__ == '__main__':
     
     # Parallel
     #pool = mp.Pool(processes=min(len(args), os.cpu_count() - 1))
-    pool = mp.Pool(processes=2)
-    pool.starmap(evaluate, args)
+    #pool = mp.Pool(processes=2)
+    #pool.starmap(evaluate, args)
     
     # Sequential
-    #for arg in args:
-    #    evaluate(*arg)
+    for arg in args:
+        evaluate(*arg)
