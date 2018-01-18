@@ -3,6 +3,7 @@ from .dnndenoise.chimera import Chimera
 from .dnndenoise.L41_regression_model import L41RegressionModel
 from .dnndenoise.sce_mask import RatioMaskSCE
 from .dnndenoise.cluster_mask import RatioMaskCluster
+from .dnndenoise.cluster_mask import RatioMaskClusterUnified
 
 __all__ = [
     "JFLEC",
@@ -10,6 +11,7 @@ __all__ = [
     "L41RegressionModel",
     "RatioMaskSCE",
     "RatioMaskCluster",
+    "RatioMaskClusterUnified",
 ]
 
 def make_model(model_name, config):
