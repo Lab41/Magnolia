@@ -218,22 +218,6 @@ class RatioMaskClusterUnified(ModelBase):
                        [shape[0], shape[1], self.F, self.embedding_size])
 
         # indices helpers for fuzzy c-means
-        #known_sources_init = np.zeros(self.num_training_sources)
-        # known_sources = tf.get_variable('known_sources',
-        #                                dtype=tf.bool, trainable=False,
-        #                                initializer=tf.constant(known_sources_init, dtype=tf.bool))
-        #current_sources_indices, _ = tf.unique(tf.reshape(self.I, shape=[shapeI[0]*shapeI[1]]))
-
-        # known_sources = tf.scatter_update(known_sources, current_sources_indices,
-        #                                  tf.fill(tf.shape(current_sources_indices), True))
-
-        # current_sources = tf.cast(tf.scatter_nd(tf.expand_dims(current_sources_indices, -1),
-        #                                        tf.ones_like(current_sources_indices, dtype=tf.int32),
-        #                                            [self.num_training_sources]),
-        #                          dtype=tf.bool)
-
-        #batch_sources = tf.reshape(tf.gather(self.speaker_vectors, tf.reshape(self.I, shape=[shapeI[0]*shapeI[1]])), shape=[shapeI[0], shapeI[1], self.embedding_size])
-
         flattened_I = tf.reshape(self.I, shape=[shapeI[0] * shapeI[1]])
         batch_range = tf.range(shape[0] * shapeI[1])
 
@@ -257,13 +241,15 @@ class RatioMaskClusterUnified(ModelBase):
                                 [shape[0], shape[1] * self.F, self.embedding_size])
 
         # compute fuzzy assignments
-        # batch, nfeatures, nsources
+        # batch, nsource in mix, nfeatures
         if self.auxiliary_vectors is None:
+            # batch, nsource in mix, nfeatures
             squared_diffs_batch = tf.reduce_sum(tf.square(tf.expand_dims(embeddings, 1) -
                                                           tf.reshape(tf.expand_dims(tf.gather(self.speaker_vectors, flattened_I),  1),
                                                                      [shape[0], shapeI[1], 1, self.embedding_size])),
                                                 -1)
             diffs_pow_matrix_batch = tf.pow(squared_diffs_batch, 1. / (m - 1.))
+            # batch, 1, nfeatures
             W_denom = tf.expand_dims(tf.reduce_sum(tf.reciprocal(diffs_pow_matrix_batch), 1), 1)
         else:
             # NOTE: true/aux refers to both the coordinates and cluster centers
@@ -273,16 +259,30 @@ class RatioMaskClusterUnified(ModelBase):
                 tf.square(true_embeddings), axis=-1)
             aux_embeddings_l2 = tf.reduce_sum(
                 tf.square(aux_embeddings), axis=-1)
+            # batch, nsource in mix, nfeatures
             true_squared_diffs_batch = tf.reduce_sum(tf.square(tf.expand_dims(true_embeddings, 1) -
                                                                tf.reshape(tf.expand_dims(tf.gather(self.speaker_vectors, flattened_I),  1),
                                                                           [shape[0], shapeI[1], 1, self.embedding_size])),
                                                      -1)
-            diffs_pow_matrix_batch = tf.pow(
-                true_squared_diffs_batch + tf.expand_dims(aux_embeddings_l2, 1), 1. / (m - 1.))
+            squared_diffs_batch = true_squared_diffs_batch + tf.expand_dims(aux_embeddings_l2, 1)
+            diffs_pow_matrix_batch = tf.pow(squared_diffs_batch, 1. / (m - 1.))
+            # batch, nfeatures, nsources (aux)
+            aux_squared_diffs = tf.reduce_sum(tf.square(tf.expand_dims(
+                aux_embeddings, 2) - tf.expand_dims(tf.expand_dims(self.auxiliary_vectors, 0), 0)), -1)
+            aux_diffs_pow_matrix = tf.pow(aux_squared_diffs + tf.expand_dims(true_embeddings_l2, -1), 1. / (m - 1.))
 
-            W_denom = tf.expand_dims(tf.reduce_sum(tf.reciprocal(diffs_pow_matrix_batch), -1), 1)
+            W_denom = tf.reduce_sum(tf.reciprocal(
+                tf.concat([
+                    tf.transpose(diffs_pow_matrix_batch, perm=[0, 2, 1]),
+                    aux_diffs_pow_matrix
+                ], axis=2)
+            ), -1)
+            # batch, 1, nfeatures
+            W_denom = tf.expand_dims(W_denom, 1)
 
+        # batch, nsource in mix, nfeatures
         W = tf.reciprocal(diffs_pow_matrix_batch * W_denom, name='W')
+        # batch, nfeatures, nsource in mix
         clustering_factors = tf.transpose(W, perm=[0, 2, 1])
 
         # MI head
