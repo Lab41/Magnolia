@@ -40,10 +40,10 @@ def main():
     stop_threshold = 10000
     # validate every number of these batches
     validate_every = 100
-    train_batchsize = 8
+    train_batchsize = 512
     train_mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_train.json']
     train_from_disk = False
-    validate_batchsize = 5
+    validate_batchsize = 500
     validate_mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_validate.json']
     validate_from_disk = False
     model_params = {

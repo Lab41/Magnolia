@@ -18,7 +18,8 @@ from magnolia.utils.training import preprocess_chimera_batch
 
 def main():
     # parse command line arguments
-    parser = argparse.ArgumentParser(description='Train the k-means clustering + ratio mask network.')
+    parser = argparse.ArgumentParser(
+        description='Train the k-means clustering + ratio mask network.')
     # parser.add_argument('--model_settings', '-s',
     #                     default='../../../../data/models_settings/chimera_template.json',
     #                     help='model settings JSON file')
@@ -35,22 +36,24 @@ def main():
     logger = logging.getLogger('model')
 
     # Number of epochs
-    num_epochs = 20 # try 20
+    num_epochs = 20  # try 20
     # Threshold for stopping if the model hasn't improved for this many consecutive batches
     stop_threshold = 10000
     # validate every number of these batches
     validate_every = 100
-    train_batchsize = 8
-    train_mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_train.json']
+    train_batchsize = 512
+    train_mixes = [
+        '/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_train.json']
     train_from_disk = False
-    validate_batchsize = 5
-    validate_mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_validate.json']
+    validate_batchsize = 500
+    validate_mixes = [
+        '/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_validate.json']
     validate_from_disk = False
     model_params = {
         'layer_size': 500,
         'embedding_size': 10,
         'auxiliary_size': 0,
-        'alpha': 0.1, # try 0.9
+        'alpha': 0.1,  # try 0.9
         'nonlinearity': 'tf.tanh',
         'fuzzifier': 2,
         'num_reco_sources': 2,
@@ -60,7 +63,6 @@ def main():
     model_location = '/gpu:0'
     uid_settings = '/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/assign_uids_LibriSpeech_UrbanSound8K.json'
     model_save_base = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/model_saves/mask_cluster'
-
 
     training_mixer = MixIterator(mixes_settings_filenames=train_mixes,
                                  batch_size=train_batchsize,
