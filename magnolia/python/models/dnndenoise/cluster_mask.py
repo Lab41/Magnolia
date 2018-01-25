@@ -81,6 +81,7 @@ class RatioMaskCluster(ModelBase):
 
                 # Model methods
                 self.network
+                # TODO: COMMENT BACK IN!!!
                 self.clustering_cost
                 self.mi_cost
                 self.cost
@@ -215,11 +216,11 @@ class RatioMaskCluster(ModelBase):
 
         # Feedforward layer
         feedforward = tf_utils.conv1d_layer(BLSTM_4,
-                                            [1, self.layer_size, self.embedding_size * self.F])
+                                            [1, self.layer_size, (self.embedding_size + self.auxiliary_size) * self.F])
 
         # Reshape the feedforward output to have shape (T,F,D)
         z = tf.reshape(feedforward,
-                       [shape[0], shape[1], self.F, self.embedding_size])
+                       [shape[0], shape[1], self.F, self.embedding_size + self.auxiliary_size])
 
         # indices helpers for fuzzy c-means
         #known_sources_init = np.zeros(self.num_training_sources)
@@ -258,7 +259,7 @@ class RatioMaskCluster(ModelBase):
 
         # batch, features, embedding
         embeddings = tf.reshape(embedding,
-                                [shape[0], shape[1] * self.F, self.embedding_size])
+                                [shape[0], shape[1] * self.F, self.embedding_size + self.auxiliary_size])
 
         # compute fuzzy assignments
         # batch, nfeatures, nsources
@@ -405,7 +406,7 @@ class RatioMaskCluster(ModelBase):
             tf.pow(W, self.fuzzifier) * squared_diffs)
 
         return clustering_loss
-    
+
     @tf_utils.scope_decorator
     def mi_cost(self):
         """
@@ -419,14 +420,25 @@ class RatioMaskCluster(ModelBase):
                             tf.expand_dims(self.X_clean, -1))
 
         return mi_cost
-    
+
     @tf_utils.scope_decorator
     def cost(self):
         """
         Constuct the cost function op for the cost function used for clustering
         and the mask inference head
         """
-        
+
+        # # TODO: REMOVE!!!
+        # cluster_output, mi_output, W, squared_diffs = self.network
+
+        # clustering_loss = tf.reduce_mean(
+        #     tf.pow(W, self.fuzzifier) * squared_diffs)
+
+        # # broadcast product along source dimension
+        # mi_loss = tf.square(self.y_clean - mi_output *
+        #                     tf.expand_dims(self.X_clean, -1))
+
+        # TODO: COMMENT BACK IN!!!
         clustering_loss = self.clustering_cost
         mi_loss = self.mi_cost
 
@@ -470,14 +482,14 @@ class RatioMaskCluster(ModelBase):
         """
         Compute the masks for the input spectrograms
         """
-        
+
         nspectrograms = len(X_in)
         #I = np.arange(nspectrograms * nsources, dtype=np.int32).reshape(nspectrograms, nsources)
         I = np.tile(np.arange(nsources, dtype=np.int32), reps=(nspectrograms, 1))
-        
+
         opt = tf.train.AdamOptimizer()
         clustering_minimize = opt.minimize(self.clustering_cost, var_list=[self.speaker_vectors])
-        
+
         previous_cost = np.finfo('float').max
         iterations_count = 0
         for i in range(nclustering_iterations_max):
@@ -489,19 +501,23 @@ class RatioMaskCluster(ModelBase):
                 previous_cost = cost
             else:
                 iterations_count += 1
-            
+
             if iterations_count >= iterations_stop:
                 break
 
         masks = self.sess.run(self.network, {self.X: X_in, self.I: I})[1]
         return masks
 
-    def get_vectors(self, X_in):
+    def get_vectors(self, X_in, nsources=2):
         """
         Compute the embedding vectors for the input spectrograms
         """
 
-        vectors = self.sess.run(self.network, {self.X: X_in})[0]
+        nspectrograms = len(X_in)
+        #I = np.arange(nspectrograms * nsources, dtype=np.int32).reshape(nspectrograms, nsources)
+        I = np.tile(np.arange(nsources, dtype=np.int32), reps=(nspectrograms, 1))
+
+        vectors = self.sess.run(self.network, {self.X: X_in, self.I: I})[0]
         return vectors
 
     def get_cost(self, X_in, X_clean_in, y_in, y_clean_in, I_in):

@@ -81,6 +81,8 @@ class RatioMaskClusterUnified(ModelBase):
 
                 # Model methods
                 self.network
+                self.clustering_cost
+                self.mi_cost
                 self.cost
                 self.optimizer
 
@@ -211,11 +213,11 @@ class RatioMaskClusterUnified(ModelBase):
 
         # Feedforward layer
         feedforward = tf_utils.conv1d_layer(BLSTM_4,
-                                            [1, self.layer_size, self.embedding_size * self.F])
+                                            [1, self.layer_size, (self.embedding_size + self.auxiliary_size) * self.F])
 
         # Reshape the feedforward output to have shape (T,F,D)
         z = tf.reshape(feedforward,
-                       [shape[0], shape[1], self.F, self.embedding_size])
+                       [shape[0], shape[1], self.F, self.embedding_size + self.auxiliary_size])
 
         # indices helpers for fuzzy c-means
         flattened_I = tf.reshape(self.I, shape=[shapeI[0] * shapeI[1]])
@@ -238,7 +240,7 @@ class RatioMaskClusterUnified(ModelBase):
 
         # batch, all features, embedding
         embeddings = tf.reshape(embedding,
-                                [shape[0], shape[1] * self.F, self.embedding_size])
+                                [shape[0], shape[1] * self.F, self.embedding_size + self.auxiliary_size])
 
         # compute fuzzy assignments
         # batch, nsource in mix, nfeatures
@@ -299,6 +301,33 @@ class RatioMaskClusterUnified(ModelBase):
         return embedding, mi_head
 
     @tf_utils.scope_decorator
+    def clustering_cost(self):
+        """
+        Constuct the cost function op for the cost function used for clustering
+        """
+
+        cluster_output, mi_output, W, squared_diffs = self.network
+
+        clustering_loss = tf.reduce_mean(
+            tf.pow(W, self.fuzzifier) * squared_diffs)
+
+        return clustering_loss
+
+    @tf_utils.scope_decorator
+    def mi_cost(self):
+        """
+        Constuct the cost function op for the cost function used for mask inference head
+        """
+
+        cluster_output, mi_output, W, squared_diffs = self.network
+
+        # broadcast product along source dimension
+        mi_cost = tf.square(self.y_clean - mi_output *
+                            tf.expand_dims(self.X_clean, -1))
+
+        return mi_cost
+
+    @tf_utils.scope_decorator
     def cost(self):
         """
         Constuct the cost function op for the cost function used in sce
@@ -355,14 +384,14 @@ class RatioMaskClusterUnified(ModelBase):
         """
         Compute the masks for the input spectrograms
         """
-        
+
         nspectrograms = len(X_in)
         #I = np.arange(nspectrograms * nsources, dtype=np.int32).reshape(nspectrograms, nsources)
         I = np.tile(np.arange(nsources, dtype=np.int32), reps=(nspectrograms, 1))
-        
+
         opt = tf.train.AdamOptimizer()
         clustering_minimize = opt.minimize(self.clustering_cost, var_list=[self.speaker_vectors])
-        
+
         previous_cost = np.finfo('float').max
         iterations_count = 0
         for i in range(nclustering_iterations_max):
@@ -374,7 +403,7 @@ class RatioMaskClusterUnified(ModelBase):
                 previous_cost = cost
             else:
                 iterations_count += 1
-            
+
             if iterations_count >= iterations_stop:
                 break
 

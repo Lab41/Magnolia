@@ -10,7 +10,7 @@ import pandas as pd
 import librosa as lr
 import tqdm
 
-# Import the RatioMaskSCE separation model
+# Import the RatioMaskCluster separation model
 from magnolia.models import make_model
 
 # Import utilities for using the model
@@ -27,7 +27,7 @@ def standardize_waveform(y):
 
 def main():
     # parse command line arguments
-    parser = argparse.ArgumentParser(description='Denoise mixed samples using the RatioMaskSCE network.')
+    parser = argparse.ArgumentParser(description='Denoise mixed samples using the RatioMaskCluster network.')
     # parser.add_argument('--model_settings', '-s',
     #                     default='../../../../data/models_settings/chimera_template.json',
     #                     help='model settings JSON file')
@@ -47,22 +47,24 @@ def main():
     model_params = {
         'layer_size': 500,
         'embedding_size': 10,
-        'alpha': 0.9, # try 0.9
+        'auxiliary_size': 0,
+        'alpha': 0.1,  # try 0.9
         'nonlinearity': 'tf.tanh',
+        'fuzzifier': 2,
         'num_reco_sources': 2,
         'normalize': False,
         'collapse_sources': False,
     }
     uid_settings = '/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/assign_uids_LibriSpeech_UrbanSound8K.json'
-    model_save_base = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/model_saves/mask_sce'
+    model_save_base = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/model_saves/mask_cluster'
 
     model_location = '/cpu:0'
     model_settings = ''
     mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_test_in_sample.json']
     # mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_test_out_of_sample.json']
     from_disk = True
-    output_path = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/mask_sce/in_sample_test'
-    # output_path = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/mask_sce/out_of_sample_test'
+    output_path = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/mask_cluster/in_sample_test'
+    # output_path = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/mask_cluster/out_of_sample_test'
     eval_sr = 8000
 
     mixer = MixIterator(mixes_settings_filenames=mixes,
@@ -83,7 +85,7 @@ def main():
     model_params['num_training_sources'] = number_of_sources
     config = {'model_params': model_params,
               'device': model_location}
-    model = make_model('RatioMaskSCE', config)
+    model = make_model('RatioMaskCluster', config)
 
     model.load(model_save_base)
 

@@ -8,14 +8,14 @@ import numpy as np
 import pandas as pd
 import librosa as lr
 
-# Import the RatioMaskSCE separation model
+# Import the RatioMaskCluster separation model
 from magnolia.models import make_model
 
 # Import utilities for using the model
 from magnolia.utils.postprocessing import convert_preprocessing_parameters
 from magnolia.preprocessing.preprocessing import undo_preprocessing
 from magnolia.training.data_iteration.mix_iterator import MixIterator
-from magnolia.utils.clustering_utils import chimera_clustering_separate, chimera_mask
+from magnolia.utils.clustering_utils import mask_cluster_clustering_separate, mask_cluster_mask
 
 
 def standardize_waveform(y):
@@ -24,7 +24,7 @@ def standardize_waveform(y):
 
 def main():
     # parse command line arguments
-    parser = argparse.ArgumentParser(description='Denoise mixed sample using the RatioMaskSCE network.')
+    parser = argparse.ArgumentParser(description='Denoise mixed sample using the RatioMaskCluster network.')
     # parser.add_argument('--model_settings', '-s',
     #                     default='../../../../data/models_settings/chimera_template.json',
     #                     help='model settings JSON file')
@@ -44,21 +44,23 @@ def main():
     model_params = {
         'layer_size': 500,
         'embedding_size': 10,
-        'alpha': 0.9, # try 0.9
+        'auxiliary_size': 0,
+        'alpha': 0.1,  # try 0.9
         'nonlinearity': 'tf.tanh',
+        'fuzzifier': 2,
         'num_reco_sources': 2,
         'normalize': False,
         'collapse_sources': False,
     }
     uid_settings = '/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/assign_uids_LibriSpeech_UrbanSound8K.json'
-    model_save_base = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/model_saves/mask_sce'
+    model_save_base = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/model_saves/mask_cluster'
 
     model_location = '/cpu:0'
     model_settings = ''
     mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_test_in_sample.json']
     from_disk = True
     mix_number = 1010
-    output_path = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/sample_wav_files/mask_sce'
+    output_path = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/sample_wav_files/mask_cluster'
 
 
     os.makedirs(output_path, exist_ok=True)
@@ -81,7 +83,7 @@ def main():
     model_params['num_training_sources'] = number_of_sources
     config = {'model_params': model_params,
               'device': model_location}
-    model = make_model('RatioMaskSCE', config)
+    model = make_model('RatioMaskCluster', config)
 
     model.load(model_save_base)
 
@@ -134,7 +136,7 @@ def main():
         # print('Sample for source {}'.format(i + 1))
         lr.output.write_wav(os.path.join(output_path, 'mix_{}_original_source_{}.wav'.format(mix_number, i + 1)), y, mixer.sample_rate(), norm=True)
 
-    source_specs = chimera_clustering_separate(model_spec, model, mixer.number_of_samples_in_mixes())
+    source_specs = mask_cluster_clustering_separate(model_spec, model, mixer.number_of_samples_in_mixes())
 
     for i, source_spec in enumerate(source_specs):
         y = undo_preprocessing(source_spec, mixer.sample_length_in_bits(),
@@ -149,7 +151,7 @@ def main():
         # print('Separated sample for source {}'.format(i + 1))
         lr.output.write_wav(os.path.join(output_path, 'mix_{}_dc_separated_{}.wav'.format(mix_number, i + 1)), y, mixer.sample_rate(), norm=True)
 
-    source_specs = chimera_mask(model_spec, model)[0]
+    source_specs = mask_cluster_mask(model_spec, model, mixer.number_of_samples_in_mixes())[0]
 
     for i in range(source_specs.shape[2]):
         source_spec = source_specs[:, :, i]
