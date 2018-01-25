@@ -351,12 +351,34 @@ class RatioMaskClusterUnified(ModelBase):
 
         return cost
 
-    def get_masks(self, X_in):
+    def get_masks(self, X_in, nsources=2, nclustering_iterations_max=500, iterations_stop=10):
         """
         Compute the masks for the input spectrograms
         """
+        
+        nspectrograms = len(X_in)
+        #I = np.arange(nspectrograms * nsources, dtype=np.int32).reshape(nspectrograms, nsources)
+        I = np.tile(np.arange(nsources, dtype=np.int32), reps=(nspectrograms, 1))
+        
+        opt = tf.train.AdamOptimizer()
+        clustering_minimize = opt.minimize(self.clustering_cost, var_list=[self.speaker_vectors])
+        
+        previous_cost = np.finfo('float').max
+        iterations_count = 0
+        for i in range(nclustering_iterations_max):
+            cost, _ = self.sess.run([self.clustering_cost,
+                                     clustering_minimize],
+                                    {self.X: X_in,
+                                     self.I: I})
+            if cost < previous_cost:
+                previous_cost = cost
+            else:
+                iterations_count += 1
+            
+            if iterations_count >= iterations_stop:
+                break
 
-        masks = self.sess.run(self.network, {self.X: X_in})[1]
+        masks = self.sess.run(self.network, {self.X: X_in, self.I: I})[1]
         return masks
 
     def get_vectors(self, X_in):

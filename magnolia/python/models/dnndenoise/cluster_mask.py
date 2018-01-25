@@ -81,6 +81,8 @@ class RatioMaskCluster(ModelBase):
 
                 # Model methods
                 self.network
+                self.clustering_cost
+                self.mi_cost
                 self.cost
                 self.optimizer
 
@@ -392,25 +394,43 @@ class RatioMaskCluster(ModelBase):
         #    return embedding, mi_head, W, true_squared_diffs_batch + aux_embeddings_l2
 
     @tf_utils.scope_decorator
-    def cost(self):
+    def clustering_cost(self):
         """
-        Constuct the cost function op for the cost function used in sce
-        and the mask inference head
+        Constuct the cost function op for the cost function used for clustering
         """
-
-        # Get the shape of the input
-        shape = tf.shape(self.y)
 
         cluster_output, mi_output, W, squared_diffs = self.network
 
         clustering_loss = tf.reduce_mean(
             tf.pow(W, self.fuzzifier) * squared_diffs)
 
+        return clustering_loss
+    
+    @tf_utils.scope_decorator
+    def mi_cost(self):
+        """
+        Constuct the cost function op for the cost function used for mask inference head
+        """
+
+        cluster_output, mi_output, W, squared_diffs = self.network
+
         # broadcast product along source dimension
         mi_cost = tf.square(self.y_clean - mi_output *
                             tf.expand_dims(self.X_clean, -1))
 
-        return self.alpha * clustering_loss + (1.0 - self.alpha) * tf.reduce_mean(mi_cost)
+        return mi_cost
+    
+    @tf_utils.scope_decorator
+    def cost(self):
+        """
+        Constuct the cost function op for the cost function used for clustering
+        and the mask inference head
+        """
+        
+        clustering_loss = self.clustering_cost
+        mi_loss = self.mi_cost
+
+        return self.alpha * clustering_loss + (1.0 - self.alpha) * tf.reduce_mean(mi_loss)
 
     @tf_utils.scope_decorator
     def optimizer(self):
@@ -446,12 +466,34 @@ class RatioMaskCluster(ModelBase):
 
         return cost
 
-    def get_masks(self, X_in):
+    def get_masks(self, X_in, nsources=2, nclustering_iterations_max=500, iterations_stop=10):
         """
         Compute the masks for the input spectrograms
         """
+        
+        nspectrograms = len(X_in)
+        #I = np.arange(nspectrograms * nsources, dtype=np.int32).reshape(nspectrograms, nsources)
+        I = np.tile(np.arange(nsources, dtype=np.int32), reps=(nspectrograms, 1))
+        
+        opt = tf.train.AdamOptimizer()
+        clustering_minimize = opt.minimize(self.clustering_cost, var_list=[self.speaker_vectors])
+        
+        previous_cost = np.finfo('float').max
+        iterations_count = 0
+        for i in range(nclustering_iterations_max):
+            cost, _ = self.sess.run([self.clustering_cost,
+                                     clustering_minimize],
+                                    {self.X: X_in,
+                                     self.I: I})
+            if cost < previous_cost:
+                previous_cost = cost
+            else:
+                iterations_count += 1
+            
+            if iterations_count >= iterations_stop:
+                break
 
-        masks = self.sess.run(self.network, {self.X: X_in})[1]
+        masks = self.sess.run(self.network, {self.X: X_in, self.I: I})[1]
         return masks
 
     def get_vectors(self, X_in):
