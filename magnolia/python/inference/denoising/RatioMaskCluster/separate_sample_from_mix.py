@@ -59,7 +59,7 @@ def main():
     model_settings = ''
     mixes = ['/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/mixing_LibriSpeech_UrbanSound8K_test_in_sample.json']
     from_disk = True
-    mix_number = 1010
+    mix_number = 1
     output_path = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/sample_wav_files/mask_cluster'
 
 

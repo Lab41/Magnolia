@@ -478,34 +478,27 @@ class RatioMaskCluster(ModelBase):
 
         return cost
 
-    def get_masks(self, X_in, nsources=2, nclustering_iterations_max=500, iterations_stop=10):
+    #def get_masks(self, X_in, nsources=2, nclustering_iterations_max=500, iterations_stop=10):
+    def get_masks(self, X_in, cluster_centers, nclustering_iterations_max=500, iterations_stop=10):
         """
         Compute the masks for the input spectrograms
         """
 
         nspectrograms = len(X_in)
-        #I = np.arange(nspectrograms * nsources, dtype=np.int32).reshape(nspectrograms, nsources)
-        I = np.tile(np.arange(nsources, dtype=np.int32), reps=(nspectrograms, 1))
-
-        opt = tf.train.AdamOptimizer()
-        clustering_minimize = opt.minimize(self.clustering_cost, var_list=[self.speaker_vectors])
-
-        previous_cost = np.finfo('float').max
-        iterations_count = 0
-        for i in range(nclustering_iterations_max):
-            cost, _ = self.sess.run([self.clustering_cost,
-                                     clustering_minimize],
-                                    {self.X: X_in,
-                                     self.I: I})
-            if cost < previous_cost:
-                previous_cost = cost
-            else:
-                iterations_count += 1
-
-            if iterations_count >= iterations_stop:
-                break
-
+        
+        num_sources = len(cluster_centers)
+        cluster_centers_init = np.zeros((self.num_training_sources, self.embedding_size))
+        cluster_centers_init[:num_sources] = cluster_centers
+        
+        #I = np.arange(nspectrograms * num_sources, dtype=np.int32).reshape(nspectrograms, num_sources)
+        I = np.tile(np.arange(num_sources, dtype=np.int32), reps=(nspectrograms, 1))
+        
+        with self.graph.as_default():
+            assign_cc = self.speaker_vectors.assign(cluster_centers_init)
+        
+        self.sess.run(assign_cc, {self.X: X_in, self.I: I})
         masks = self.sess.run(self.network, {self.X: X_in, self.I: I})[1]
+        
         return masks
 
     def get_vectors(self, X_in, nsources=2):

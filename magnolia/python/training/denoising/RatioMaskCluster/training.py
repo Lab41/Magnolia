@@ -53,16 +53,16 @@ def main():
         'layer_size': 500,
         'embedding_size': 10,
         'auxiliary_size': 0,
-        'alpha': 0.1,  # try 0.9
+        'alpha': 0.9,  # try 0.9
         'nonlinearity': 'tf.tanh',
-        'fuzzifier': 2,
+        'fuzzifier': 1.2,
         'num_reco_sources': 2,
         'normalize': False,
         'collapse_sources': False,
     }
     model_location = '/gpu:0'
     uid_settings = '/local_data/magnolia/pipeline_data/date_2017_09_27_time_13_25/settings/assign_uids_LibriSpeech_UrbanSound8K.json'
-    model_save_base = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/model_saves/mask_cluster'
+    model_save_base = '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/model_saves/mask_cluster_tight_alpha0.99'
 
     training_mixer = MixIterator(mixes_settings_filenames=train_mixes,
                                  batch_size=train_batchsize,

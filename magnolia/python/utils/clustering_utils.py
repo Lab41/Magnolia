@@ -127,7 +127,7 @@ def get_cluster_masks(vectors, num_sources, binary_mask=True, algo=None):
 
     else:
         # Do clustering
-        algo.fit(vectors[0].reshape((shape[1]*shape[2],shape[3])))
+        algo.fit(vectors[0].reshape((shape[1]*shape[2], shape[3])))
 
         if binary_mask:
             # Use cluster IDs to construct masks
@@ -402,37 +402,32 @@ def mask_cluster_clustering_separate(spec, model, num_sources,
 
 def mask_cluster_mask(spec, model, num_sources, **kwd_args):
     model_spec = preprocess_chimera_batch(spec)[1]
-    # TODO: COMMENT BACK IN!!!
-    soft_masks = model.get_masks(model_spec, num_sources, **kwd_args)
+    
+    # # TODO: COMMENT BACK IN!!!
+    # soft_masks = model.get_masks(model_spec, num_sources, **kwd_args)
 
+    # masked_specs = soft_masks*np.expand_dims(spec.transpose(0, 2, 1), axis=-1)
+
+    # return masked_specs.transpose(0, 2, 1, 3)
+    
+    # TODO: REMOVE
+    # Get the T-F embedding vectors for this signal from the model
+    vectors = model.get_vectors(model_spec)
+
+    # Clustering algo
+    clusterer = KMeans(n_clusters=num_sources, random_state=0)
+    
+    # Get the shape of the input
+    shape = np.shape(vectors)
+    
+    vectorsr = vectors[0].reshape((shape[1]*shape[2], shape[3]))
+    
+    # Do clustering
+    clusterer.fit(vectorsr)
+    
+    cluster_centers = clusterer.cluster_centers_
+    
+    soft_masks = model.get_masks(model_spec, cluster_centers, **kwd_args)
     masked_specs = soft_masks*np.expand_dims(spec.transpose(0, 2, 1), axis=-1)
-
+    
     return masked_specs.transpose(0, 2, 1, 3)
-    
-    # # TODO: REMOVE
-    # # Get the T-F embedding vectors for this signal from the model
-    # vectors = model.get_vectors(model_spec)
-
-    # # Clustering algo
-    # clusterer = KMeans(n_clusters=num_sources, random_state=0)
-    
-    # # Get the shape of the input
-    # shape = np.shape(vectors)
-    
-    # vectorsr = vectors[0].reshape((shape[1]*shape[2], shape[3]))
-    
-    # # Do clustering
-    # clusterer.fit(vectorsr)
-    
-    # cluster_centers = clusterer.cluster_centers_
-    
-    # squared_diffs_pow = np.power(np.sum(np.square(np.expand_dims(vectorsr, 1) - np.expand_dims(cluster_centers, 0)), -1),
-    #                              1. / (model.fuzzifier - 1.))
-    
-    # W_denom = np.expand_dims(np.sum(np.reciprocal(squared_diffs_pow), -1), -1)
-    
-    # W = np.reciprocal(squared_diffs_pow * W_denom)
-    
-    # clustering_factors = np.reshape(W, (shape[2], shape[1], num_sources)).transpose((1, 0, 2))
-    
-    # return np.expand_dims(model_spec, -1) * np.expand_dims(clustering_factors, 0)
