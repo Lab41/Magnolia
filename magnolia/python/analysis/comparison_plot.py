@@ -20,12 +20,12 @@ def load_dataframes(models):
     for model in models:
         if 'in_set' in model:
             model['in_set_df'] = pd.read_csv(model['in_set'])
-            if model['name'] == 'DAE':
-                format_dae_columns(model['in_set_df'])
+            #if model['name'] == 'DAE':
+            #    format_dae_columns(model['in_set_df'])
         if 'out_of_set' in model:
             model['out_of_set_df'] = pd.read_csv(model['out_of_set'])
-            if model['name'] == 'DAE':
-                format_dae_columns(model['out_of_set_df'])
+            #if model['name'] == 'DAE':
+            #    format_dae_columns(model['out_of_set_df'])
 
 
 def error_on_the_mean(x):
@@ -115,7 +115,7 @@ def make_sdr_delta_versus_noise_source_plot(models, df_base_name):
     ax.xaxis.label.set_size(15)
     ax.yaxis.label.set_size(15)
 
-    ylim = [-0.5, 1.2*ax.get_ylim()[1]]
+    ylim = [-0.5, 1.3*ax.get_ylim()[1]]
     #ylim[0] = -0.5
     ax.set_ylim(ylim)
     #plt.axis([0, 11, -.5, 16])
@@ -197,7 +197,7 @@ def make_sdr_delta_versus_input_snr_plot(models, df_base_name, bins):
     ax.xaxis.label.set_size(15)
     ax.yaxis.label.set_size(15)
 
-    ylim = [-0.5, 1.2*ax.get_ylim()[1]]
+    ylim = [-0.5, 1.3*ax.get_ylim()[1]]
     #ylim[0] = -0.5
     ax.set_ylim(ylim)
     #plt.axis([0, 11, -.5, 16])
@@ -216,11 +216,12 @@ def main():
             'out_of_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/snmf/out_of_sample_test_sdr_summary.csv',
             'color': '#98C1D9'
         },
-        #{
-        #    'name': 'DAE',
-        #    'out_of_set': '/data/fs4/home/pgamble/Magnolia/Denoising/Autoencoder/Final Results/eval_test_A.csv',
-        #    'color': '#E0FBFC'
-        #},
+        {
+            'name': 'DAE',
+            'in_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/dae/ae_in_sample_test.csv',
+            'out_of_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/dae/ae_out_of_sample_test.csv',
+            'color': '#828C51'#'#E0FBFC'
+        },
         {
             'name': 'DC + MI (MI)',
             'in_set': '/local_data/magnolia/experiment_data/date_2017_09_28_time_13_14/aux/evaluations/bss/chimera/mi_in_sample_test_sdr_summary.csv',
