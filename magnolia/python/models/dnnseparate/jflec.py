@@ -9,30 +9,17 @@ from magnolia.utils import tf_utils
 logger = logging.getLogger('model')
 
 
-class Chimera(ModelBase):
+class JFLEC(ModelBase):
     """
-    Chimera network from [1].  Defaults correspond to
-    the parameters used by the best performing model in the paper.
-
-    [1] Luo, Yi., et al. "Deep Clustering and Conventional Networks for Music
-        Separation: Stronger Together" Published in Acoustics, Speech, and
-        Signal Processing (ICASSP) 2017; doi:10.1109/ICASSP.2017.7952118
-
-    Hyperparameters:
-        F: Number of frequency bins in the input data
-        layer_size: Size of BLSTM layers
-        embedding_size: Dimension of embedding vector
-        alpha: Relative mixture of cost terms
-        nonlinearity: Nonlinearity to use in BLSTM layers
-        device: Which device to run the model on
     """
 
     def initialize(self):
-        self.F = self.config['model_params']['F']
-        self.num_sources = 2
-        self.layer_size = self.config['model_params']['layer_size']
+        self.num_sources = self.config['model_params']['num_sources']
+        self.num_samples = self.config['model_params']['num_samples']
+        self.num_encoding_layers = self.config['model_params']['num_encoding_layers']
         self.embedding_size = self.config['model_params']['embedding_size']
-        self.alpha = self.config['model_params']['alpha']
+        self.num_decoding_layers = self.config['model_params']['num_decoding_layers']
+        self.alpha_init = self.config['model_params']['alpha']
         nl = self.config['model_params']['nonlinearity']
         self.nonlinearity = eval('{}'.format(nl))
 
@@ -48,14 +35,16 @@ class Chimera(ModelBase):
         with graph.as_default():
             with tf.device(self.config['device']):
                 # Placeholder tensor for the input data
-                self.X = tf.placeholder("float", [None, None, self.F])
-                # Placeholder tensor for the unscaled input data
-                self.X_clean = tf.placeholder("float", [None, None, self.F])
+                self.X = tf.placeholder(tf.float32, [None, self.num_samples])
+
+                # Placeholder tensor for UIDs for sources
+                self.X_uids = tf.placeholder(tf.int32, [None, 2])
+
+                # Placeholder scalar for relative cost factor
+                self.Alpha = tf.placeholder(tf.float32)
 
                 # Placeholder tensor for the labels/targets
-                self.y = tf.placeholder("float", [None, None, self.F, None])
-                # Placeholder tensor for the unscaled labels/targets
-                self.y_clean = tf.placeholder("float", [None, None, self.F, None])
+                self.Y = tf.placeholder(tf.float32, [None, self.num_samples])
 
                 # Model methods
                 self.network
@@ -128,17 +117,22 @@ class Chimera(ModelBase):
                 # Store the validation cost
                 self.v_costs.append(ave_c_v)
 
-            # Store the current batch number
-            self.nbatches.append(batch_count + start)
+                # Store the current batch number
+                self.nbatches.append(batch_count + 1 + start)
 
-            logger.info("Training cost on batch {} is {}.".format(self.nbatches[-1], self.t_costs[-1]))
-            logger.info("Validation cost on batch {} is {}.".format(self.nbatches[-1], self.v_costs[-1]))
-            logger.info("Last saved {} batches ago.".format(self.nbatches[-1] - self.last_saved))
+                # Compute scale quantities for plotting
+                length = len(self.nbatches)
+                cutoff = int(0.5*length)
+                lowline = [min(self.v_costs)]*length
 
-            # Stop training if the number of iterations since the last save point exceeds the threshold
-            if self.nbatches[-1] - self.last_saved > stop_threshold:
-                logger.info("Early stopping criteria met!")
-                break
+                logger.info("Training cost on batch {} is {}.".format(self.nbatches[-1], self.t_costs[-1]))
+                logger.info("Validation cost on batch {} is {}.".format(self.nbatches[-1], self.v_costs[-1]))
+                logger.info("Last saved {} batches ago.".format(self.nbatches[-1] - self.last_saved))
+
+                # Stop training if the number of iterations since the last save point exceeds the threshold
+                if self.nbatches[-1] - self.last_saved > stop_threshold:
+                    logger.info("Early stopping criteria met!")
+                    break
 
             batch_count += 1
 
@@ -152,51 +146,56 @@ class Chimera(ModelBase):
     @tf_utils.scope_decorator
     def network(self):
         """
-        Construct the op for the network used in [1].  This consists of four
-        BLSTM layers followed by a dense layer giving a set of T-F vectors of
-        dimension embedding_size
         """
 
         # Get the shape of the input
-        shape = tf.shape(self.X)
+        input_shape = tf.shape(self.X)
 
-        # BLSTM layer one
-        BLSTM_1 = tf_utils.BLSTM_(self.X, self.layer_size, 'one',
-                                  activation=self.nonlinearity)
+        # encoder
+        l = tf.expand_dims(self.X)
+        for i in range(self.num_encoding_layers):
+            if i == 0:
+                nfilters = 2**3
+                filter_size = 2**3
+            else:
+                nfilters *= 2
+            layer_num = i + 1
+            l = self.encoding_layer(l, filter_size, nfilters, layer_num)
 
-        # BLSTM layer two
-        BLSTM_2 = tf_utils.BLSTM_(BLSTM_1, self.layer_size, 'two',
-                                  activation=self.nonlinearity)
+        # feature + embeddings
+        embeddings = self.compute_embeddings(l)
 
-        # BLSTM layer three
-        BLSTM_3 = tf_utils.BLSTM_(BLSTM_2, self.layer_size, 'three',
-                                  activation=self.nonlinearity)
+        # clustering
+        cc = self.make_cluster_centers()
+        # compute fuzzy assignments
+        # batch, feature 1, feature 2, nsources
+        squared_diffs = tf.reduce_sum(tf.square(tf.expand_dims(embeddings, 3) - tf.expand_dims(tf.expand_dims(tf.expand_dims(cc, 0), 0), 0)), -1)
+        squared_diffs_pow = tf.pow(squared_diffs, 1./(m - 1.))
+        W = tf.reciprocal(squared_diffs_pow*tf.expand_dims(tf.reduce_sum(tf.reciprocal(squared_diffs_pow), -1), -1))
 
-        # BLSTM layer four
-        BLSTM_4 = tf_utils.BLSTM_(BLSTM_3, self.layer_size, 'four',
-                                  activation=self.nonlinearity)
+        WT = tf.transpose(W, perm=[0, 3, 1, 2])
+        clustering_factors = tf.gather_nd(WT, self.X_uids)
+        
+        # NOTE: I'm making an explicit choice to multiply the embedding vectors
+        #       by the fuzzy c-means coefficients
+        # batch, feature 1, feature 2, nsources, embedding_size
+        scaled_embeddings = tf.expand_dims(clustering_factors, -1)*embeddings
 
-        # Feedforward layer
-        feedforward = tf_utils.conv1d_layer(BLSTM_4,
-                              [1, self.layer_size, self.embedding_size*self.F])
+        # decoder
+        # collapse embedding dimension with convolution (should revisit later)
+        with tf.variable_scope('embedding_decoder', reuse=tf.AUTO_REUSE):
+            filters = tf.truncated_normal([1, 1, 1, self.embedding_size, 1], mean=0.0, stddev=0.1)
+            bias = tf.truncated_normal([1], mean=0.0, stddev=0.1)
+            l = tf.nn.convolution(input=scaled_embeddings,
+                                  filter=tf.get_variable(name='weights',
+                                                         initializer=filters),
+                                  padding='VALID') + \
+                tf.get_variable(name='bias', initializer=bias)
+            l = self.nonlinearity(tf.squeeze(l))
+            
+        #for i in range(self.num_encoding_layers):
 
-        # Reshape the feedforward output to have shape (T,F,D)
-        z = tf.reshape(feedforward,
-                        [shape[0], shape[1], self.F, self.embedding_size])
-
-        # DC head
-        embedding = self.nonlinearity(z)
-        # Normalize the T-F vectors to get the network output
-        embedding = tf.nn.l2_normalize(embedding, 3)
-
-        # MI head
-        # Feedforward layer
-        feedforward_fc = tf_utils.conv2d_layer(z,
-                              [1, 1, self.embedding_size, self.num_sources])
-        # perform a softmax along the source dimension
-        mi_head = tf.nn.softmax(feedforward_fc, dim=3)
-
-        return embedding, mi_head
+        return embeddings, W
 
     @tf_utils.scope_decorator
     def cost(self):
@@ -280,14 +279,6 @@ class Chimera(ModelBase):
 
         return cost
 
-    def get_masks(self, X_in):
-        """
-        Compute the masks for the input spectrograms
-        """
-
-        masks = self.sess.run(self.network, {self.X: X_in})[1]
-        return masks
-
     def get_vectors(self, X_in):
         """
         Compute the embedding vectors for the input spectrograms
@@ -304,3 +295,57 @@ class Chimera(ModelBase):
                              self.X_clean: X_clean_in,
                              self.y_clean: y_clean_in})
         return cost
+
+    def encoding_layer(self, prev_layer, filter_size, nfilters, layer_num):
+        shape = tf.shape(prev_layer)
+        prev_nfilters = shape[-1]
+
+        with tf.variable_scope('encoding_layer_{}'.format(layer_num),
+                               reuse=tf.AUTO_REUSE):
+            filters = tf.truncated_normal([filter_size, prev_nfilters, nfilters],
+                                          mean=0.0, stddev=0.1)
+            bias = tf.truncated_normal([nfilters],
+                                       mean=0.0, stddev=0.1)
+            l = tf.nn.convolution(input=prev_layer,
+                                  filter=tf.get_variable(name='weights',
+                                                         initializer=filters),
+                                  padding='VALID',
+                                  strides=[1, 1, 2]) + \
+                 tf.get_variable(name='bias',
+                                 initializer=bias)
+            
+            l = self.nonlinearity(l)
+        
+        return l
+
+    def compute_embeddings(self, prev_layer):
+        feature_shape = tf.shape(prev_layer)
+        l = tf.expand_dims(prev_layer)
+
+        with tf.variable_scope('embeddings', reuse=tf.AUTO_REUSE):
+            # NOTE: This convolution will scan over all "time bins" with
+            #       different weights for each embedding dimension.
+            #       The filter window is divised such that the temporal
+            #       correlations are preserved
+            filters = tf.truncated_normal([2*feature_shape[1] - 1, 1,
+                                           1, self.embedding_size], mean=0.0, stddev=0.1)
+            bias = tf.truncated_normal([self.embedding_size], mean=0.0, stddev=0.1)
+            embeddings = tf.nn.convolution(input=l,
+                                           filter=tf.get_variable(name='weights',
+                                                                  initializer=filters),
+                                           padding='SAME') + \
+                         tf.get_variable(name='bias',
+                                         initializer=bias)
+            
+            embeddings = self.nonlinearity(embeddings)
+            
+        return embeddings
+
+    def make_cluster_centers(self):
+        with tf.variable_scope('cluster_centers', reuse=tf.AUTO_REUSE):
+            init = tf.truncated_normal([self.num_sources, self.embedding_size],
+                                       mean=0.0, stddev=0.1)
+
+            w = tf.get_variable(name='weights', initializer=init)
+
+        return w

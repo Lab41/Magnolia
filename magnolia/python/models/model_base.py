@@ -92,7 +92,7 @@ class ModelBase(abc.ABC):
 
         # Add all the other common code for the initialization here
         gpu_options = tf.GPUOptions(allow_growth=True)
-        sessConfig = tf.ConfigProto(gpu_options=gpu_options)
+        sessConfig = tf.ConfigProto(allow_soft_placement=True, gpu_options=gpu_options)
         self.sess = tf.Session(config=sessConfig, graph=self.graph)
         self.make_summaries = 'summary_config' in self.config
         if self.make_summaries:
@@ -140,11 +140,19 @@ class ModelBase(abc.ABC):
         self.saver.save(self.sess, save_path)
 
 
-    def load(self, checkpoint_dir):
-        checkpoint = tf.train.get_checkpoint_state(checkpoint_dir)
-        if self.debug_flag:
-            logger.debug('Loading the model from folder: {}'.format(checkpoint_dir))
-        self.saver.restore(self.sess, checkpoint.model_checkpoint_path)
+    def load(self, path):
+        self.saver.restore(self.sess, path)
+        # TODO: fix this
+        #model_name = checkpoint_dir.split(os.sep)[-1]
+        #dir_name = os.path.join(checkpoint_dir.split(os.sep)[:-1])
+        #checkpoint = tf.train.get_checkpoint_state(dir_name, latest_filename=model_name)
+        #if checkpoint is None:
+        #    raise RuntimeError("Couldn't find checkpoint files at {}".format(checkpoint_dir))
+        #path = checkpoint.model_checkpoint_path
+        #step = int(path.split(os.sep)[-1].split('-')[-1])
+        #if self.debug_flag:
+        #    logger.debug('Loading the model (step {}) from folder: {}'.format(step, checkpoint_dir))
+        #self.saver.restore(self.sess, path)
 
 
     ###########################################################

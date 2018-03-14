@@ -56,10 +56,12 @@ def main():
         total_length = int(sample_length*sample_rate)
 
         for i in range(args.sample):
-            spec, bin_masks, source_specs, uids, snrs = next(mixer_iter)
+            spec, bin_masks, source_specs, wf, wf_sources, uids, snrs = next(mixer_iter)
 
         spec = spec[0]
         bin_masks = bin_masks[0]
+        wf = wf[0]
+        wf_sources = wf_sources[0]
         uids = uids[0]
         snrs = snrs[0]
 
@@ -71,6 +73,9 @@ def main():
             istft_args=istft_args)
         lr.output.write_wav(mix_file_name, y, sample_rate, norm=True)
 
+        mix_file_name = '{}_waveform_mix.wav'.format(os.path.splitext(args.output_file)[0])
+        lr.output.write_wav(mix_file_name, wf, sample_rate, norm=True)
+
         for i in range(bin_masks.shape[0]):
             source_file_name = '{}_{}.wav'.format(os.path.splitext(args.output_file)[0], uids[i])
             source_spec = apply_binary_mask(bin_masks[i], spec)
@@ -78,6 +83,9 @@ def main():
                 preemphasis_coeff=preemphasis_coeff,
                 istft_args=istft_args)
             lr.output.write_wav(source_file_name, source_y, sample_rate, norm=True)
+
+            source_file_name = '{}_{}_waveform.wav'.format(os.path.splitext(args.output_file)[0], uids[i])
+            lr.output.write_wav(source_file_name, wf_sources[i], sample_rate, norm=True)
 
 
 if __name__ == '__main__':

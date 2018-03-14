@@ -9,8 +9,8 @@ from sklearn.cluster import KMeans, SpectralClustering, AgglomerativeClustering
 from sklearn.mixture import BayesianGaussianMixture, GaussianMixture
 from sklearn.decomposition import PCA
 
-from ..features.spectral_features import istft
-from ..features.preprocessing import make_stft_features, \
+from magnolia.preprocessing.spectral_features import istft
+from magnolia.preprocessing.preprocessing import make_stft_features, \
                                      undo_preemphasis
 from magnolia.utils.training import preprocess_l41_batch, preprocess_chimera_batch, preprocess_l41_regression_batch
 
@@ -127,7 +127,7 @@ def get_cluster_masks(vectors, num_sources, binary_mask=True, algo=None):
 
     else:
         # Do clustering
-        algo.fit(vectors[0].reshape((shape[1]*shape[2],shape[3])))
+        algo.fit(vectors[0].reshape((shape[1]*shape[2], shape[3])))
 
         if binary_mask:
             # Use cluster IDs to construct masks
@@ -361,3 +361,73 @@ def l41_regression_signal(spec, model):
     signal = model.get_signal(model_spec)
 
     return signal.transpose(0, 2, 1, 3)
+
+
+def mask_cluster_clustering_separate(spec, model, num_sources,
+                                     binary_mask=True):
+    """
+    Takes in a spectrogram and a model which has a get_vectors method and returns
+    the specified number of output sources.
+
+    Inputs:
+        spec: Spectrogram (in the format from a MixIterator) to separate.
+        model: Instance of model to use to separate the signal
+        num_sources: Integer number of sources to separate into
+        binary_mask: If true, computes the binary mask. Otherwise
+                     computes a soft mask
+
+    Returns:
+        sources: Numpy ndarray of shape (num_sources, Spectrogram.shape)
+    """
+
+
+    model_spec = preprocess_chimera_batch(spec)[1]
+    # Get the T-F embedding vectors for this signal from the model
+    vectors = model.get_vectors(model_spec)
+
+    # Clustering algo
+    clusterer = KMeans(n_clusters=num_sources, random_state=0)
+
+    # Run clustering algorithm on the vectors with k=num_sources to recover the
+    # signal masks
+    masks = get_cluster_masks(vectors, num_sources, binary_mask=binary_mask, algo=clusterer)
+
+    # Apply the masks from the clustering to the input signal
+    masked_specs = apply_masks(spec[0].T, masks)
+
+    sources = np.stack(masked_specs)
+
+    return sources.transpose(0, 2, 1)
+
+
+def mask_cluster_mask(spec, model, num_sources, **kwd_args):
+    model_spec = preprocess_chimera_batch(spec)[1]
+    
+    # # TODO: COMMENT BACK IN!!!
+    # soft_masks = model.get_masks(model_spec, num_sources, **kwd_args)
+
+    # masked_specs = soft_masks*np.expand_dims(spec.transpose(0, 2, 1), axis=-1)
+
+    # return masked_specs.transpose(0, 2, 1, 3)
+    
+    # TODO: REMOVE
+    # Get the T-F embedding vectors for this signal from the model
+    vectors = model.get_vectors(model_spec)
+
+    # Clustering algo
+    clusterer = KMeans(n_clusters=num_sources, random_state=0)
+    
+    # Get the shape of the input
+    shape = np.shape(vectors)
+    
+    vectorsr = vectors[0].reshape((shape[1]*shape[2], shape[3]))
+    
+    # Do clustering
+    clusterer.fit(vectorsr)
+    
+    cluster_centers = clusterer.cluster_centers_
+    
+    soft_masks = model.get_masks(model_spec, cluster_centers, **kwd_args)
+    masked_specs = soft_masks*np.expand_dims(spec.transpose(0, 2, 1), axis=-1)
+    
+    return masked_specs.transpose(0, 2, 1, 3)

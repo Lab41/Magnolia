@@ -244,6 +244,7 @@ class L41RegressionModel:
 
     @staticmethod
     def scale_signal(S, amin=1e-5, log_base=10, ref_value=1.0):
+        # NOTE: should possibly min/max scale
         log_base = np.log(log_base)
         log_spec = 20.0 * tf.log(tf.maximum(amin, S)) / log_base
         log_spec -= 20.0 * tf.log(tf.maximum(amin, ref_value)) / log_base
