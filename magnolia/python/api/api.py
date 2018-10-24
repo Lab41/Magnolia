@@ -5,12 +5,12 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import librosa
 
-from preprocessing.preprocessing import normalize_waveform
-from preprocessing.preprocessing import preprocess_waveform
-from preprocessing.preprocessing import undo_preprocessing
-from utils.postprocessing import convert_preprocessing_parameters
-from utils.clustering_utils import chimera_clustering_separate, chimera_mask
-from models import make_model
+from magnolia.preprocessing.preprocessing import normalize_waveform
+from magnolia.preprocessing.preprocessing import preprocess_waveform
+from magnolia.preprocessing.preprocessing import undo_preprocessing
+from magnolia.utils.postprocessing import convert_preprocessing_parameters
+from magnolia.utils.clustering_utils import chimera_clustering_separate, chimera_mask
+from magnolia.models import make_model
 
 UPLOAD_DIR = './uploads'
 CONVERTED_DIR = './converted'
@@ -94,7 +94,7 @@ def convert_back_to_wav(yy):
     librosa.write_wav(temp_path, yy, SAMPLING_RATE)
     return url_for('api/v1/converted/' + filename)
 
-@app.route('api/v1/converted/<filename>', methods=['GET'])
+@app.route('/api/v1/converted/<filename>', methods=['GET'])
 def uploaded_file(filename):
     return send_from_directory(app.config['CONVERTED_DIR'],
                                filename)

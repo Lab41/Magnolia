@@ -1,6 +1,6 @@
 import numpy as np
-from ..features.preprocessing import undo_preemphasis
-from ..features.spectral_features import istft
+from magnolia.preprocessing.preprocessing import undo_preemphasis
+from magnolia.preprocessing.spectral_features import istft
 
 
 def convert_preprocessing_parameters(params):
