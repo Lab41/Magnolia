@@ -2,8 +2,8 @@ import json
 import os
 import tempfile
 import logging.config
-from flask import Flask, request, jsonify, url_for
-from flask_cors import CORS
+from flask import Flask, request, jsonify, url_for, send_from_directory
+from flask_cors import CORS, cross_origin
 import librosa
 import numpy as np
 
@@ -18,8 +18,8 @@ UPLOAD_DIR = './uploads'
 CONVERTED_DIR = './converted'
 MODEL_DIR = './model'
 MODEL_DEVICE = '/cpu:0'
-ALLOWED_EXTENSIONS = set(['wav', 'mp3'])
-SAMPLING_RATE = 10000
+ALLOWED_EXTENSIONS = set(['wav'])
+SAMPLING_RATE = 16000
 
 settings={
     "compression": "gzip",
@@ -28,7 +28,8 @@ settings={
         "target_sample_rate": 10000,
         "preemphasis_coeff": 0.0,
         "stft_args": {
-            "n_fft": 512
+            "n_fft": 512,
+            'hop_length': 256
         }
     }
 }
@@ -63,19 +64,23 @@ def save_temp_file(request):
 
 def convert_file_to_waveform(file_path):
     y,sr = librosa.load(file_path)
+    print("sampling rate: {0}".format(sr))
     duration = librosa.get_duration(y=y, sr=sr)
-    return y, duration
+    print("durations: {0}".format(duration))
+    print("len in bits: {0}".format(int(duration*sr)))
+    return y, sr, duration
 
 def prepare_waveform(wf_batch):
     # Compute STFT spectrogram
-    signal = normalize_waveform(np.squeeze(wf_batch))
-    D,yy = preprocess_waveform(signal, SAMPLING_RATE, **settings['processing_parameters'])
+    signal = wf_batch #normalize_waveform(np.squeeze(wf_batch))
+    D,yy = preprocess_waveform(wf_batch, SAMPLING_RATE, **settings['processing_parameters'])
     app.logger.debug(D.shape)
     app.logger.debug(yy.shape)
     return D
 
 def process_waveform(D):
     frequency_dim = D.shape[0]
+    print("D shape 1: {0}".format(D.shape[1]))
     model_save_base = MODEL_DIR
     model_location = MODEL_DEVICE
 
@@ -92,38 +97,41 @@ def process_waveform(D):
     model.load(model_save_base)
 
     source_specs = chimera_mask(np.expand_dims(D,axis=0), model)[0]
+    print(source_specs[0].shape)
     return source_specs
 
 def postprocess_waveform(source_specs, sample_length_in_bits):
-    istft_args={'hop_length': 256}
-    print(sample_length_in_bits)
+    istft_args={'hop_length': 256, 'win_length': 512}
     yy_out = undo_preprocessing(source_specs[:,:,0], sample_length_in_bits,
                                    preemphasis_coeff=0,
                                    istft_args=istft_args)
 
     return yy_out
 
-def convert_back_to_wav(yy):
+def convert_back_to_wav(yy, save_sr):
     tf = tempfile.NamedTemporaryFile()
     filename = os.path.basename(tf.name)
     temp_path = os.path.join(app.config['CONVERTED_DIR'], filename)
-    print(temp_path)
-    librosa.output.write_wav(temp_path, yy, SAMPLING_RATE)
+    librosa.output.write_wav(temp_path, yy, save_sr)
     return url_for('uploaded_file', filename=filename)
 
 @app.route('/api/v1/converted/<filename>', methods=['GET'])
+@cross_origin(origin='*')
 def uploaded_file(filename):
     return send_from_directory(app.config['CONVERTED_DIR'],
-                               filename)
+                               filename, attachment_filename=filename + '.wav', mimetype='audio/wav')
+
 @app.route('/api/v1/convert', methods=['POST'])
+@cross_origin(origin='*')
 def convert_file():
     temp_path = save_temp_file(request)
-    wf_batch, len_in_secs = convert_file_to_waveform(temp_path)
-    len_in_bits = int(SAMPLING_RATE*len_in_secs)
+    wf_batch, load_sr, len_in_secs = convert_file_to_waveform(temp_path)
+    SAMPLING_RATE = load_sr
+    len_in_bits = int(16000*len_in_secs)
     D = prepare_waveform(wf_batch)
     source_specs = process_waveform(D)
     yy = postprocess_waveform(source_specs, len_in_bits)
-    converted_url = convert_back_to_wav(yy)
+    converted_url = convert_back_to_wav(yy, 13000)
     return converted_url
 
 if __name__ == '__main__':

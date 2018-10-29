@@ -8,3 +8,6 @@ __pycache__
 magnolia.egg-info/
 dist/
 build/
+magnolia/python/api/model/
+magnolia/python/api/converted/
+magnolia/python/api/uploads/
