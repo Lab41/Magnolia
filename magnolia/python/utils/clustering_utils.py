@@ -9,8 +9,8 @@ from sklearn.cluster import KMeans, SpectralClustering, AgglomerativeClustering
 from sklearn.mixture import BayesianGaussianMixture, GaussianMixture
 from sklearn.decomposition import PCA
 
-from ..features.spectral_features import istft
-from ..features.preprocessing import make_stft_features, \
+from magnolia.preprocessing.spectral_features import istft
+from magnolia.preprocessing.preprocessing import make_stft_features, \
                                      undo_preemphasis
 from magnolia.utils.training import preprocess_l41_batch, preprocess_chimera_batch, preprocess_l41_regression_batch
 
